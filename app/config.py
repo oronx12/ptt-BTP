@@ -14,7 +14,11 @@ class Config:
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB
 
     # PostgreSQL Supabase
-    SQLALCHEMY_DATABASE_URI      = os.environ.get("DATABASE_URL", "")
+    # Render fournit parfois "postgres://" (ancien format) — SQLAlchemy 2.x exige "postgresql://"
+    _db_url = os.environ.get("DATABASE_URL", "")
+    if _db_url.startswith("postgres://"):
+        _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URI = _db_url or None
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Pool stable pour Supabase Session Pooler
     SQLALCHEMY_ENGINE_OPTIONS = {

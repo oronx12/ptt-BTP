@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTT BTP - Editeur de profils</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .nav-active {
+            background: rgba(59, 130, 246, 0.3) !important;
+            border-color: rgba(59, 130, 246, 0.5) !important;
+            font-weight: 600 !important;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: 200ms ease;
+            margin-left: 8px;
+        }
+        .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        /* ===== NOUVEAU DESIGN - SECTIONS ORGANISÉES ===== */
+        .page-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .page-header {
+            margin-bottom: 24px;
+        }
+        
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .phase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        .phase-badge svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .page-title h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        
+        .page-subtitle {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-left: 4px;
+        }
+        
+        /* Layout principal en 2 colonnes */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* Cards de section */
+        .section-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .section-header.orange {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+        }
+        
+        .section-header.blue {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+        
+        .section-header.cyan {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+        }
+        
+        .section-header.purple {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+        }
+        
+        .section-header.green {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+        }
+        
+        .step-badge {
+            width: 28px;
+            height: 28px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        
+        .section-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            flex: 1;
+        }
+        
+        .section-header .section-icon {
+            width: 20px;
+            height: 20px;
+            opacity: 0.9;
+        }
+        
+        .section-body {
+            padding: 20px;
+        }
+        
+        /* Sous-sections */
+        .sub-section {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .sub-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .sub-section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .sub-section-title svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-light);
+        }
+        
+        /* Zone d'upload de fichier */
+        .file-upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            background: #fafbfc;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .file-upload-zone:hover {
+            border-color: #94a3b8;
+            background: #f1f5f9;
+        }
+        
+        .file-upload-zone.dragover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+        
+        .file-upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px;
+            color: #94a3b8;
+        }
+        
+        .file-upload-text {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+        
+        .file-upload-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        /* Boutons d'action groupés */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .action-buttons .btn {
+            flex: 1;
+            min-width: 80px;
+            justify-content: center;
+        }
+        
+        .btn-sm {
+            padding: 8px 12px !important;
+            font-size: 0.8rem !important;
+        }
+        
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        /* Canvas container amélioré */
+        .canvas-wrapper {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .canvas-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .canvas-toolbar .btn {
+            padding: 8px 14px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+        }
+        
+        .canvas-toolbar .btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+        
+        .canvas-area {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .canvas-area canvas {
+            display: block;
+            width: 100%;
+            height: 400px;
+        }
+        
+        .canvas-instructions {
+            margin-top: 12px;
+            padding: 12px;
+            background: #eff6ff;
+            border-radius: 8px;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .canvas-instructions h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1e40af;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .canvas-instructions p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #1e40af;
+            line-height: 1.6;
+        }
+        
+        /* Formulaires de positionnement */
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .form-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .form-group {
+            flex: 1;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-light);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            background: white;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-hint {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 10px 12px;
+            background: #fef3c7;
+            border-radius: 8px;
+            margin-top: 12px;
+            border: 1px solid #fcd34d;
+        }
+        
+        .form-hint svg {
+            width: 16px;
+            height: 16px;
+            color: #d97706;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        
+        .form-hint span {
+            font-size: 0.8rem;
+            color: #92400e;
+            line-height: 1.4;
+        }
+        
+        /* Section échelles */
+        .scales-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .scale-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .scale-input label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-light);
+            min-width: 20px;
+        }
+        
+        .scale-input input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 0.9rem;
+            padding: 4px;
+        }
+        
+        .scale-input input:focus {
+            outline: none;
+        }
+        
+        /* Tableau des points amélioré */
+        .points-list-section {
+            margin-top: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+        }
+        
+        .points-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+        }
+        
+        .points-list-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .points-count {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .points-table-container-large {
+            max-height: 350px;
+            overflow-y: auto;
+            background: white;
+        }
+        
+        .points-table-full {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .points-table-full thead {
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            z-index: 10;
+        }
+        
+        .points-table-full th {
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .points-table-full td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.9rem;
+        }
+        
+        .points-table-full tbody tr {
+            transition: background 0.15s ease;
+        }
+        
+        .points-table-full tbody tr:hover {
+            background: #f0f9ff;
+        }
+        
+        .points-table-full tbody tr.selected {
+            background: #dbeafe;
+        }
+        
+        .points-table-full .btn-edit,
+        .points-table-full .btn-delete {
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            margin-right: 4px;
+            transition: all 0.15s ease;
+        }
+        
+        .points-table-full .btn-edit {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        
+        .points-table-full .btn-edit:hover {
+            background: #bae6fd;
+        }
+        
+        .points-table-full .btn-delete {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .points-table-full .btn-delete:hover {
+            background: #fecaca;
+        }
+        
+        .points-table-full tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .points-table-empty {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+        
+        .points-table-empty svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 16px;
+            opacity: 0.4;
+        }
+        
+        .points-table-empty p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        /* Boutons de navigation */
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+        }
+        
+        .nav-buttons .btn {
+            width: 100%;
+            justify-content: center;
+            padding: 12px 16px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+            color: white !important;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+            color: white !important;
+            box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+            color: white !important;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+        
+        /* Status badge pour fichier chargé */
+        .file-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: #ecfdf5;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+        
+        .file-status.loaded {
+            background: #ecfdf5;
+            border-color: #86efac;
+        }
+        
+        .file-status svg {
+            width: 18px;
+            height: 18px;
+            color: #22c55e;
+        }
+        
+        .file-status span {
+            font-size: 0.85rem;
+            color: #166534;
+            font-weight: 500;
+        }
+        
+        /* Masquer les anciennes sections */
+        .control-panel,
+        .editor-section .editor-header,
+        .editor-section .editor-actions {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-title">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-weight:700; font-size: 20px; letter-spacing: -0.5px;">PTT BTP</div>
+                <div style="font-size:12px; opacity:0.8;">Phase 1 : Profil en travers type</div>
+            </div>
+        </div>
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <nav class="mobile-nav" id="mobileNav">
+            <button onclick="window.location.href='/'">
+                Accueil
+            </button>
+            <button onclick="window.location.href='/editeur'" class="nav-active">
+                Phase 1 : Profil en travers type
+            </button>
+            <button onclick="window.location.href='/points-kilometriques'">
+                Phase 2 : Points kilométriques
+            </button>
+            <button onclick="window.location.href='/reception'">
+                Réception topographique
+            </button>
+            <div class="user-avatar">
+                U
+            </div>
+        </nav>
+        <script>
+            function toggleMobileMenu() {
+                document.getElementById('mobileNav').classList.toggle('active');
+            }
+        </script>
+    </header>
+    
+    <div class="main-container">
+        <!-- NOUVEAU CONTENU ORGANISÉ -->
+        <div class="page-content">
+            <!-- En-tête de page -->
+            <div class="page-header">
+                <div class="page-title">
+                    <span class="phase-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+                            <path d="M2 17L12 22L22 17"/>
+                            <path d="M2 12L12 17L22 12"/>
+                        </svg>
+                        PHASE 1
+                    </span>
+                    <h1>Profil en travers type</h1>
+                </div>
+                <p class="page-subtitle">Créez et éditez votre profil en travers en ajoutant des points, des connexions et des polygones</p>
+            </div>
+            
+            <!-- Layout principal -->
+            <div class="main-grid">
+                <!-- Colonne gauche - Éditeur et liste -->
+                <div class="left-column">
+                    
+                    <!-- ÉTAPE 2 : Éditeur graphique -->
+                    <div class="section-card">
+                        <div class="section-header blue">
+                            <span class="step-badge">2</span>
+                            <h3>Éditeur graphique</h3>
+                            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="3" y1="9" x2="21" y2="9"/>
+                                <line x1="9" y1="21" x2="9" y2="9"/>
+                            </svg>
+                        </div>
+                        <div class="section-body">
+                            <div class="canvas-wrapper">
+                                <div class="canvas-toolbar">
+                                    <button id="add-point-btn" class="btn btn-sm">
+                                        <span class="btn-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                            </svg>
+                                            Ajouter point
+                                        </span>
+                                    </button>
+                                    <button id="connect-points-btn" class="btn btn-sm secondary">
+                                        <span class="btn-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                            </svg>
+                                            Connecter
+                                        </span>
+                                    </button>
+                                    <button id="create-polygon-btn" class="btn btn-sm secondary">
+                                        <span class="btn-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>
+                                            </svg>
+                                            Polygone
+                                        </span>
+                                    </button>
+                                    <button id="delete-selected-btn" class="btn btn-sm secondary">
+                                        <span class="btn-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6"/>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            </svg>
+                                            Supprimer
+                                        </span>
+                                    </button>
+                                </div>
+                                
+                                <div class="canvas-area">
+                                    <canvas id="editor-canvas" width="800" height="400"></canvas>
+                                </div>
+                                
+                                <div class="canvas-instructions">
+                                    <h4>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <line x1="12" y1="16" x2="12" y2="12"/>
+                                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                        </svg>
+                                        Instructions
+                                    </h4>
+                                    <p>
+                                        <strong>Ajouter :</strong> Activez le mode puis cliquez sur le canvas • 
+                                        <strong>Connecter :</strong> Sélectionnez plusieurs points puis cliquez • 
+                                        <strong>Polygone :</strong> Sélectionnez 3+ points puis cliquez • 
+                                        <strong>Supprimer :</strong> Sélectionnez des éléments puis cliquez
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ÉTAPE 4 : Liste des points -->
+                    <div class="section-card">
+                        <div class="points-list-header">
+                            <h3>
+                                <span class="step-badge" style="background: rgba(255,255,255,0.2);">4</span>
+                                Liste des points
+                            </h3>
+                            <span class="points-count" id="points-count">0 point(s)</span>
+                        </div>
+                        <div class="points-table-container-large">
+                            <table id="points-table" class="points-table-full">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nom</th>
+                                        <th>X</th>
+                                        <th>Z</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Colonne droite - Import, Positionnement, Navigation -->
+                <div class="right-column">
+                    
+                    <!-- ÉTAPE 1 : Charger les données -->
+                    <div class="section-card">
+                        <div class="section-header orange">
+                            <span class="step-badge">1</span>
+                            <h3>Charger les données</h3>
+                            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <div class="section-body">
+                            <!-- Import fichier -->
+                            <div class="sub-section">
+                                <div class="sub-section-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                    Importer un fichier CSV
+                                </div>
+                                <div class="file-upload-zone" id="file-drop-zone">
+                                    <svg class="file-upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    <p class="file-upload-text">Glissez un fichier ou cliquez pour parcourir</p>
+                                    <p class="file-upload-hint">Formats acceptés : CSV</p>
+                                    <input id="file-input" type="file" accept="text/csv,.csv" style="display:none;">
+                                </div>
+                                <div class="action-buttons" style="margin-top: 12px;">
+                                    <button id="parse-local" class="btn btn-sm secondary">📥 Importer Droite</button>
+                                    <button id="parse-local-left" class="btn btn-sm secondary">📥 Importer Gauche</button>
+                                </div>
+                                <div id="file-status-import" class="file-status loaded" style="display: none;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                    <span id="file-status-text">Fichier chargé</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Export -->
+                            <div class="sub-section">
+                                <div class="sub-section-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7 10 12 15 17 10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    Exporter les points
+                                </div>
+                                <div class="action-buttons">
+                                    <button id="export-csv-btn" class="btn btn-sm secondary">CSV</button>
+                                    <button id="export-excel-btn" class="btn btn-sm secondary">Excel</button>
+                                    <button id="export-json-btn" class="btn btn-sm secondary">JSON</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ÉTAPE 3 : Positionnement manuel -->
+                    <div class="section-card">
+                        <div class="section-header cyan">
+                            <span class="step-badge">3</span>
+                            <h3>Positionnement manuel</h3>
+                            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M12 2v4"/>
+                                <path d="M12 18v4"/>
+                                <path d="M2 12h4"/>
+                                <path d="M18 12h4"/>
+                            </svg>
+                        </div>
+                        <div class="section-body">
+                            <!-- Coordonnées directes -->
+                            <div class="sub-section">
+                                <div class="sub-section-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="2"/>
+                                        <path d="M12 2v4"/>
+                                        <path d="M12 18v4"/>
+                                        <path d="M2 12h4"/>
+                                        <path d="M18 12h4"/>
+                                    </svg>
+                                    Coordonnées directes
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>X</label>
+                                        <input id="direct-x" type="number" step="0.1" placeholder="0.0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Z</label>
+                                        <input id="direct-z" type="number" step="0.1" placeholder="0.0">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Nom du point</label>
+                                        <input id="direct-label" type="text" placeholder="Nom du point">
+                                    </div>
+                                </div>
+                                <button id="add-direct-point" class="btn btn-primary btn-sm" style="width: 100%; margin-top: 8px;">
+                                    <span class="btn-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <line x1="12" y1="5" x2="12" y2="19"/>
+                                            <line x1="5" y1="12" x2="19" y2="12"/>
+                                        </svg>
+                                        Ajouter le point
+                                    </span>
+                                </button>
+                            </div>
+                            
+                            <!-- Coordonnées relatives -->
+                            <div class="sub-section">
+                                <div class="sub-section-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="18" cy="18" r="3"/>
+                                        <circle cx="6" cy="6" r="3"/>
+                                        <path d="M6 21V9a9 9 0 0 0 9 9h6"/>
+                                    </svg>
+                                    À partir d'un point existant
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Point de référence</label>
+                                        <select id="reference-point">
+                                            <option value="">Sélectionner un point...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>X relatif</label>
+                                        <input id="relative-x" type="number" step="0.1" placeholder="0.0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Z relatif</label>
+                                        <input id="relative-z" type="number" step="0.1" placeholder="0.0">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Nom du point</label>
+                                        <input id="relative-label" type="text" placeholder="Nom du nouveau point">
+                                    </div>
+                                </div>
+                                <button id="add-relative-point" class="btn btn-sm" style="width: 100%; margin-top: 8px; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: white;">
+                                    <span class="btn-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                            <line x1="12" y1="5" x2="12" y2="19"/>
+                                            <line x1="5" y1="12" x2="19" y2="12"/>
+                                        </svg>
+                                        Ajouter relativement
+                                    </span>
+                                </button>
+                                <div class="form-hint">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="16" x2="12" y2="12"/>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    </svg>
+                                    <span>Le point sera positionné relativement au point de référence sélectionné</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Section Échelles et Navigation -->
+                    <div class="section-card">
+                        <div class="section-header green">
+                            <span class="step-badge">⚙</span>
+                            <h3>Options & Navigation</h3>
+                            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                        </div>
+                        <div class="section-body">
+                            <!-- Échelles -->
+                            <div class="sub-section">
+                                <div class="sub-section-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                                    </svg>
+                                    Échelles d'affichage
+                                </div>
+                                <div class="scales-grid">
+                                    <div class="scale-input">
+                                        <label>X:</label>
+                                        <input id="scale-x" type="number" value="10" step="0.5" min="0.1">
+                                    </div>
+                                    <div class="scale-input">
+                                        <label>Z:</label>
+                                        <input id="scale-z" type="number" value="10" step="0.5" min="0.1">
+                                    </div>
+                                </div>
+                                <div class="action-buttons" style="margin-top: 12px;">
+                                    <button id="apply-scales" class="btn btn-sm secondary">Appliquer</button>
+                                    <button id="reset-view" class="btn btn-sm secondary">Reset vue</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Navigation -->
+                            <div class="sub-section">
+                                <div class="sub-section-title">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+                                    </svg>
+                                    Navigation
+                                </div>
+                                <div class="nav-buttons">
+                                    <button id="load-existing-points" class="btn btn-sm secondary">
+                                        <span class="btn-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                <polyline points="7 10 12 15 17 10"/>
+                                                <line x1="12" y1="15" x2="12" y2="3"/>
+                                            </svg>
+                                            Charger points existants
+                                        </span>
+                                    </button>
+                                    <button id="save-points" class="btn btn-sm btn-primary">
+                                        <span class="btn-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                                <polyline points="17 21 17 13 7 13 7 21"/>
+                                                <polyline points="7 3 7 8 15 8"/>
+                                            </svg>
+                                            Sauvegarder
+                                        </span>
+                                    </button>
+                                    <button id="go-to-km" class="btn btn-sm btn-success">
+                                        <span class="btn-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                                <polyline points="12 5 19 12 12 19"/>
+                                            </svg>
+                                            Aller aux Points km (Phase 2)
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Zones cachées pour compatibilité -->
+        <div style="display:none;">
+            <div id="spinner" class="spinner hidden"></div>
+            <div id="result" class="meta"></div>
+            <div id="table-zone"></div>
+            <div id="viz-zone"></div>
+            <a id="export-csv" href="/api/points/export"></a>
+        </div>
+    </div>
+
+    <script>
+    // === VARIABLES GLOBALES ===
+    let points = [];
+    let connections = [];
+    let polygons = [];
+    let selected = new Set();
+    let connectionIdCounter = 1; 
+    let polygonIdCounter = 1; 
+    let addPointMode = false;
+    let dragId = null;
+    let panActive = false;
+    let panStart = null;
+    let view = { tx: 0, ty: 0, scale: 10 };
+    let scaleX = 10;
+    let scaleZ = 10;
+    
+    const canvas = document.getElementById('editor-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Charger les points depuis le serveur
+    async function loadPoints() {
+        try {
+            const resp = await fetch('/api/points');
+            const data = await resp.json();
+            if (data.points) {
+                // Ne pas charger automatiquement les points - interface vide par défaut
+                // points = data.points;
+                // connections = data.connections || [];
+                // polygons = data.polygons || [];
+                // renderPointsTable();
+                // draw();
+            }
+        } catch (e) {
+            console.error('Erreur lors du chargement:', e);
+        }
+    }
+
+    function resize(){
+        // Caler la taille interne du canvas sur sa taille affichée pour que le clic corresponde au curseur
+        const rect = canvas.getBoundingClientRect();
+        const targetWidth = Math.max(300, rect.width);
+        const targetHeight = Math.max(300, rect.height);
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        draw();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function worldToScreen(x,z){
+        const cx = canvas.width/2;
+        const cy = canvas.height/2;
+        return { sx: cx + x * scaleX + view.tx, sy: cy - z * scaleZ + view.ty };
+    }
+
+    function screenToWorld(sx,sy){
+        const cx = canvas.width/2;
+        const cy = canvas.height/2;
+        return { x: (sx - cx - view.tx) / scaleX, z: -(sy - cy - view.ty) / scaleZ };
+    }
+
+    function drawGrid(){
+        ctx.strokeStyle = '#f0f0f0';
+        ctx.lineWidth = 1;
+        const step = Math.max(20, 50 / view.scale);
+        for(let x = 0; x < canvas.width; x += step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+        for(let y = 0; y < canvas.height; y += step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+    }
+
+    function draw(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        
+        // Grille de fond
+        drawGrid();
+        
+        // Axes principaux
+        ctx.strokeStyle = '#d0d0d0';
+        ctx.lineWidth = 1;
+        const origin = worldToScreen(0,0);
+        if(origin.sx >= 0 && origin.sx <= canvas.width) {
+            ctx.beginPath(); ctx.moveTo(origin.sx, 0); 
+            ctx.lineTo(origin.sx, canvas.height); ctx.stroke();
+        }
+        if(origin.sy >= 0 && origin.sy <= canvas.height) {
+            ctx.beginPath(); ctx.moveTo(0, origin.sy); 
+            ctx.lineTo(canvas.width, origin.sy); ctx.stroke();
+        }
+        
+        // Dessiner les connexions
+        ctx.lineWidth = 2;
+        connections.forEach((conn, index) => {
+            const p1 = points.find(p => p.id === conn.point1);
+            const p2 = points.find(p => p.id === conn.point2);
+            
+            if (p1 && p2) {
+                const s1 = worldToScreen(p1.x, p1.z);
+                const s2 = worldToScreen(p2.x, p2.z);
+                
+                ctx.strokeStyle = conn.color || '#2563eb';
+                ctx.lineWidth = 2;
+                
+                ctx.beginPath();
+                ctx.moveTo(s1.sx, s1.sy);
+                ctx.lineTo(s2.sx, s2.sy);
+                ctx.stroke();
+            }
+        });
+
+        // Dessiner les polygones
+        polygons.forEach((poly, polyIndex) => {
+            if (poly.points.length < 3) return;
+            
+            const polyPoints = poly.points.map(pid => points.find(p => p.id === pid)).filter(p => p);
+            if (polyPoints.length < 3) return;
+            
+            const screenPoints = polyPoints.map(p => worldToScreen(p.x, p.z));
+            
+            ctx.strokeStyle = poly.color || '#16a34a';
+            ctx.lineWidth = 2;
+            
+            // Dessiner le contour du polygone
+            ctx.beginPath();
+            ctx.moveTo(screenPoints[0].sx, screenPoints[0].sy);
+            for (let i = 1; i < screenPoints.length; i++) {
+                ctx.lineTo(screenPoints[i].sx, screenPoints[i].sy);
+            }
+            ctx.closePath();
+            ctx.stroke();
+            
+            // Remplir le polygone
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = poly.color || '#16a34a';
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        });
+
+        // Dessiner les points
+        points.forEach(point => {
+            const screen = worldToScreen(point.x, point.z);
+            const isSelected = selected.has(point.id);
+            
+            ctx.fillStyle = isSelected ? '#e11d48' : '#2563eb';
+            ctx.beginPath();
+            ctx.arc(screen.sx, screen.sy, isSelected ? 7 : 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Contour blanc pour les points sélectionnés
+            if (isSelected) {
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            // Label du point
+            ctx.fillStyle = '#111';
+            ctx.font = 'bold 11px Arial';
+            const label = point.label || point.id.toString();
+            ctx.fillText(label, screen.sx + 10, screen.sy - 8);
+            
+            // Coordonnées sous le point
+            ctx.font = '9px Arial';
+            ctx.fillStyle = '#666';
+            ctx.fillText(`(${point.x}, ${point.z})`, screen.sx + 10, screen.sy + 12);
+        });
+        
+        // Indicateur de mode ajout de points
+        if (addPointMode) {
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#3b82f6';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('Mode ajout de points actif - Cliquez pour placer un point', 20, 30);
+        }
+    }
+
+    // === NOUVELLES FONCTIONS SIMPLIFIÉES ===
+    
+    // Gestionnaires des nouveaux boutons
+    document.getElementById('add-point-btn').onclick = () => {
+        addPointMode = !addPointMode; // Toggle du mode
+        
+        // Réinitialiser les styles des autres boutons
+        document.getElementById('connect-points-btn').style.background = '';
+        document.getElementById('create-polygon-btn').style.background = '';
+        document.getElementById('delete-selected-btn').style.background = '';
+        
+        if (addPointMode) {
+            canvas.style.cursor = 'crosshair';
+            document.getElementById('add-point-btn').style.background = '#3b82f6';
+            document.getElementById('add-point-btn').style.color = 'white';
+            document.getElementById('add-point-btn').textContent = 'Mode ajout actif';
+        } else {
+            canvas.style.cursor = '';
+            document.getElementById('add-point-btn').style.background = '';
+            document.getElementById('add-point-btn').style.color = '';
+            document.getElementById('add-point-btn').textContent = 'Ajouter un point';
+        }
+    };
+
+    document.getElementById('connect-points-btn').onclick = () => {
+        const selectedPoints = Array.from(selected);
+        if (selectedPoints.length < 2) {
+            alert('Veuillez sélectionner au moins 2 points pour créer des connexions.');
+            return;
+        }
+        
+        // Créer des connexions entre tous les points sélectionnés (en chaîne)
+        let connectionsCreated = 0;
+        for (let i = 0; i < selectedPoints.length - 1; i++) {
+            const point1 = selectedPoints[i];
+            const point2 = selectedPoints[i + 1];
+            
+            // Vérifier si cette connexion n'existe pas déjà
+            const existingConnection = connections.find(c => 
+                (c.point1 === point1 && c.point2 === point2) || 
+                (c.point1 === point2 && c.point2 === point1)
+            );
+            
+            if (!existingConnection) {
+                connections.push({
+                    id: ++connectionIdCounter,
+                    point1: point1,
+                    point2: point2,
+                    type: 'line',
+                    color: `hsl(${(connectionsCreated * 45) % 360}, 70%, 50%)`
+                });
+                connectionsCreated++;
+            }
+        }
+        
+        console.log(`${connectionsCreated} connexions créées entre ${selectedPoints.length} points`);
+        selected.clear();
+        renderPointsTable();
+        draw();
+        alert(`${connectionsCreated} connexions créées !`);
+    };
+
+    document.getElementById('create-polygon-btn').onclick = () => {
+        const selectedPoints = Array.from(selected);
+        if (selectedPoints.length < 3) {
+            alert('Veuillez sélectionner au moins 3 points pour créer un polygone.');
+            return;
+        }
+        
+        // Créer polygone avec tous les points sélectionnés
+        const newPolygon = {
+            id: ++polygonIdCounter,
+            points: [...selectedPoints],
+            type: 'polygon',
+            color: `hsl(${(polygonIdCounter * 60) % 360}, 65%, 55%)`,
+            filled: true
+        };
+        
+        polygons.push(newPolygon);
+        console.log(`Polygone créé avec ${selectedPoints.length} points: ${selectedPoints.join(', ')}`);
+        selected.clear();
+        renderPointsTable();
+        draw();
+        alert(`Polygone créé avec ${selectedPoints.length} points !`);
+    };
+
+    document.getElementById('delete-selected-btn').onclick = () => {
+        const selectedPoints = Array.from(selected);
+        if (selectedPoints.length > 0) {
+            if (confirm(`Supprimer ${selectedPoints.length} point(s) sélectionné(s) et tous les éléments liés ?`)) {
+                // Supprimer les points
+                points = points.filter(p => !selected.has(p.id));
+                // Supprimer les connexions liées
+                connections = connections.filter(c => 
+                    !selectedPoints.includes(c.point1) && !selectedPoints.includes(c.point2)
+                );
+                // Supprimer les polygones liés
+                polygons = polygons.filter(poly => 
+                    !selectedPoints.some(id => poly.points.includes(id))
+                );
+                selected.clear();
+                renderPointsTable();
+                draw();
+                alert('Éléments supprimés !');
+            }
+        } else {
+            alert('Veuillez sélectionner des points à supprimer.');
+        }
+    };
+
+    // === GESTIONNAIRES POSITIONNEMENT DE POINT ===
+    
+    // Fonction pour mettre à jour la liste des points de référence
+    function updateReferencePointsList() {
+        const select = document.getElementById('reference-point');
+        select.innerHTML = '<option value="">Sélectionner un point...</option>';
+        
+        points.forEach(point => {
+            const option = document.createElement('option');
+            option.value = point.id;
+            option.textContent = `${point.label || point.id} (${point.x.toFixed(1)}, ${point.z.toFixed(1)})`;
+            select.appendChild(option);
+        });
+    }
+    
+    // Option 1: Ajouter point par coordonnées directes
+    document.getElementById('add-direct-point').onclick = () => {
+        const x = parseFloat(document.getElementById('direct-x').value);
+        const z = parseFloat(document.getElementById('direct-z').value);
+        const label = document.getElementById('direct-label').value.trim();
+        
+        if (isNaN(x) || isNaN(z)) {
+            alert('Veuillez entrer des coordonnées X et Z valides.');
+            return;
+        }
+        
+        // Créer le nouveau point
+        const newId = points.length > 0 ? Math.max(...points.map(p => p.id)) + 1 : 1;
+        const newPoint = {
+            id: newId,
+            label: label || `P${newId}`,
+            x: Math.round(x * 10) / 10,
+            z: Math.round(z * 10) / 10
+        };
+        
+        points.push(newPoint);
+        updateReferencePointsList(); // Mettre à jour la liste des points de référence
+        renderPointsTable();
+        draw();
+        
+        // Vider les champs
+        document.getElementById('direct-x').value = '';
+        document.getElementById('direct-z').value = '';
+        document.getElementById('direct-label').value = '';
+        
+        alert(`Point "${newPoint.label}" ajouté aux coordonnées (${newPoint.x}, ${newPoint.z})`);
+    };
+    
+    // Option 2: Ajouter point à partir d'un point existant
+    document.getElementById('add-relative-point').onclick = () => {
+        const referenceId = parseInt(document.getElementById('reference-point').value);
+        const relativeX = parseFloat(document.getElementById('relative-x').value);
+        const relativeZ = parseFloat(document.getElementById('relative-z').value);
+        const label = document.getElementById('relative-label').value.trim();
+        
+        if (!referenceId) {
+            alert('Veuillez sélectionner un point de référence.');
+            return;
+        }
+        
+        if (isNaN(relativeX) || isNaN(relativeZ)) {
+            alert('Veuillez entrer des coordonnées X et Z valides relatives au point de référence.');
+            return;
+        }
+        
+        // Trouver le point de référence
+        const referencePoint = points.find(p => p.id === referenceId);
+        if (!referencePoint) {
+            alert('Point de référence introuvable.');
+            return;
+        }
+        
+        // Calculer les coordonnées absolues dans le système principal
+        // Le point de référence devient temporairement l'origine (0,0)
+        // Les coordonnées relatives sont ajoutées aux coordonnées du point de référence
+        const absoluteX = referencePoint.x + relativeX;
+        const absoluteZ = referencePoint.z + relativeZ;
+        
+        // Créer le nouveau point avec les coordonnées absolues recalculées
+        const newId = points.length > 0 ? Math.max(...points.map(p => p.id)) + 1 : 1;
+        const newPoint = {
+            id: newId,
+            label: label || `P${newId}`,
+            x: Math.round(absoluteX * 10) / 10,
+            z: Math.round(absoluteZ * 10) / 10,
+            referencePoint: referenceId // Garder une trace du point de référence utilisé
+        };
+        
+        points.push(newPoint);
+        updateReferencePointsList(); // Mettre à jour la liste des points de référence
+        renderPointsTable();
+        draw();
+        
+        // Vider les champs
+        document.getElementById('reference-point').value = '';
+        document.getElementById('relative-x').value = '';
+        document.getElementById('relative-z').value = '';
+        document.getElementById('relative-label').value = '';
+        
+        alert(`Point "${newPoint.label}" créé aux coordonnées (${newPoint.x}, ${newPoint.z})\nPosition relative (${relativeX}, ${relativeZ}) par rapport au point "${referencePoint.label}" (${referencePoint.x}, ${referencePoint.z})`);
+    };
+
+    // Gestion des clics
+    canvas.addEventListener('click', (ev)=>{
+        const rect = canvas.getBoundingClientRect(); 
+        const sx = ev.clientX - rect.left; 
+        const sy = ev.clientY - rect.top;
+        
+        if(addPointMode){ 
+            // Ajouter un point exactement à la position du curseur
+            const world = screenToWorld(sx, sy);
+            const newId = points.length > 0 ? Math.max(...points.map(p=>p.id)) + 1 : 1;
+            const newPoint = {
+                id: newId,
+                label: `P${newId}`,
+                x: Math.round(world.x * 100) / 100, // Précision au centième
+                z: Math.round(world.z * 100) / 100
+            };
+            
+            points.push(newPoint);
+            renderPointsTable();
+            draw();
+            console.log(`Point P${newId} ajouté aux coordonnées (${newPoint.x}, ${newPoint.z})`);
+            
+            // Garder le mode actif pour ajouter plusieurs points facilement
+        } else {
+            // Sélectionner un point (mode sélection par défaut)
+            let nearest = null; 
+            let best = 9999;
+            
+            points.forEach(p => { 
+                const s = worldToScreen(p.x, p.z); 
+                const d = Math.hypot(sx - s.sx, sy - s.sy); 
+                if(d < best && d < 15) { // Zone de détection élargie
+                    best = d; 
+                    nearest = p;
+                }
+            });
+            
+            if(nearest) { 
+                if(ev.ctrlKey || ev.metaKey) {
+                    // Sélection multiple avec Ctrl
+                    if(selected.has(nearest.id)) {
+                        selected.delete(nearest.id);
+                        console.log(`Point P${nearest.id} désélectionné`);
+                    } else {
+                        selected.add(nearest.id);
+                        console.log(`Point P${nearest.id} ajouté à la sélection (total: ${selected.size})`);
+                    }
+                } else {
+                    // Sélection simple
+                    if(selected.has(nearest.id) && selected.size === 1) {
+                        selected.clear(); // Désélectionner si c'est le seul sélectionné
+                        console.log('Sélection effacée');
+                    } else {
+                        selected.clear(); 
+                        selected.add(nearest.id); 
+                        console.log(`Point P${nearest.id} sélectionné`);
+                    }
+                }
+                renderPointsTable(); 
+                draw(); 
+            } else {
+                // Clic dans le vide - désélectionner tout
+                if (selected.size > 0) {
+                    selected.clear();
+                    renderPointsTable(); 
+                    draw(); 
+                    console.log('Sélection effacée (clic dans le vide)');
+                }
+            }
+        }
+    });
+
+    function renderPointsTable(){
+        const tbody = document.querySelector('#points-table tbody');
+        const countEl = document.getElementById('points-count');
+        tbody.innerHTML = '';
+        
+        // Mettre à jour le compteur
+        if (countEl) {
+            countEl.textContent = points.length + ' point' + (points.length > 1 ? 's' : '');
+        }
+        
+        // Afficher message si aucun point
+        if (points.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="5" class="points-table-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 2v4"/>
+                    <path d="M12 18v4"/>
+                    <path d="M2 12h4"/>
+                    <path d="M18 12h4"/>
+                </svg>
+                <p>Aucun point défini</p>
+                <p style="font-size: 0.8rem; margin-top: 8px; opacity: 0.7;">Utilisez l'éditeur graphique ou le positionnement manuel pour ajouter des points</p>
+            </td>`;
+            tbody.appendChild(tr);
+            updateReferencePointsList();
+            return;
+        }
+        
+        points.forEach(p => {
+            const isSelected = selected.has(p.id);
+            const tr = document.createElement('tr');
+            tr.className = isSelected ? 'selected' : '';
+            tr.innerHTML = `
+                <td style="font-weight:600; color:var(--primary);">#${p.id}</td>
+                <td><input type="text" value="${p.label||''}" id="label-${p.id}" style="font-size:0.85rem; padding:6px 10px; width:100%; border:1px solid #e2e8f0; border-radius:6px; transition: all 0.2s;" onchange="updatePointLabel(${p.id}, this.value)" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.1)'" onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'" placeholder="Sans nom"></td>
+                <td><input type="number" value="${p.x}" id="x-${p.id}" step="0.1" style="font-size:0.85rem; padding:6px 10px; width:90px; border:1px solid #e2e8f0; border-radius:6px; text-align:right; transition: all 0.2s;" onchange="updatePointX(${p.id}, parseFloat(this.value))" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.1)'" onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'"></td>
+                <td><input type="number" value="${p.z}" id="z-${p.id}" step="0.1" style="font-size:0.85rem; padding:6px 10px; width:90px; border:1px solid #e2e8f0; border-radius:6px; text-align:right; transition: all 0.2s;" onchange="updatePointZ(${p.id}, parseFloat(this.value))" onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.1)'" onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'"></td>
+                <td style="white-space:nowrap;">
+                    <button onclick="toggleSelectPoint(${p.id})" class="btn-edit" title="${isSelected ? 'Désélectionner' : 'Sélectionner'}">${isSelected ? '✓' : '○'}</button>
+                    <button onclick="deletePoint(${p.id})" class="btn-delete" title="Supprimer">✕</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        // Mettre à jour la liste des points de référence
+        updateReferencePointsList();
+    }
+    
+    function toggleSelectPoint(id) {
+        if (selected.has(id)) {
+            selected.delete(id);
+        } else {
+            selected.add(id);
+        }
+        renderPointsTable();
+        draw();
+    }
+
+    function updatePointLabel(id, newLabel){
+        const point = points.find(p => p.id === id);
+        if(point){
+            point.label = newLabel;
+            draw();
+        }
+    }
+    
+    function updatePointX(id, newX){
+        const point = points.find(p => p.id === id);
+        if(point && !isNaN(newX)){
+            point.x = Math.round(newX * 10) / 10;
+            draw();
+        }
+    }
+    
+    function updatePointZ(id, newZ){
+        const point = points.find(p => p.id === id);
+        if(point && !isNaN(newZ)){
+            point.z = Math.round(newZ * 10) / 10;
+            draw();
+        }
+    }
+
+    function deletePoint(id){
+        const point = points.find(p => p.id === id);
+        if(point && confirm(`Supprimer le point ${point.label || point.id} ?`)){
+            points = points.filter(p => p.id !== id);
+            selected.delete(id);
+            connections = connections.filter(c => c.from !== id && c.to !== id && c.point1 !== id && c.point2 !== id);
+            polygons = polygons.filter(poly => !poly.points.includes(id));
+            renderPointsTable();
+            draw();
+        }
+    }
+
+    // Gestionnaires d'échelle
+    document.getElementById('apply-scales').onclick = ()=>{
+        scaleX = parseFloat(document.getElementById('scale-x').value) || 10;
+        scaleZ = parseFloat(document.getElementById('scale-z').value) || 10;
+        console.log('Nouvelles échelles:', scaleX, scaleZ);
+        draw();
+    };
+    
+    document.getElementById('reset-view').onclick = ()=>{
+        view.tx = 0;
+        view.ty = 0;
+        scaleX = 10;
+        scaleZ = 10;
+        document.getElementById('scale-x').value = 10;
+        document.getElementById('scale-z').value = 10;
+        console.log('Vue réinitialisée');
+        draw();
+    };
+
+    // Navigation vers page points kilométriques
+    document.getElementById('go-to-km').onclick = () => {
+        sessionStorage.setItem('currentPoints', JSON.stringify(points));
+        sessionStorage.setItem('currentConnections', JSON.stringify(connections));
+        window.location.href = '/points-kilometriques';
+    };
+
+    // Save/load
+    document.getElementById('save-points').onclick = async ()=>{ 
+        const saveData = {points, connections, polygons};
+        await fetch('/api/points',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(saveData)}); 
+        alert('Points, connexions et polygones sauvegardés.'); 
+    };
+
+    // Charger points existants
+    document.getElementById('load-existing-points').onclick = async () => {
+        if (points.length > 0 && !confirm('Des points existent déjà. Voulez-vous les remplacer par ceux du fichier ?')) {
+            return;
+        }
+        
+        try {
+            const resp = await fetch('/api/points');
+            const data = await resp.json();
+            if (data.points && data.points.length > 0) {
+                points = data.points;
+                connections = data.connections || [];
+                polygons = data.polygons || [];
+                renderPointsTable();
+                draw();
+                alert(`${points.length} points chargés depuis le fichier`);
+            } else {
+                alert('Aucun point trouvé dans le fichier de données');
+            }
+        } catch (e) {
+            console.error('Erreur lors du chargement:', e);
+            alert('Erreur lors du chargement des points existants');
+        }
+    };
+
+    // Export handlers
+    document.getElementById('export-csv-btn').onclick = () => {
+        if (points.length === 0) { 
+            alert('Aucun point à exporter'); 
+            return; 
+        }
+        
+        // Format CSV compatible avec l'import : ID,Nom,X,Z
+        let csv = 'ID,Nom,X,Z\n';
+        points.forEach(p => {
+            const id = p.id || '';
+            const nom = p.label || `P${p.id}`;
+            const x = p.x || 0;
+            const z = p.z || 0;
+            csv += `${id},"${nom}",${x},${z}\n`;
+        });
+        
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        downloadFile(csv, `points_export_${timestamp}.csv`, 'text/csv');
+        alert(`${points.length} points exportés en CSV`);
+    };
+    
+    document.getElementById('export-json-btn').onclick = () => {
+        if (points.length === 0) { 
+            alert('Aucun point à exporter'); 
+            return; 
+        }
+        
+        // Format JSON complet avec métadonnées
+        const data = {
+            export_info: {
+                exported_at: new Date().toISOString(),
+                format_version: "1.0",
+                total_points: points.length,
+                total_connections: connections.length,
+                total_polygons: polygons.length
+            },
+            points: points.map(p => ({
+                id: p.id,
+                label: p.label || `P${p.id}`,
+                x: p.x,
+                z: p.z,
+                referencePoint: p.referencePoint || null
+            })),
+            connections: connections.map(c => ({
+                id: c.id,
+                point1: c.point1,
+                point2: c.point2,
+                type: c.type || 'line',
+                color: c.color || '#2563eb'
+            })),
+            polygons: polygons.map(poly => ({
+                id: poly.id,
+                points: poly.points,
+                type: poly.type || 'polygon',
+                color: poly.color || '#16a34a',
+                filled: poly.filled !== false
+            }))
+        };
+        
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        downloadFile(JSON.stringify(data, null, 2), `points_complete_${timestamp}.json`, 'application/json');
+        alert(`${points.length} points exportés en JSON avec toutes les données`);
+    };
+    
+    document.getElementById('export-excel-btn').onclick = () => {
+        if (points.length === 0) { 
+            alert('Aucun point à exporter'); 
+            return; 
+        }
+        
+        // Format Excel-compatible CSV avec UTF-8 BOM et séparateur point-virgule
+        // Format : ID;Nom;X;Z (compatible avec Excel français)
+        let csv = '\ufeffID;Nom;X;Z\n';
+        points.forEach(p => {
+            const id = p.id || '';
+            const nom = p.label || `P${p.id}`;
+            const x = p.x || 0;
+            const z = p.z || 0;
+            // Utiliser des guillemets pour les noms et virgule française pour les décimales
+            csv += `${id};"${nom}";${x.toString().replace('.', ',')};${z.toString().replace('.', ',')}\n`;
+        });
+        
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        downloadFile(csv, `points_excel_${timestamp}.csv`, 'text/csv');
+        alert(`${points.length} points exportés pour Excel`);
+    };
+
+    function downloadFile(content, filename, type) {
+        const blob = new Blob([content], { type: type + ';charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    }
+
+    // Parse file content (import CSV)
+    function parseFileContent(text, fileName) {
+        console.log('Parsing file:', fileName);
+        
+        const newPts = [];
+        const isCSV = fileName.toLowerCase().endsWith('.csv') || text.includes(',') || text.includes(';');
+        
+        if (isCSV) {
+            const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+            if (lines.length < 2) {
+                throw new Error('Fichier CSV trop court (moins de 2 lignes)');
+            }
+            
+            const delimiter = text.includes(';') ? ';' : ',';
+            const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
+            
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(delimiter);
+                if (cols.length < 4) continue; // Besoin de 4 colonnes minimum: ID, Nom, X, Z
+                
+                // Format attendu: colonne A=ID, B=Nom, C=X, D=Z
+                let id = cols[0] ? parseInt(cols[0]) || i : i;
+                let label = cols[1] ? cols[1].trim() : `Point${i}`;
+                let x = parseFloat(cols[2]) || 0; // Colonne C = X
+                let z = parseFloat(cols[3]) || 0; // Colonne D = Z
+                
+                newPts.push({ id, x, z, label });
+            }
+        } else {
+            // JSON/GeoJSON
+            const data = JSON.parse(text);
+            if (data.features) {
+                // GeoJSON
+                data.features.forEach((feat, i) => {
+                    if (feat.geometry && feat.geometry.coordinates) {
+                        const coords = feat.geometry.coordinates;
+                        const label = feat.properties?.name || feat.properties?.label || `Point${i+1}`;
+                        newPts.push({ x: coords[0], z: coords[1], label });
+                    }
+                });
+            } else if (data.points) {
+                // JSON interne
+                newPts.push(...data.points);
+            }
+        }
+        
+        return newPts;
+    }
+
+    // Import CSV handlers
+    document.getElementById('parse-local').onclick = () => {
+        const file = document.getElementById('file-input').files[0];
+        if (!file) { alert('Veuillez sélectionner un fichier'); return; }
+        
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const newPts = parseFileContent(reader.result, file.name);
+                if (newPts.length === 0) { alert('Aucun point trouvé dans le fichier'); return; }
+                
+                const nextId = points.length > 0 ? Math.max(...points.map(p => p.id)) + 1 : 1;
+                newPts.forEach((pt, i) => {
+                    // Utiliser l'ID du fichier si disponible, sinon générer
+                    const useFileId = pt.id && !points.find(p => p.id === pt.id);
+                    const pointId = useFileId ? pt.id : (nextId + i);
+                    
+                    points.push({
+                        id: pointId,
+                        label: pt.label || `P${pointId}`,
+                        x: pt.x,
+                        z: pt.z
+                    });
+                });
+                
+                renderPointsTable();
+                draw();
+                alert(`${newPts.length} points importés (côté droit)`);
+            } catch (e) {
+                alert(`Erreur d'import: ${e.message}`);
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    document.getElementById('parse-local-left').onclick = () => {
+        const file = document.getElementById('file-input').files[0];
+        if (!file) { alert('Veuillez sélectionner un fichier'); return; }
+        
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const newPts = parseFileContent(reader.result, file.name);
+                if (newPts.length === 0) { alert('Aucun point trouvé dans le fichier'); return; }
+                
+                const nextId = points.length > 0 ? Math.max(...points.map(p => p.id)) + 1 : 1;
+                newPts.forEach((pt, i) => {
+                    // Utiliser l'ID du fichier si disponible, sinon générer
+                    const useFileId = pt.id && !points.find(p => p.id === pt.id);
+                    const pointId = useFileId ? pt.id : (nextId + i);
+                    
+                    points.push({
+                        id: pointId,
+                        label: pt.label || `P${pointId}`,
+                        x: -pt.x, // Inversion pour côté gauche
+                        z: pt.z
+                    });
+                });
+                
+                renderPointsTable();
+                draw();
+                alert(`${newPts.length} points importés (côté gauche, X inversé)`);
+            } catch (e) {
+                alert(`Erreur d'import: ${e.message}`);
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    // Drag to move points (left button)
+    canvas.addEventListener('mousedown', (ev)=>{
+        const rect = canvas.getBoundingClientRect(); 
+        const sx = ev.clientX-rect.left; 
+        const sy = ev.clientY-rect.top;
+        
+        // middle button or space = pan
+        if(ev.button === 1 || ev.shiftKey){ 
+            panActive = true; 
+            panStart = { sx, sy, tx: view.tx, ty: view.ty }; 
+            canvas.classList.add('canvas-grabbing'); 
+            return; 
+        }
+        
+        let nearest=null; let best=9999; 
+        points.forEach(p=>{ 
+            const s=worldToScreen(p.x,p.z); 
+            const d=Math.hypot(sx-s.sx, sy-s.sy); 
+            if(d<best && d<10){best=d; nearest=p;}
+        });
+        
+        if(nearest){ dragId = nearest.id; }
+    });
+
+    canvas.addEventListener('mousemove', (ev)=>{
+        if(panActive && panStart){
+            const rect = canvas.getBoundingClientRect();
+            const sx = ev.clientX - rect.left;
+            const sy = ev.clientY - rect.top;
+            view.tx = panStart.tx + (sx - panStart.sx);
+            view.ty = panStart.ty + (sy - panStart.sy);
+            draw();
+            return;
+        }
+        
+        if(dragId !== null){
+            const rect = canvas.getBoundingClientRect();
+            const sx = ev.clientX - rect.left;
+            const sy = ev.clientY - rect.top;
+            const world = screenToWorld(sx, sy);
+            const point = points.find(p => p.id === dragId);
+            if(point){
+                point.x = Math.round(world.x * 10) / 10;
+                point.z = Math.round(world.z * 10) / 10;
+                renderPointsTable();
+                draw();
+            }
+        }
+    });
+
+    window.addEventListener('mouseup', ()=>{ 
+        dragId = null; 
+        panActive = false; 
+        panStart = null; 
+        canvas.classList.remove('canvas-grabbing'); 
+    });
+
+    // Wheel -> zoom (mise à jour pour les échelles séparées)
+    canvas.addEventListener('wheel', (ev)=>{
+        ev.preventDefault(); 
+        const rect = canvas.getBoundingClientRect(); 
+        const sx = ev.clientX - rect.left; 
+        const sy = ev.clientY - rect.top;
+        const before = screenToWorld(sx,sy);
+        const factor = ev.deltaY > 0 ? 0.9 : 1.1;
+        
+        // Zoom proportionnel pour les deux axes
+        scaleX = Math.max(1, Math.min(100, scaleX * factor));
+        scaleZ = Math.max(1, Math.min(100, scaleZ * factor));
+        
+        // Mettre à jour les champs d'entrée
+        document.getElementById('scale-x').value = scaleX.toFixed(1);
+        document.getElementById('scale-z').value = scaleZ.toFixed(1);
+        
+        // Ajuster la position pour maintenir le point sous la souris
+        const afterScreen = worldToScreen(before.x, before.z);
+        view.tx += sx - afterScreen.sx; 
+        view.ty += sy - afterScreen.sy;
+        draw();
+    }, { passive: false });
+
+    // Initialisation
+    loadPoints();
+    renderPointsTable(); // Afficher la table des points (vide au départ)
+    draw(); // Dessiner le canvas vide
+    
+    // === Gestion du drag & drop de fichier ===
+    const fileDropZone = document.getElementById('file-drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileStatusDiv = document.getElementById('file-status-import');
+    const fileStatusText = document.getElementById('file-status-text');
+    
+    // Click sur la zone ouvre le file input
+    if (fileDropZone) {
+        fileDropZone.addEventListener('click', () => fileInput.click());
+        
+        // Drag events
+        fileDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.add('dragover');
+        });
+        
+        fileDropZone.addEventListener('dragleave', () => {
+            fileDropZone.classList.remove('dragover');
+        });
+        
+        fileDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileDropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                showFileStatus(files[0].name);
+            }
+        });
+    }
+    
+    // Quand un fichier est sélectionné
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                showFileStatus(this.files[0].name);
+            }
+        });
+    }
+    
+    function showFileStatus(fileName) {
+        if (fileStatusDiv && fileStatusText) {
+            fileStatusText.textContent = `Fichier prêt: ${fileName}`;
+            fileStatusDiv.style.display = 'flex';
+        }
+    }
+    
+    // Compatibility for old scripts (empty functions/vars)
+    const params_form_script = () => {};
+    document.getElementById = ((original) => (id) => {
+        const result = original.call(document, id);
+        if (!result && (id === 'params-form' || id === 'Z0' || id === 'X0')) {
+            return { onsubmit: () => {}, value: 0 };
+        }
+        return result;
+    })(document.getElementById);
+    
+    </script>
+
+                    <script>
+                    // Gestion du formulaire de recalcul et visualisation simplifiée
+                    document.getElementById = ((original) => (id) => {
+                        const result = original.call(document, id);
+                        if (!result && id === 'params-form') {
+                            return {
+                                onsubmit: async function(e){
+                                    // Cette fonction est maintenant vide car on a supprimé les paramètres
+                                    return false;
+                                }
+                            };
+                        }
+                        return result;
+                    })(document.getElementById);
+                    </script>
+    </div>
+    
+    <!-- Barre de navigation workflow -->
+    <div class="workflow-nav-bar">
+        <div class="workflow-nav-container">
+            <a href="/" class="workflow-nav-item prev">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Accueil</span>
+            </a>
+            <div class="workflow-nav-progress">
+                <div class="progress-step active">
+                    <span class="step-dot"></span>
+                    <span class="step-label">Phase 1 : Profil en travers type</span>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step">
+                    <span class="step-dot"></span>
+                    <span class="step-label">Phase 2 : Points km</span>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step">
+                    <span class="step-dot"></span>
+                    <span class="step-label">Réception</span>
+                </div>
+            </div>
+            <a href="/points-kilometriques" class="workflow-nav-item next" onclick="savePointsBeforeNavigate()">
+                <span>Étape suivante : Points km</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+    <script>
+    function savePointsBeforeNavigate() {
+        // Sauvegarder les points avant de naviguer
+        if (typeof points !== 'undefined' && points.length > 0) {
+            sessionStorage.setItem('currentPoints', JSON.stringify(points));
+        }
+    }
+    </script>
+    <style>
+    .workflow-nav-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        padding: 16px 32px;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+        z-index: 100;
+    }
+    .workflow-nav-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+    }
+    .workflow-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 8px;
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .workflow-nav-item:hover {
+        background: rgba(255,255,255,0.2);
+        transform: translateY(-2px);
+    }
+    .workflow-nav-item.next {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-color: transparent;
+    }
+    .workflow-nav-item.next:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+    .workflow-nav-progress {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        justify-content: center;
+    }
+    .progress-step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .step-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.3);
+        border: 2px solid rgba(255,255,255,0.5);
+    }
+    .progress-step.active .step-dot {
+        background: #10b981;
+        border-color: #10b981;
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+    .step-label {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .progress-step.active .step-label {
+        color: white;
+        font-weight: 600;
+    }
+    .progress-line {
+        width: 40px;
+        height: 2px;
+        background: rgba(255,255,255,0.3);
+    }
+    @media (max-width: 900px) {
+        .workflow-nav-progress {
+            display: none;
+        }
+        .workflow-nav-bar {
+            padding: 12px 16px;
+        }
+        .workflow-nav-item span {
+            display: none;
+        }
+        .workflow-nav-item {
+            padding: 12px;
+        }
+    }
+    body {
+        padding-bottom: 80px;
+    }
+    </style>
+</body>
+</html>

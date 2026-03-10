@@ -1,0 +1,4030 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTT BTP - Réception topographique</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        :root {
+            --surface-1: #ffffff;
+            --surface-2: #f8fafc;
+            --surface-3: #f1f5f9;
+            --border-color: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-blue-light: #eff6ff;
+            --accent-green: #22c55e;
+            --accent-green-light: #f0fdf4;
+            --accent-orange: #f59e0b;
+            --accent-orange-light: #fffbeb;
+            --accent-red: #ef4444;
+            --accent-red-light: #fef2f2;
+        }
+        
+        .nav-active {
+            background: rgba(59, 130, 246, 0.3) !important;
+            border-color: rgba(59, 130, 246, 0.5) !important;
+            font-weight: 600 !important;
+        }
+        
+        /* ===== PAGE LAYOUT ===== */
+        .page-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .page-header {
+            margin-bottom: 32px;
+        }
+        
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 8px 0;
+        }
+        
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        
+        /* ===== SECTION CARDS ===== */
+        .section-card {
+            background: var(--surface-1);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .section-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--text-primary);
+        }
+        
+        .section-header.blue { background: var(--accent-blue-light); border-left: 4px solid var(--accent-blue); }
+        .section-header.green { background: var(--accent-green-light); border-left: 4px solid var(--accent-green); }
+        .section-header.orange { background: var(--accent-orange-light); border-left: 4px solid var(--accent-orange); }
+        
+        .section-body {
+            padding: 24px;
+        }
+        
+        /* ===== FORM STYLES ===== */
+        .form-grid {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .form-grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .form-grid-2 { grid-template-columns: repeat(2, 1fr); }
+        
+        @media (max-width: 768px) {
+            .form-grid-3, .form-grid-2 { grid-template-columns: 1fr; }
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .form-input {
+            padding: 10px 14px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            background: var(--surface-1);
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        /* ===== TOGGLE SWITCH ===== */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--surface-2);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .toggle-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .toggle-label.active {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 56px;
+            height: 28px;
+            background: var(--border-strong);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .toggle-switch.active {
+            background: var(--accent-blue);
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-switch.active::after {
+            transform: translateX(28px);
+        }
+        
+        /* ===== SOURCE SELECTOR ===== */
+        .source-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .source-card {
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: var(--surface-1);
+        }
+        
+        .source-card:hover {
+            border-color: var(--border-strong);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        .source-card.selected {
+            border-color: var(--accent-blue);
+            background: var(--accent-blue-light);
+        }
+        
+        .source-card.selected.orange {
+            border-color: var(--accent-orange);
+            background: var(--accent-orange-light);
+        }
+        
+        .source-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .source-card-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        
+        .source-card-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--surface-3);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-top: 12px;
+        }
+        
+        .source-card.selected .source-card-badge {
+            background: var(--accent-blue);
+            color: white;
+        }
+        
+        .source-card.selected.orange .source-card-badge {
+            background: var(--accent-orange);
+            color: white;
+        }
+        
+        /* ===== SELECTION PANEL ===== */
+        .selection-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        .selection-box {
+            background: var(--surface-2);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        
+        .selection-box-header {
+            padding: 14px 16px;
+            background: var(--surface-3);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .selection-box-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .selection-box-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-mini {
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            background: var(--surface-1);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .btn-mini:hover {
+            background: var(--surface-3);
+        }
+        
+        .selection-box-content {
+            max-height: 240px;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background 0.15s ease;
+            cursor: pointer;
+        }
+        
+        .checkbox-row:hover {
+            background: var(--surface-3);
+        }
+        
+        .checkbox-row input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-blue);
+            cursor: pointer;
+        }
+        
+        .checkbox-row label {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        /* ===== DATA TABLES - MODERN STYLE ===== */
+        .data-table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--surface-1);
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        
+        .data-table thead {
+            background: var(--surface-3);
+            position: sticky;
+            top: 0;
+        }
+        
+        .data-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
+        }
+        
+        .data-table th.center,
+        .data-table td.center {
+            text-align: center;
+        }
+        
+        .data-table tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.15s ease;
+        }
+        
+        .data-table tbody tr:last-child {
+            border-bottom: none;
+        }
+        
+        .data-table tbody tr:hover {
+            background: var(--surface-2);
+        }
+        
+        .data-table td {
+            padding: 10px 16px;
+            color: var(--text-primary);
+        }
+        
+        .data-table .input-cell {
+            padding: 6px 8px;
+        }
+        
+        .data-table .input-cell input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-align: center;
+            background: var(--surface-1);
+            transition: all 0.2s ease;
+        }
+        
+        .data-table .input-cell input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .data-table .input-cell input.readonly {
+            background: var(--surface-2);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+        
+        /* Cell status colors */
+        .cell-positive { background: var(--accent-red-light) !important; }
+        .cell-negative { background: #eff6ff !important; }
+        .cell-ok { background: var(--accent-green-light) !important; }
+        .cell-highlight { background: var(--accent-orange-light) !important; }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-badge.ok { background: var(--accent-green-light); color: #166534; }
+        .status-badge.warning { background: var(--accent-orange-light); color: #92400e; }
+        .status-badge.error { background: var(--accent-red-light); color: #dc2626; }
+        
+        /* ===== STATION CARD ===== */
+        .station-card {
+            background: var(--surface-1);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        
+        .station-header {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, #2563eb 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .station-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .station-params {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding: 20px;
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        @media (max-width: 900px) {
+            .station-params { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        .station-param {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .station-param-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        
+        .station-param-input {
+            padding: 10px 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: var(--surface-1);
+        }
+        
+        .station-param-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .station-param-input.computed {
+            background: var(--accent-blue-light);
+            border-color: var(--accent-blue);
+            font-weight: 600;
+        }
+        
+        .station-content {
+            padding: 20px;
+        }
+        
+        /* ===== SIGNATURE CARDS ===== */
+        .signature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 32px;
+        }
+        
+        .signature-card {
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            overflow: hidden;
+        }
+        
+        .signature-card.blue {
+            border-color: var(--accent-blue);
+        }
+        
+        .signature-card.orange {
+            border-color: var(--accent-orange);
+        }
+        
+        .signature-card-header {
+            padding: 12px 16px;
+            font-weight: 600;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        
+        .signature-card.blue .signature-card-header {
+            background: var(--accent-blue-light);
+            color: var(--accent-blue);
+        }
+        
+        .signature-card.orange .signature-card-header {
+            background: var(--accent-orange-light);
+            color: #b45309;
+        }
+        
+        .signature-card-body {
+            padding: 20px;
+        }
+        
+        .signature-row {
+            display: flex;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+        
+        .signature-row strong {
+            min-width: 80px;
+            color: var(--text-secondary);
+        }
+        
+        .signature-area {
+            border-top: 1px dashed var(--border-color);
+            margin-top: 20px;
+            padding-top: 10px;
+            min-height: 60px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        
+        /* ===== SIGNATURE CANVAS ===== */
+        .signature-canvas-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .signature-canvas {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            background: #fafafa;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        
+        .signature-canvas:hover {
+            border-color: var(--accent-blue);
+            background: #f0f7ff;
+        }
+        
+        .signature-canvas.signed {
+            border-style: solid;
+            border-color: var(--accent-green);
+            background: white;
+        }
+        
+        .signature-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-clear-signature {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-clear-signature:hover {
+            background: var(--accent-red-light);
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+        
+        .signature-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        
+        .signature-preview {
+            max-width: 100%;
+            max-height: 80px;
+            border-radius: 4px;
+        }
+        
+        /* ===== BUTTONS ===== */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 24px;
+        }
+        
+        .btn-primary {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-secondary {
+            padding: 12px 24px;
+            background: var(--surface-1);
+            color: var(--text-primary);
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--surface-2);
+            border-color: var(--border-strong);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent-green) 0%, #16a34a 100%);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+        
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-container {
+            background: var(--surface-1);
+            margin: 5% auto;
+            border-radius: 16px;
+            width: 600px;
+            max-width: 90vw;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        /* ===== INFO BOX ===== */
+        .info-box {
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box.blue {
+            background: var(--accent-blue-light);
+            border: 1px solid #bfdbfe;
+        }
+        
+        .info-box.orange {
+            background: var(--accent-orange-light);
+            border: 1px solid #fde68a;
+        }
+        
+        .info-box-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .info-box-content {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        /* ===== TABLE INPUT STYLES ===== */
+        .table-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-align: center;
+            background: var(--surface-1);
+            transition: all 0.2s ease;
+        }
+        
+        .table-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .table-input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        /* Computed cells - readonly values */
+        td.computed {
+            background: var(--accent-blue-light) !important;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .cote-theorique-value {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        /* Interpolated badge */
+        .interpolated-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            background: var(--accent-orange-light);
+            color: #92400e;
+            font-size: 0.6rem;
+            font-weight: 700;
+            border-radius: 4px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        
+        /* Button for adding sub-point */
+        .btn-add-sub {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-green);
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        
+        .btn-add-sub:hover {
+            background: #16a34a;
+            transform: scale(1.05);
+        }
+        
+        /* Ecart cells coloring */
+        .ecart-positif-cell:not(:empty) {
+            color: #dc2626;
+            font-weight: 600;
+        }
+        
+        .ecart-negatif-cell:not(:empty) {
+            color: #2563eb;
+            font-weight: 600;
+        }
+        
+        /* Observation cell styling */
+        .observation-cell {
+            font-weight: 600;
+        }
+        
+        .observation-cell.ok {
+            color: #16a34a;
+        }
+        
+        .observation-cell.error {
+            color: #dc2626;
+        }
+        
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            .site-header, .source-grid, .selection-box-actions, .btn-group, .workflow-nav-bar { display: none !important; }
+            .section-card { box-shadow: none; border: 1px solid #ccc; }
+            .station-header { background: #e5e7eb !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+        }
+        
+        /* ===== LOADING & ERROR ===== */
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+        
+        .error-state {
+            padding: 16px;
+            background: var(--accent-red-light);
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            color: #dc2626;
+            font-size: 0.9rem;
+        }
+        
+        /* Hide old elements */
+        .user-avatar { display: none; }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-title">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-weight:700; font-size: 20px; letter-spacing: -0.5px;">PTT BTP</div>
+                <div style="font-size:12px; opacity:0.8;">Réception topographique</div>
+            </div>
+        </div>
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <nav class="mobile-nav" id="mobileNav">
+            <button onclick="window.location.href='/'">
+                Accueil
+            </button>
+            <button onclick="window.location.href='/editeur'">
+                Phase 1 : Profil en travers type
+            </button>
+            <button onclick="window.location.href='/points-kilometriques'">
+                Phase 2 : Points kilométriques
+            </button>
+            <button onclick="window.location.href='/reception'" class="nav-active">
+                Réception topographique
+            </button>
+            <div class="user-avatar">
+                U
+            </div>
+        </nav>
+        <script>
+            function toggleMobileMenu() {
+                document.getElementById('mobileNav').classList.toggle('active');
+            }
+        </script>
+    </header>
+    
+    <div class="page-wrapper">
+        <!-- En-tête de page -->
+        <div class="page-header">
+            <h1 class="page-title">Fiche de réception topographique</h1>
+            <p class="page-subtitle">Contrôle de conformité des cotes terrain par rapport au projet théorique</p>
+        </div>
+
+        <!-- SECTION 1 : Informations générales -->
+        <div class="section-card">
+            <div class="section-header blue">
+                <h2>1. Informations du contrôle</h2>
+            </div>
+            <div class="section-body">
+                <div class="form-grid form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Projet</label>
+                        <input id="projet-nom" type="text" class="form-input" placeholder="Nom du projet">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date de contrôle</label>
+                        <input id="date-controle" type="date" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Opérateur</label>
+                        <input id="operateur-nom" type="text" class="form-input" placeholder="Nom de l'opérateur">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Météo</label>
+                        <input id="meteo" type="text" class="form-input" placeholder="Conditions météo">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Matériel utilisé</label>
+                        <input id="materiel" type="text" class="form-input" placeholder="Type de matériel">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tolérance (mm)</label>
+                        <input id="tolerance" type="number" step="0.1" value="2" class="form-input" style="max-width: 120px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2 : Signataires -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>2. Informations des signataires</h2>
+            </div>
+            <div class="section-body">
+                <div class="form-grid form-grid-2">
+                    <!-- Contrôleur -->
+                    <div style="background: var(--accent-blue-light); padding: 20px; border-radius: 10px; border: 1px solid #bfdbfe;">
+                        <div style="font-weight: 600; color: var(--accent-blue); margin-bottom: 16px; font-size: 0.95rem;">CONTRÔLEUR</div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Nom complet</label>
+                            <input id="controleur-nom" type="text" class="form-input" placeholder="Nom du contrôleur">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Fonction</label>
+                            <input id="controleur-fonction" type="text" class="form-input" placeholder="Ex: Géomètre">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Date</label>
+                            <input id="controleur-date" type="date" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Signature</label>
+                            <div class="signature-canvas-container">
+                                <canvas id="signature-controleur" class="signature-canvas" width="280" height="80"></canvas>
+                                <div class="signature-actions">
+                                    <button type="button" class="btn-clear-signature" onclick="clearSignature('controleur')">Effacer</button>
+                                </div>
+                                <div class="signature-hint">Dessinez votre signature avec la souris ou le doigt</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Entreprise -->
+                    <div style="background: var(--accent-orange-light); padding: 20px; border-radius: 10px; border: 1px solid #fde68a;">
+                        <div style="font-weight: 600; color: #b45309; margin-bottom: 16px; font-size: 0.95rem;">ENTREPRISE</div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Nom du représentant</label>
+                            <input id="entreprise-nom" type="text" class="form-input" placeholder="Nom du représentant">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Société</label>
+                            <input id="entreprise-societe" type="text" class="form-input" placeholder="Nom de l'entreprise">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Date</label>
+                            <input id="entreprise-date" type="date" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Signature</label>
+                            <div class="signature-canvas-container">
+                                <canvas id="signature-entreprise" class="signature-canvas" width="280" height="80"></canvas>
+                                <div class="signature-actions">
+                                    <button type="button" class="btn-clear-signature" onclick="clearSignature('entreprise')">Effacer</button>
+                                </div>
+                                <div class="signature-hint">Dessinez votre signature avec la souris ou le doigt</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3 : Source des coordonnées -->
+        <div class="section-card">
+            <div class="section-header orange">
+                <h2>3. Source des coordonnées projet</h2>
+                <div class="toggle-container">
+                    <span class="toggle-label" id="label-manual">Manuel/Points km</span>
+                    <div class="toggle-switch" id="source-toggle" onclick="toggleSource()"></div>
+                    <span class="toggle-label" id="label-excel">Fichier Excel</span>
+                </div>
+            </div>
+            <div class="section-body">
+                <!-- Source cards -->
+                <div class="source-grid">
+                    <div class="source-card selected" id="option-manual" onclick="selectSourceOption('manual')">
+                        <div class="source-card-title">Saisie manuelle / Points km</div>
+                        <div class="source-card-desc">Utilisez les points importés depuis l'éditeur et la page Points kilométriques.</div>
+                        <div class="source-card-badge" id="manual-badge">Sélectionné</div>
+                        <div id="manual-data-status" style="margin-top: 12px; padding: 10px; background: white; border-radius: 6px; font-size: 0.85rem; display: none;">
+                            Données chargées : <strong id="manual-pk-count">0</strong> PK et <strong id="manual-cote-count">0</strong> côtes
+                        </div>
+                    </div>
+                    
+                    <div class="source-card" id="option-excel" onclick="selectSourceOption('excel')">
+                        <div class="source-card-title">Depuis fichier Excel</div>
+                        <div class="source-card-desc">Utilisez un fichier Excel existant contenant les coordonnées projet.</div>
+                        <div class="source-card-badge">Non sélectionné</div>
+                    </div>
+                </div>
+                
+                <!-- Config manuelle -->
+                <div id="manual-config" style="display: none;">
+                    <div class="info-box blue">
+                        <div class="info-box-title">Configuration depuis les points manuels</div>
+                        <div class="info-box-content">Sélectionnez les PK et côtes à inclure dans la fiche de réception.</div>
+                    </div>
+                    
+                    <div class="selection-columns">
+                        <div class="selection-box">
+                            <div class="selection-box-header">
+                                <span class="selection-box-title">Points kilométriques (PK)</span>
+                                <div class="selection-box-actions">
+                                    <button class="btn-mini" id="select-all-manual-pk">Tout</button>
+                                    <button class="btn-mini" id="deselect-all-manual-pk">Aucun</button>
+                                </div>
+                            </div>
+                            <div class="selection-box-content" id="manual-pk-checkboxes">
+                                <!-- Checkboxes générées dynamiquement -->
+                            </div>
+                        </div>
+                        
+                        <div class="selection-box">
+                            <div class="selection-box-header">
+                                <span class="selection-box-title">Côtes à réceptionner</span>
+                                <div class="selection-box-actions">
+                                    <button class="btn-mini" id="select-all-manual-cotes">Tout</button>
+                                    <button class="btn-mini" id="deselect-all-manual-cotes">Aucun</button>
+                                </div>
+                            </div>
+                            <div class="selection-box-content" id="manual-cotes-checkboxes">
+                                <!-- Checkboxes générées dynamiquement -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button id="generate-manual-reception" class="btn-primary btn-success">Générer la fiche de réception</button>
+                    </div>
+                </div>
+                
+                <!-- Config Excel -->
+                <div id="excel-config" style="display: none;">
+                    <div id="loading-message" class="loading-state">Chargement des données Excel...</div>
+                    <div id="error-message" class="error-state" style="display:none;"></div>
+
+                    <div id="sheets-loaded-indicator" style="display:none; margin-bottom: 16px; padding: 10px 14px; background: var(--accent-green-light); border: 1px solid #86efac; border-radius: 8px; font-size: 0.85rem; color: #166534;">
+                        ✓ Données chargées — sélectionnez les éléments à réceptionner ci-dessous
+                    </div>
+                </div>
+
+                <!-- Sélection des PK et côtes (Excel) -->
+                <div id="data-selection" style="display:none;">
+                    <div class="selection-columns">
+                        <!-- Sélection des PK -->
+                        <div class="selection-box">
+                            <div class="selection-box-header">
+                                <span class="selection-box-title">Points kilométriques à contrôler</span>
+                                <div class="selection-box-actions">
+                                    <button class="btn-mini" id="select-all-pk">Tout</button>
+                                    <button class="btn-mini" id="deselect-all-pk">Aucun</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Sélection par plage -->
+                            <div style="padding: 12px; background: var(--surface-3); border-bottom: 1px solid var(--border-color);">
+                                <div class="form-label" style="margin-bottom: 8px;">Sélection par plage</div>
+                                <div style="display: flex; gap: 8px; align-items: end;">
+                                    <div style="flex: 1;">
+                                        <select id="pk-start" class="form-input" style="padding: 6px 10px; font-size: 0.8rem;">
+                                            <option value="">PK début</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <select id="pk-end" class="form-input" style="padding: 6px 10px; font-size: 0.8rem;">
+                                            <option value="">PK fin</option>
+                                        </select>
+                                    </div>
+                                    <button id="select-range-pk" class="btn-mini" style="padding: 7px 12px;">Appliquer</button>
+                                </div>
+                            </div>
+                            
+                            <div class="selection-box-content" id="pk-checkboxes">
+                                <!-- PK checkboxes -->
+                            </div>
+                        </div>
+
+                        <!-- Sélection des éléments à réceptionner (Gauche / Droit) -->
+                        <div class="selection-box">
+                            <div class="selection-box-header">
+                                <span class="selection-box-title">Éléments à réceptionner</span>
+                                <div class="selection-box-actions">
+                                    <button class="btn-mini" id="select-all-cotes">Tout</button>
+                                    <button class="btn-mini" id="deselect-all-cotes">Aucun</button>
+                                </div>
+                            </div>
+                            <div id="cotes-checkboxes" style="overflow-y: auto; max-height: 350px;">
+                                <!-- Grille Gauche / Droit générée dynamiquement -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button id="generate-reception" class="btn-primary btn-success">Générer la fiche de réception</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4 : Fiche de réception générée -->
+        <div id="reception-sheet" class="section-card" style="display:none;">
+            <div class="section-header green">
+                <h2>Fiche de réception topographique</h2>
+                <div class="toggle-container">
+                    <span class="toggle-label active" id="label-assainissement">Assainissement</span>
+                    <div class="toggle-switch" id="mode-toggle" onclick="toggleReceptionMode()"></div>
+                    <span class="toggle-label" id="label-terrassement">Terrassement</span>
+                </div>
+            </div>
+            <div class="section-body">
+                <!-- Récapitulatif -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; padding: 16px; background: var(--surface-2); border-radius: 10px;">
+                    <div><span style="color: var(--text-secondary); font-size: 0.8rem;">Projet</span><br><strong id="display-projet">-</strong></div>
+                    <div><span style="color: var(--text-secondary); font-size: 0.8rem;">Date</span><br><strong id="display-date">-</strong></div>
+                    <div><span style="color: var(--text-secondary); font-size: 0.8rem;">Opérateur</span><br><strong id="display-operateur">-</strong></div>
+                    <div><span style="color: var(--text-secondary); font-size: 0.8rem;">Section</span><br><strong id="display-sheet">-</strong></div>
+                    <div><span style="color: var(--text-secondary); font-size: 0.8rem;">Météo</span><br><strong id="display-meteo">-</strong></div>
+                    <div><span style="color: var(--text-secondary); font-size: 0.8rem;">Tolérance</span><br><strong><span id="display-tolerance">2</span> mm</strong></div>
+                </div>
+
+                <!-- Conteneur des stations -->
+                <div id="stations-container"></div>
+
+                <!-- Bouton ajouter station -->
+                <div class="btn-group">
+                    <button id="add-station-btn" class="btn-secondary">+ Ajouter une station de nivellement</button>
+                </div>
+
+                <!-- Signatures -->
+                <div class="signature-grid">
+                    <div class="signature-card blue">
+                        <div class="signature-card-header">CONTRÔLEUR</div>
+                        <div class="signature-card-body">
+                            <div class="signature-row"><strong>Nom:</strong> <span id="display-controleur-nom">-</span></div>
+                            <div class="signature-row"><strong>Fonction:</strong> <span id="display-controleur-fonction">-</span></div>
+                            <div class="signature-row"><strong>Date:</strong> <span id="display-controleur-date">-</span></div>
+                            <div class="signature-area" id="display-signature-controleur">
+                                <span class="signature-placeholder">Aucune signature</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="signature-card orange">
+                        <div class="signature-card-header">ENTREPRISE</div>
+                        <div class="signature-card-body">
+                            <div class="signature-row"><strong>Nom:</strong> <span id="display-entreprise-nom">-</span></div>
+                            <div class="signature-row"><strong>Société:</strong> <span id="display-entreprise-societe">-</span></div>
+                            <div class="signature-row"><strong>Date:</strong> <span id="display-entreprise-date">-</span></div>
+                            <div class="signature-area" id="display-signature-entreprise">
+                                <span class="signature-placeholder">Aucune signature</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="btn-group" style="margin-top: 32px;">
+                    <button id="visualiser-resultats-btn" class="btn-primary" style="background: linear-gradient(135deg, #0f766e 0%, #065f46 100%); font-size: 1rem; padding: 14px 28px;">
+                        Visualiser les résultats
+                    </button>
+                    <button id="export-reception-pdf" class="btn-secondary">Imprimer / PDF rapide</button>
+                    <button id="export-reception-excel" class="btn-secondary">Exporter en Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION RÉSULTATS DE RÉCEPTION -->
+    <div id="resultats-section" class="section-card" style="display:none; margin-top: 32px;">
+        <div class="section-header" style="background: linear-gradient(135deg, #0f766e 0%, #065f46 100%);">
+            <h2 style="color:white; margin:0;">Résultats de réception</h2>
+            <div id="resultats-badges" style="display:flex; gap:8px; align-items:center;"></div>
+        </div>
+        <div class="section-body">
+
+            <!-- Statistiques globales -->
+            <div id="resultats-stats" style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:28px; padding:20px; background:var(--surface-2); border-radius:10px;"></div>
+
+            <!-- Tableaux par station -->
+            <div id="resultats-tables"></div>
+
+            <!-- Résultats par observation -->
+            <div style="margin-top:28px; border:1px solid var(--border-color); border-radius:10px; overflow:hidden;">
+                <div style="background:linear-gradient(135deg,#475569 0%,#334155 100%); padding:14px 20px; display:flex; align-items:center; gap:10px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span style="color:white; font-weight:700; font-size:0.95rem; text-transform:uppercase; letter-spacing:0.5px;">Résultats par observation</span>
+                    <span style="color:rgba(255,255,255,0.6); font-size:0.8rem; margin-left:4px;">(facultatif)</span>
+                </div>
+                <div style="padding:16px 20px; background:var(--surface-1);">
+                    <textarea id="observations-generales"
+                        rows="5"
+                        style="width:100%; border:1px solid var(--border-color); border-radius:8px; padding:12px 14px; font-family:inherit; font-size:0.9rem; color:var(--text-primary); line-height:1.6; resize:vertical; background:var(--surface-2);"
+                        placeholder="Saisissez vos observations générales sur cette réception (état de la chaussée, points de vigilance, réserves, etc.)..."></textarea>
+                    <div style="font-size:0.78rem; color:var(--text-muted); margin-top:6px;">Ces observations apparaîtront dans le PDF exporté, avant les signatures.</div>
+                </div>
+            </div>
+
+            <!-- Export depuis la section résultats -->
+            <div class="btn-group" style="margin-top:24px;">
+                <button id="export-resultats-pdf-btn" class="btn-primary" style="background:linear-gradient(135deg,#1e3a5f 0%,#0f2744 100%); font-size:1rem; padding:14px 28px;">
+                    Exporter en PDF
+                </button>
+                <button id="print-resultats-btn" class="btn-secondary">
+                    Imprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour ajouter un point intermédiaire par interpolation -->
+    <div id="interpolation-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">Ajouter un point intermédiaire par interpolation</h3>
+            </div>
+            <div class="modal-body">
+                <div class="info-box blue">
+                    <div class="info-box-title">Principe d'interpolation</div>
+                    <div class="info-box-content">
+                        Choisissez deux PK de référence (avant et après) puis entrez la distance depuis le premier PK.
+                        <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                            <li>Le nouveau PK sera calculé : PK₁ + distance</li>
+                            <li>La cote interpolée : Z₁ + (d / ΔD) × (Z₂ - Z₁)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Sélection PK1 et PK2 -->
+                <div id="pk-selection-container" style="display:none; margin-bottom: 20px;">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label">1. PK de référence AVANT</label>
+                        <select id="modal-pk1-select" class="form-input">
+                            <option value="">Choisissez un PK disponible</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">2. PK de référence APRÈS</label>
+                        <select id="modal-pk2-select" class="form-input">
+                            <option value="">Choisissez un PK disponible</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-top: 20px;">
+                    <label class="form-label" id="distance-label-text">Distance depuis le PK de référence 1 (en mètres)</label>
+                    <input type="number" step="0.01" id="modal-distance-input" class="form-input" placeholder="Ex: 15.50">
+                    <small style="color: var(--text-muted); display: block; margin-top: 6px;">Exemple : 15.50 pour ajouter un point à 15,50 m du premier PK</small>
+                </div>
+                
+                <div id="modal-encadrants-info" class="info-box orange" style="margin-top: 20px; display: none;">
+                    <div class="info-box-title">Informations d'interpolation</div>
+                    <div class="info-box-content">
+                        <div style="display: grid; gap: 8px;">
+                            <div><strong>AVANT :</strong> <span id="modal-pk-avant"></span></div>
+                            <div><strong>APRÈS :</strong> <span id="modal-pk-apres"></span></div>
+                            <div style="background: white; padding: 8px; border-radius: 6px; margin-top: 4px;">
+                                <strong>NOUVEAU PK :</strong> <span id="modal-new-pk-display" style="color: var(--accent-blue); font-weight: 700;"></span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 0.8rem;">
+                            ΔD = <span id="modal-delta-d"></span> m | d = <span id="modal-d"></span> m | Ratio = <span id="modal-ratio"></span>%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-cancel" class="btn-secondary">Annuler</button>
+                <button id="modal-confirm" class="btn-primary btn-success">Ajouter le point</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Données manuelles chargées depuis sessionStorage
+    let manualReceptionData = null;
+    let currentSource = 'manual'; // 'manual' ou 'excel'
+    let receptionMode = 'assainissement'; // 'assainissement' ou 'terrassement' - Variable globale
+    
+    // ===== SYSTÈME DE SIGNATURE CANVAS =====
+    const signatureData = {
+        controleur: null,
+        entreprise: null
+    };
+    
+    const signatureContexts = {};
+    const signatureDrawing = {};
+    
+    // Initialisation des canvas de signature
+    function initSignatureCanvas(type) {
+        const canvas = document.getElementById(`signature-${type}`);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        signatureContexts[type] = ctx;
+        signatureDrawing[type] = false;
+        
+        // Configuration du style de dessin
+        ctx.strokeStyle = '#1e3a5f';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Fond blanc
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Événements souris
+        canvas.addEventListener('mousedown', (e) => startDrawing(e, type));
+        canvas.addEventListener('mousemove', (e) => draw(e, type));
+        canvas.addEventListener('mouseup', () => stopDrawing(type));
+        canvas.addEventListener('mouseout', () => stopDrawing(type));
+        
+        // Événements tactiles (pour tablettes/téléphones)
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            startDrawing(mouseEvent, type);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            draw(mouseEvent, type);
+        });
+        
+        canvas.addEventListener('touchend', () => stopDrawing(type));
+    }
+    
+    function getCanvasCoordinates(e, canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
+    }
+    
+    function startDrawing(e, type) {
+        const canvas = document.getElementById(`signature-${type}`);
+        const ctx = signatureContexts[type];
+        const coords = getCanvasCoordinates(e, canvas);
+        
+        signatureDrawing[type] = true;
+        ctx.beginPath();
+        ctx.moveTo(coords.x, coords.y);
+    }
+    
+    function draw(e, type) {
+        if (!signatureDrawing[type]) return;
+        
+        const canvas = document.getElementById(`signature-${type}`);
+        const ctx = signatureContexts[type];
+        const coords = getCanvasCoordinates(e, canvas);
+        
+        ctx.lineTo(coords.x, coords.y);
+        ctx.stroke();
+        
+        // Marquer comme signé
+        canvas.classList.add('signed');
+    }
+    
+    function stopDrawing(type) {
+        if (signatureDrawing[type]) {
+            signatureDrawing[type] = false;
+            saveSignature(type);
+        }
+    }
+    
+    function saveSignature(type) {
+        const canvas = document.getElementById(`signature-${type}`);
+        if (!canvas) return;
+        
+        // Vérifier si le canvas a été dessiné (pas juste blanc)
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        let hasDrawing = false;
+        for (let i = 0; i < data.length; i += 4) {
+            // Chercher des pixels non-blancs
+            if (data[i] < 250 || data[i+1] < 250 || data[i+2] < 250) {
+                hasDrawing = true;
+                break;
+            }
+        }
+        
+        if (hasDrawing) {
+            signatureData[type] = canvas.toDataURL('image/png');
+            updateSignatureDisplay(type);
+        } else {
+            signatureData[type] = null;
+        }
+    }
+    
+    function clearSignature(type) {
+        const canvas = document.getElementById(`signature-${type}`);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        canvas.classList.remove('signed');
+        
+        signatureData[type] = null;
+        updateSignatureDisplay(type);
+    }
+    
+    function updateSignatureDisplay(type) {
+        const displayArea = document.getElementById(`display-signature-${type}`);
+        if (!displayArea) return;
+        
+        if (signatureData[type]) {
+            displayArea.innerHTML = `<img src="${signatureData[type]}" class="signature-preview" alt="Signature ${type}">`;
+        } else {
+            displayArea.innerHTML = '<span class="signature-placeholder">Aucune signature</span>';
+        }
+    }
+    
+    function getSignatureBase64(type) {
+        return signatureData[type] || null;
+    }
+    
+    // Initialiser les canvas au chargement
+    setTimeout(() => {
+        initSignatureCanvas('controleur');
+        initSignatureCanvas('entreprise');
+    }, 100);
+    
+    // ===== FIN SYSTÈME DE SIGNATURE =====
+    
+    // Toggle source function
+    function toggleSource() {
+        const toggle = document.getElementById('source-toggle');
+        if (currentSource === 'manual') {
+            currentSource = 'excel';
+            toggle.classList.add('active');
+            document.getElementById('label-manual').classList.remove('active');
+            document.getElementById('label-excel').classList.add('active');
+        } else {
+            currentSource = 'manual';
+            toggle.classList.remove('active');
+            document.getElementById('label-manual').classList.add('active');
+            document.getElementById('label-excel').classList.remove('active');
+        }
+        selectSourceOption(currentSource);
+    }
+    
+    // Toggle mode réception (Assainissement/Terrassement)
+    function toggleReceptionMode() {
+        const toggle = document.getElementById('mode-toggle');
+        const labelA = document.getElementById('label-assainissement');
+        const labelT = document.getElementById('label-terrassement');
+        
+        if (toggle.classList.contains('active')) {
+            toggle.classList.remove('active');
+            labelA.classList.add('active');
+            labelT.classList.remove('active');
+            receptionMode = 'assainissement';
+        } else {
+            toggle.classList.add('active');
+            labelA.classList.remove('active');
+            labelT.classList.add('active');
+            receptionMode = 'terrassement';
+        }
+        // Regénérer les stations si nécessaire
+        console.log('Mode réception:', receptionMode);
+        
+        // Régénérer les tableaux si des stations existent
+        if (typeof window.regenerateAllStations === 'function') {
+            window.regenerateAllStations();
+        }
+    }
+    
+    // Fonction globale pour sélectionner la source des coordonnées
+    function selectSourceOption(option) {
+        const optionManual = document.getElementById('option-manual');
+        const optionExcel = document.getElementById('option-excel');
+        const excelConfig = document.getElementById('excel-config');
+        const manualConfig = document.getElementById('manual-config');
+        const manualBadge = document.getElementById('manual-badge');
+        const excelBadge = optionExcel.querySelector('.source-card-badge');
+        
+        // Reset styles
+        optionManual.classList.remove('selected');
+        optionExcel.classList.remove('selected', 'orange');
+        
+        if (option === 'manual') {
+            currentSource = 'manual';
+            optionManual.classList.add('selected');
+            manualBadge.textContent = 'Sélectionné';
+            excelBadge.textContent = 'Non sélectionné';
+            excelConfig.style.display = 'none';
+            document.getElementById('data-selection').style.display = 'none';
+            
+            // Update toggle
+            document.getElementById('source-toggle').classList.remove('active');
+            document.getElementById('label-manual').classList.add('active');
+            document.getElementById('label-excel').classList.remove('active');
+            
+            // Afficher la configuration manuelle si des données sont disponibles
+            if (manualReceptionData && manualReceptionData.pks && manualReceptionData.pks.length > 0) {
+                manualConfig.style.display = 'block';
+            } else {
+                manualConfig.style.display = 'none';
+            }
+        } else if (option === 'excel') {
+            currentSource = 'excel';
+            optionExcel.classList.add('selected', 'orange');
+            manualBadge.textContent = 'Non sélectionné';
+            excelBadge.textContent = 'Sélectionné';
+            excelConfig.style.display = 'block';
+            manualConfig.style.display = 'none';
+            
+            // Update toggle
+            document.getElementById('source-toggle').classList.add('active');
+            document.getElementById('label-manual').classList.remove('active');
+            document.getElementById('label-excel').classList.add('active');
+        }
+    }
+    
+    // Fonction pour utiliser les données manuelles
+    function useManualData() {
+        if (manualReceptionData) {
+            selectSourceOption('manual');
+            document.getElementById('manual-config').style.display = 'block';
+        }
+    }
+    
+    // Vérifier si des données manuelles sont disponibles au chargement
+    function checkManualData() {
+        console.log('=== checkManualData appelée ===');
+        const storedData = sessionStorage.getItem('receptionData');
+        console.log('sessionStorage receptionData:', storedData ? 'présent (' + storedData.length + ' chars)' : 'absent');
+        
+        if (storedData) {
+            try {
+                manualReceptionData = JSON.parse(storedData);
+                console.log('Données parsées:', manualReceptionData);
+                if (manualReceptionData.source === 'manual' && manualReceptionData.pks && manualReceptionData.pks.length > 0) {
+                    // Afficher le statut
+                    document.getElementById('manual-data-status').style.display = 'block';
+                    document.getElementById('manual-pk-count').textContent = manualReceptionData.pks.length;
+                    document.getElementById('manual-cote-count').textContent = manualReceptionData.cotes ? manualReceptionData.cotes.length : 0;
+                    
+                    // Peupler les checkboxes
+                    populateManualCheckboxes();
+                    
+                    // Auto-sélectionner l'option manuelle
+                    selectSourceOption('manual');
+                    
+                    console.log('Données manuelles chargées avec succès!', manualReceptionData);
+                } else {
+                    console.log('Données présentes mais source != manual ou pks vides');
+                }
+            } catch (e) {
+                console.error('Erreur parsing données manuelles:', e);
+            }
+        } else {
+            console.log('Aucune donnée dans sessionStorage');
+        }
+        
+        // Initialiser le toggle label actif
+        document.getElementById('label-manual').classList.add('active');
+    }
+    
+    // Peupler les checkboxes avec les données manuelles
+    function populateManualCheckboxes() {
+        if (!manualReceptionData) return;
+        
+        // PK checkboxes - NON cochés par défaut
+        const pkContainer = document.getElementById('manual-pk-checkboxes');
+        pkContainer.innerHTML = '';
+        manualReceptionData.pks.forEach((pk, index) => {
+            const div = document.createElement('div');
+            div.className = 'checkbox-row';
+            div.innerHTML = `
+                <input type="checkbox" id="manual-pk-${index}" value="${index}" class="manual-pk-checkbox">
+                <label for="manual-pk-${index}">${pk}</label>
+            `;
+            pkContainer.appendChild(div);
+        });
+        
+        // Côtes checkboxes - NON cochés par défaut
+        const cotesContainer = document.getElementById('manual-cotes-checkboxes');
+        cotesContainer.innerHTML = '';
+        if (manualReceptionData.cotes) {
+            manualReceptionData.cotes.forEach((cote, index) => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-row';
+                div.innerHTML = `
+                    <input type="checkbox" id="manual-cote-${index}" value="${index}">
+                    <label for="manual-cote-${index}">${cote.name} (X:${cote.x.toFixed(3)}, Z:${cote.z.toFixed(3)})</label>
+                `;
+                cotesContainer.appendChild(div);
+            });
+        }
+    }
+    
+    // Application de réception topographique
+    (function(){
+        let currentSheetData = null;    // Utilisé par le mode Manuel (compatibilité)
+        let selectedSheet = null;       // Utilisé par le mode Manuel
+        let allSheetsData = {};         // Mode Excel : { "Cote_Gauche": {...}, "Cote_Droit": {...} }
+        let commonPKs = [];             // PKs communs à tous les onglets Excel
+        // receptionMode est maintenant une variable globale définie plus haut
+        
+        // Initialiser la date d'aujourd'hui
+        document.getElementById('date-controle').value = new Date().toISOString().split('T')[0];
+        
+        // ========================================
+        // FONCTIONS UTILITAIRES PK ↔ MÈTRES
+        // ========================================
+        
+        /**
+         * Convertir PK en mètres
+         * Exemples:
+         *   "0+125" → 125 m
+         *   "1+045" → 1045 m
+         *   "0+012.50" → 12.50 m
+         */
+        function parsePKToMeters(pkString) {
+            const parts = pkString.toString().split('+');
+            if (parts.length !== 2) {
+                console.error('Format PK invalide:', pkString);
+                return 0;
+            }
+            const km = parseFloat(parts[0]);
+            const m = parseFloat(parts[1]);
+            return km * 1000 + m;
+        }
+        
+        /**
+         * Convertir mètres en PK
+         * Exemples:
+         *   125 → "0+125"
+         *   1045 → "1+045"
+         *   15.50 → "0+015.50"
+         */
+        function metersToPK(meters) {
+            const km = Math.floor(meters / 1000);
+            const m = meters - (km * 1000);
+            
+            // Formater les mètres avec le bon nombre de décimales
+            let mStr;
+            if (m % 1 === 0) {
+                // Entier : formater sur 3 chiffres (ex: 015)
+                mStr = m.toFixed(0).padStart(3, '0');
+            } else {
+                // Décimal : garder 2 décimales
+                mStr = m.toFixed(2).padStart(6, '0');
+            }
+            
+            return `${km}+${mStr}`;
+        }
+        
+        /**
+         * Formater les mètres en PK (alias pour compatibilité)
+         */
+        function formatMetersAsPK(meters) {
+            return metersToPK(meters);
+        }
+        
+        // Charger tous les onglets au démarrage
+        loadAllSheetsData();
+
+        // Vérifier les données manuelles au démarrage
+        checkManualData();
+
+        // Charger tous les onglets Excel simultanément
+        async function loadAllSheetsData() {
+            try {
+                console.log('Chargement de tous les onglets Excel...');
+                const sheetsResp = await fetch('/api/excel/sheets');
+                const sheetsData = await sheetsResp.json();
+
+                if (sheetsData.error) {
+                    showError(sheetsData.error);
+                    return;
+                }
+
+                console.log('Onglets trouvés:', sheetsData.sheets);
+
+                // Charger toutes les feuilles en parallèle
+                const dataPromises = sheetsData.sheets.map(sheet =>
+                    fetch(`/api/excel/data/${encodeURIComponent(sheet)}`).then(r => r.json())
+                );
+                const allData = await Promise.all(dataPromises);
+
+                // Stocker toutes les données
+                allSheetsData = {};
+                sheetsData.sheets.forEach((sheet, i) => {
+                    if (!allData[i].error) {
+                        allSheetsData[sheet] = allData[i];
+                    } else {
+                        console.warn(`Erreur onglet ${sheet}:`, allData[i].error);
+                    }
+                });
+
+                if (Object.keys(allSheetsData).length === 0) {
+                    showError('Aucun onglet Excel valide chargé.');
+                    return;
+                }
+
+                // Calculer les PK communs à tous les onglets (intersection)
+                const allPKSets = Object.values(allSheetsData).map(d => new Set(d.pks));
+                const firstSet = allPKSets[0];
+                commonPKs = [...firstSet].filter(pk => allPKSets.every(s => s.has(pk)));
+                commonPKs.sort((a, b) => parsePKToMeters(a) - parsePKToMeters(b));
+
+                console.log(`PK communs: ${commonPKs.length} points`);
+
+                // Afficher l'UI
+                document.getElementById('loading-message').style.display = 'none';
+                document.getElementById('sheets-loaded-indicator').style.display = 'block';
+
+                populatePKCheckboxes(commonPKs);
+                renderColumnSelectionUI();
+
+                document.getElementById('data-selection').style.display = 'block';
+                console.log('Section de sélection affichée');
+
+            } catch (error) {
+                console.error('Erreur lors du chargement:', error);
+                showError('Erreur de chargement: ' + error.message);
+            }
+        }
+        
+        // Remplir les checkboxes des PK
+        function populatePKCheckboxes(pks) {
+            console.log('populatePKCheckboxes appelé avec', pks.length, 'PK');
+            const container = document.getElementById('pk-checkboxes');
+            if (!container) {
+                console.error('Conteneur pk-checkboxes introuvable!');
+                return;
+            }
+            container.innerHTML = '';
+            
+            pks.forEach((pk, index) => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-item';
+                div.innerHTML = `
+                    <input type="checkbox" value="${index}" class="pk-checkbox" id="pk-${index}">
+                    <label for="pk-${index}">${pk}</label>
+                `;
+                container.appendChild(div);
+            });
+            console.log('Checkboxes PK créées:', pks.length);
+            
+            // Remplir aussi les selects de plage
+            populatePKRangeSelects(pks);
+        }
+        
+        // Remplir les selects pour la sélection par plage
+        function populatePKRangeSelects(pks) {
+            const startSelect = document.getElementById('pk-start');
+            const endSelect = document.getElementById('pk-end');
+            
+            startSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+            endSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+            
+            pks.forEach((pk, index) => {
+                startSelect.innerHTML += `<option value="${index}">${pk}</option>`;
+                endSelect.innerHTML += `<option value="${index}">${pk}</option>`;
+            });
+        }
+        
+        // Générer un label lisible depuis le nom de colonne et le nom de l'onglet
+        function makeElementLabel(colName, sheetName) {
+            if (colName === 'Axe_Z') return 'Axe Z (Référence)';
+            // Supprimer le préfixe G_ ou D_
+            const name = colName.replace(/^[GD]_/, '').replace(/_/g, ' ');
+            const side = sheetName.toLowerCase().includes('gauche') ? 'Gauche' : 'Droit';
+            return `${name} (${side})`;
+        }
+
+        // Construire le panneau de sélection à 2 colonnes (Gauche / Droit)
+        function renderColumnSelectionUI() {
+            const container = document.getElementById('cotes-checkboxes');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const sheetNames = Object.keys(allSheetsData);
+            if (sheetNames.length === 0) return;
+
+            const grid = document.createElement('div');
+            grid.style.cssText = 'display: grid; grid-template-columns: repeat(' + sheetNames.length + ', 1fr); gap: 0;';
+
+            sheetNames.forEach((sheetName, sheetIdx) => {
+                const sheetData = allSheetsData[sheetName];
+                const isGauche = sheetName.toLowerCase().includes('gauche');
+                const col = document.createElement('div');
+                col.style.cssText = `padding: 12px; ${sheetIdx < sheetNames.length - 1 ? 'border-right: 1px solid var(--border-color);' : ''}`;
+
+                const title = document.createElement('div');
+                title.style.cssText = 'font-weight: 700; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid ' + (isGauche ? '#3b82f6' : '#10b981') + '; color: ' + (isGauche ? '#1d4ed8' : '#059669') + ';';
+                title.textContent = isGauche ? '← Côté Gauche' : 'Côté Droit →';
+                col.appendChild(title);
+
+                sheetData.cote_columns.forEach((colName, index) => {
+                    const label = makeElementLabel(colName, sheetName);
+                    const uniqueId = `cote-${sheetName}-${index}`;
+                    const div = document.createElement('div');
+                    div.className = 'checkbox-item';
+                    div.innerHTML = `
+                        <input type="checkbox"
+                               class="cote-checkbox"
+                               id="${uniqueId}"
+                               value="${colName}"
+                               data-sheet="${sheetName}"
+                               data-label="${label}">
+                        <label for="${uniqueId}">${label}</label>
+                    `;
+                    col.appendChild(div);
+                });
+
+                grid.appendChild(col);
+            });
+
+            container.appendChild(grid);
+            console.log('UI de sélection des éléments générée');
+        }
+        
+        // Sélectionner/désélectionner tous les PK
+        document.getElementById('select-all-pk').addEventListener('click', () => {
+            document.querySelectorAll('.pk-checkbox').forEach(cb => cb.checked = true);
+        });
+        
+        document.getElementById('deselect-all-pk').addEventListener('click', () => {
+            document.querySelectorAll('.pk-checkbox').forEach(cb => cb.checked = false);
+        });
+        
+        // Sélection par plage de PK
+        document.getElementById('select-range-pk').addEventListener('click', () => {
+            const startIndex = parseInt(document.getElementById('pk-start').value);
+            const endIndex = parseInt(document.getElementById('pk-end').value);
+            
+            if (isNaN(startIndex) || isNaN(endIndex)) {
+                alert('Veuillez sélectionner un PK de début et un PK de fin');
+                return;
+            }
+            
+            if (startIndex > endIndex) {
+                alert('Le PK de début doit être inférieur ou égal au PK de fin');
+                return;
+            }
+            
+            // Cocher tous les PK dans la plage
+            const checkboxes = document.querySelectorAll('.pk-checkbox');
+            checkboxes.forEach(cb => {
+                const index = parseInt(cb.value);
+                if (index >= startIndex && index <= endIndex) {
+                    cb.checked = true;
+                }
+            });
+            
+            alert(`PK sélectionnés de l'index ${startIndex} à ${endIndex}`);
+        });
+        
+        // Ajouter une autre plage (cumulative) - Vérifier si le bouton existe
+        const addRangePkBtn = document.getElementById('add-range-pk');
+        if (addRangePkBtn) {
+            addRangePkBtn.addEventListener('click', () => {
+                const startIndex = parseInt(document.getElementById('pk-start').value);
+                const endIndex = parseInt(document.getElementById('pk-end').value);
+                
+                if (isNaN(startIndex) || isNaN(endIndex)) {
+                    alert('Veuillez sélectionner un PK de début et un PK de fin');
+                    return;
+                }
+                
+                if (startIndex > endIndex) {
+                    alert('Le PK de début doit être inférieur ou égal au PK de fin');
+                    return;
+                }
+                
+                // Cocher tous les PK dans la plage (sans décocher les autres)
+                const checkboxes = document.querySelectorAll('.pk-checkbox');
+                let count = 0;
+                checkboxes.forEach(cb => {
+                    const index = parseInt(cb.value);
+                    if (index >= startIndex && index <= endIndex) {
+                        cb.checked = true;
+                        count++;
+                    }
+                });
+                
+                // Réinitialiser les selects pour une nouvelle plage
+                document.getElementById('pk-start').value = '';
+                document.getElementById('pk-end').value = '';
+                
+                alert(`${count} PK supplémentaires ajoutés à la sélection`);
+            });
+        }
+        
+        // Sélectionner/désélectionner toutes les côtes
+        document.getElementById('select-all-cotes').addEventListener('click', () => {
+            document.querySelectorAll('.cote-checkbox').forEach(cb => cb.checked = true);
+        });
+        
+        document.getElementById('deselect-all-cotes').addEventListener('click', () => {
+            document.querySelectorAll('.cote-checkbox').forEach(cb => cb.checked = false);
+        });
+        
+        // Générer la fiche de réception (Excel)
+        const generateReceptionBtn = document.getElementById('generate-reception');
+        if (generateReceptionBtn) {
+            generateReceptionBtn.addEventListener('click', () => {
+                console.log('Bouton Générer (Excel) cliqué');
+                const selectedPKs = Array.from(document.querySelectorAll('.pk-checkbox:checked'));
+                const selectedCotes = Array.from(document.querySelectorAll('.cote-checkbox:checked'));
+                
+                console.log('PK sélectionnés:', selectedPKs.length);
+                console.log('Côtes sélectionnées:', selectedCotes.length);
+                console.log('currentSheetData:', currentSheetData);
+                
+                if (selectedPKs.length === 0) {
+                    alert('Veuillez sélectionner au moins un point kilométrique');
+                    return;
+                }
+                
+                if (selectedCotes.length === 0) {
+                    alert('Veuillez sélectionner au moins une côte à réceptionner');
+                    return;
+                }
+                
+                console.log('Génération de la fiche...');
+                generateReceptionSheet(selectedPKs, selectedCotes);
+            });
+        } else {
+            console.error('Bouton generate-reception non trouvé!');
+        }
+        
+        // Stocker les points sélectionnés globalement
+        let globalSelectedPoints = [];
+        
+        // Générer la fiche de réception
+        function generateReceptionSheet(selectedPKs, selectedCotes) {
+            try {
+                console.log('=== generateReceptionSheet appelée ===');
+                console.log('selectedPKs:', selectedPKs);
+                console.log('selectedCotes:', selectedCotes);
+                console.log('currentSheetData:', currentSheetData);
+                console.log('selectedSheet:', selectedSheet);
+                
+                // Validation de la source de données selon le mode
+                const isExcelMode = Object.keys(allSheetsData).length > 0
+                    && selectedCotes.length > 0
+                    && selectedCotes[0].dataset && selectedCotes[0].dataset.sheet;
+
+                if (isExcelMode) {
+                    if (Object.keys(allSheetsData).length === 0) {
+                        alert('Erreur: données Excel non chargées.');
+                        return;
+                    }
+                } else {
+                    if (!currentSheetData || !currentSheetData.pks) {
+                        console.error('currentSheetData est invalide!');
+                        alert('Erreur: données non chargées. Veuillez sélectionner une source de données.');
+                        return;
+                    }
+                }
+
+                // Remplir les informations d'en-tête
+                document.getElementById('display-projet').textContent = document.getElementById('projet-nom').value || 'Non renseigné';
+                document.getElementById('display-date').textContent = document.getElementById('date-controle').value || new Date().toLocaleDateString('fr-FR');
+                document.getElementById('display-operateur').textContent = document.getElementById('operateur-nom').value || 'Non renseigné';
+                // Afficher les éléments sélectionnés ou la feuille manuelle
+                if (isExcelMode) {
+                    const labels = Array.from(selectedCotes).map(cb => cb.dataset.label || cb.value);
+                    document.getElementById('display-sheet').textContent = [...new Set(labels)].slice(0, 3).join(', ') + (labels.length > 3 ? '…' : '');
+                } else {
+                    document.getElementById('display-sheet').textContent = selectedSheet || 'Non défini';
+                }
+                document.getElementById('display-meteo').textContent = document.getElementById('meteo').value || 'Non renseigné';
+                
+                // Remplir les informations des signataires
+                document.getElementById('display-controleur-nom').textContent = document.getElementById('controleur-nom').value || '_________________________';
+                document.getElementById('display-controleur-fonction').textContent = document.getElementById('controleur-fonction').value || '_________________________';
+                document.getElementById('display-controleur-date').textContent = document.getElementById('controleur-date').value || '_________________________';
+                
+                document.getElementById('display-entreprise-nom').textContent = document.getElementById('entreprise-nom').value || '_________________________';
+                document.getElementById('display-entreprise-societe').textContent = document.getElementById('entreprise-societe').value || '_________________________';
+                document.getElementById('display-entreprise-date').textContent = document.getElementById('entreprise-date').value || '_________________________';
+                
+                // Mettre à jour les images de signature
+                updateSignatureDisplay('controleur');
+                updateSignatureDisplay('entreprise');
+                
+                console.log('En-têtes remplis, traitement des points...');
+                
+                // Construire globalSelectedPoints selon la source (Excel multi-onglets ou Manuel)
+                globalSelectedPoints = [];
+                const selectedCoteNames = Array.from(selectedCotes).map(cb => cb.value);
+                console.log('selectedCoteNames:', selectedCoteNames);
+
+                selectedPKs.forEach((pkCheckbox, idx) => {
+                    const pkIndex = parseInt(pkCheckbox.value);
+                    let pkValue, pkInMeters;
+
+                    if (isExcelMode) {
+                        pkValue = commonPKs[pkIndex];
+                    } else {
+                        pkValue = currentSheetData.pks[pkIndex];
+                    }
+
+                    if (!pkValue) {
+                        console.warn(`PK index ${pkIndex} invalide, ignoré`);
+                        return;
+                    }
+                    pkInMeters = parsePKToMeters(pkValue);
+
+                    selectedCotes.forEach(coteCheckbox => {
+                        const coteName = coteCheckbox.value;
+                        let coteTheorique, rowData;
+
+                        if (isExcelMode) {
+                            // Mode Excel : chercher la valeur dans le bon onglet
+                            const sheetName = coteCheckbox.dataset.sheet;
+                            const label = coteCheckbox.dataset.label || coteName;
+                            const sheetData = allSheetsData[sheetName];
+                            if (!sheetData) return;
+                            const sheetPKIndex = sheetData.pks.indexOf(pkValue);
+                            if (sheetPKIndex === -1) return;
+                            rowData = sheetData.data[sheetPKIndex];
+                            coteTheorique = rowData ? rowData[coteName] : null;
+
+                            if (coteTheorique === null || coteTheorique === undefined || coteTheorique === '') return;
+
+                            globalSelectedPoints.push({
+                                pkValue,
+                                pkInMeters,
+                                pkIndex,
+                                coteName,
+                                sheetName,
+                                label,
+                                coteTheorique: parseFloat(coteTheorique),
+                                rowData
+                            });
+                        } else {
+                            // Mode Manuel : utiliser currentSheetData
+                            rowData = currentSheetData.data[pkIndex];
+                            if (!rowData) return;
+                            coteTheorique = rowData[coteName];
+                            if (coteTheorique === null || coteTheorique === undefined || coteTheorique === '') return;
+
+                            globalSelectedPoints.push({
+                                pkValue,
+                                pkInMeters,
+                                pkIndex,
+                                coteName,
+                                sheetName: null,
+                                label: coteName,
+                                coteTheorique: parseFloat(coteTheorique),
+                                rowData
+                            });
+                        }
+                    });
+                });
+
+                console.log('globalSelectedPoints:', globalSelectedPoints);
+
+                // Stocker aussi les noms des côtes sélectionnées globalement
+                window.selectedCoteNames = selectedCoteNames;
+                
+                if (globalSelectedPoints.length === 0) {
+                    alert('Aucun point valide sélectionné. Vérifiez que les données sont correctement chargées.');
+                    return;
+                }
+                
+                // Créer la première station
+                console.log('Création de la station...');
+                const container = document.getElementById('stations-container');
+                container.innerHTML = '';
+                addStation(1);
+            
+                // Afficher la fiche
+                console.log('Affichage de la fiche...');
+                document.getElementById('reception-sheet').style.display = 'block';
+                document.getElementById('reception-sheet').scrollIntoView({ behavior: 'smooth' });
+                console.log('Fiche affichée avec succès!');
+                
+            } catch (e) {
+                console.error('Erreur dans generateReceptionSheet:', e);
+                alert('Erreur lors de la génération: ' + e.message);
+            }
+        }
+        
+        // Compteur de stations
+        let stationCounter = 1;
+        
+        // Ajouter une station de nivellement
+        function addStation(stationNum) {
+            const container = document.getElementById('stations-container');
+            // Tolérance en mm, convertir en mètres
+            const toleranceMM = parseFloat(document.getElementById('tolerance').value) || 2;
+            const tolerance = toleranceMM / 1000;
+            
+            const stationDiv = document.createElement('div');
+            stationDiv.className = 'station-card';
+            stationDiv.id = `station-${stationNum}`;
+            
+            stationDiv.innerHTML = `
+                <div class="station-header">
+                    <h4 class="station-title">Station de nivellement n°${stationNum}</h4>
+                    ${stationNum > 1 ? `<button class="btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="removeStation(${stationNum})">Supprimer</button>` : ''}
+                </div>
+                
+                <div class="station-params">
+                    <div class="station-param">
+                        <label class="station-param-label">Cote du repère (m)</label>
+                        <input type="number" step="0.001" class="station-param-input cote-repere-station" data-station="${stationNum}" 
+                               placeholder="Ex: 102.340" title="Altitude connue du repère utilisé">
+                    </div>
+                    <div class="station-param">
+                        <label class="station-param-label">Lecture arrière L.A.R (m)</label>
+                        <input type="number" step="0.001" class="station-param-input lar-station" data-station="${stationNum}" 
+                               placeholder="Ex: 1.245" title="Lecture sur le repère">
+                    </div>
+                    <div class="station-param">
+                        <label class="station-param-label">Cote bleue / H.I. (m)</label>
+                        <input type="text" class="station-param-input computed cote-bleue-station" data-station="${stationNum}" 
+                               readonly value="-" title="Hauteur d'instrument = Cote repère + L.A.R">
+                    </div>
+                    <div class="station-param" id="pente-container-${stationNum}" style="display:none;">
+                        <label class="station-param-label">Pente transversale (%)</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="number" step="0.01" class="station-param-input pente-station" data-station="${stationNum}" 
+                                   placeholder="Ex: 2.5" style="flex:1;">
+                            <button onclick="recalculateAllCotes(${stationNum})" class="btn-primary" style="padding: 8px 12px; font-size: 0.8rem;">
+                                Recalculer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="station-content">
+                    <div class="btn-group" style="margin-bottom: 16px; justify-content: flex-start;">
+                        <button class="btn-secondary add-interpolation-global-btn" data-station="${stationNum}" style="font-size: 0.85rem; padding: 10px 16px;">
+                            + Ajouter un point intermédiaire
+                        </button>
+                    </div>
+                    
+                    <div class="data-table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                ${window.generateTableHeader()}
+                            </thead>
+                            <tbody id="tbody-station-${stationNum}">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(stationDiv);
+            
+            // Remplir le tableau avec les points
+            const tbody = document.getElementById(`tbody-station-${stationNum}`);
+            const toleranceMetres = tolerance;
+            
+            // Grouper les points par PK
+            const pointsByPK = {};
+            globalSelectedPoints.forEach(point => {
+                if (!pointsByPK[point.pkValue]) {
+                    pointsByPK[point.pkValue] = [];
+                }
+                pointsByPK[point.pkValue].push(point);
+            });
+            
+            const uniquePKs = Object.keys(pointsByPK).sort((a, b) => {
+                return parsePKToMeters(a) - parsePKToMeters(b);
+            });
+            
+            // Ajouter les lignes et les boutons d'interpolation
+            uniquePKs.forEach((pkValue, pkIndex) => {
+                const pointsForThisPK = pointsByPK[pkValue];
+                
+                // Ajouter toutes les lignes pour ce PK
+                pointsForThisPK.forEach(point => {
+                    // Assigner le stationNum si pas déjà fait
+                    if (!point.stationNum) {
+                        point.stationNum = stationNum;
+                    }
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = 'data-row';
+                    tr.setAttribute('data-pk', point.pkValue);
+                    tr.setAttribute('data-cote-name', point.coteName);
+                    tr.setAttribute('data-cote-theorique', point.coteTheorique);
+                    tr.setAttribute('data-element-label', point.label || point.coteName);
+                    tr.innerHTML = window.generateRowHTML(stationNum, point.pkValue, point.pkInMeters.toFixed(3), point.coteTheorique, false, point.label || point.coteName);
+                    tbody.appendChild(tr);
+                });
+                
+                // Ajouter un bouton d'interpolation entre ce PK et le suivant
+                if (pkIndex < uniquePKs.length - 1) {
+                    const nextPK = uniquePKs[pkIndex + 1];
+                    const currentPKMeters = parsePKToMeters(pkValue);
+                    const nextPKMeters = parsePKToMeters(nextPK);
+                    
+                    const tr = document.createElement('tr');
+                    tr.className = 'interpolation-row';
+                    tr.style.background = 'var(--surface-2)';
+                    
+                    const colSpan = receptionMode === 'terrassement' ? 12 : 10; // +1 pour la colonne ÉLÉMENT
+                    
+                    tr.innerHTML = `
+                        <td colspan="${colSpan}" style="text-align:center; padding:12px;">
+                            <button class="btn-add-interpolation btn-mini" 
+                                    data-station="${stationNum}"
+                                    data-pk1="${pkValue}"
+                                    data-pk2="${nextPK}"
+                                    data-pk1-meters="${currentPKMeters}"
+                                    data-pk2-meters="${nextPKMeters}"
+                                    style="background: var(--accent-green-light); color: #166534; border-color: #86efac;">
+                                + Point entre ${pkValue} et ${nextPK}
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+            
+            // Attacher les événements
+            attachStationCalculators(stationNum, tolerance);
+            
+            // Attacher les boutons d'interpolation
+            attachInterpolationButtons(stationNum, tolerance);
+            
+            // Attacher le bouton global d'interpolation
+            const globalBtn = document.querySelector(`.add-interpolation-global-btn[data-station="${stationNum}"]`);
+            if (globalBtn) {
+                globalBtn.addEventListener('click', function() {
+                    showInterpolationModal(stationNum, tolerance, null, null, null, null);
+                });
+            }
+        }
+        
+        // Attacher les gestionnaires pour les boutons d'interpolation
+        function attachInterpolationButtons(stationNum, tolerance) {
+            const buttons = document.querySelectorAll(`.btn-add-interpolation[data-station="${stationNum}"]`);
+            
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const pk1 = this.dataset.pk1;
+                    const pk2 = this.dataset.pk2;
+                    const pk1Meters = parseFloat(this.dataset.pk1Meters);
+                    const pk2Meters = parseFloat(this.dataset.pk2Meters);
+                    
+                    showInterpolationModal(stationNum, tolerance, pk1, pk2, pk1Meters, pk2Meters);
+                });
+            });
+        }
+        
+        // Afficher la modale d'interpolation
+        function showInterpolationModal(stationNum, tolerance, pk1, pk2, pk1Meters, pk2Meters) {
+            const modal = document.getElementById('interpolation-modal');
+            const distanceInput = document.getElementById('modal-distance-input');
+            const encadrantsInfo = document.getElementById('modal-encadrants-info');
+            const pkSelectionContainer = document.getElementById('pk-selection-container');
+            const pk1Select = document.getElementById('modal-pk1-select');
+            const pk2Select = document.getElementById('modal-pk2-select');
+            
+            // Réinitialiser
+            distanceInput.value = '';
+            
+            // Mode manuel (PK1 et PK2 fournis) ou mode avec sélection
+            const isManualMode = (pk1 && pk2);
+            
+            if (isManualMode) {
+                // Mode entre deux PK consécutifs
+                pkSelectionContainer.style.display = 'none';
+                
+                const deltaD = pk2Meters - pk1Meters;
+                
+                // Afficher les informations d'encadrement
+                document.getElementById('modal-pk-avant').textContent = `PK ${pk1} (${pk1Meters.toFixed(3)} m)`;
+                document.getElementById('modal-pk-apres').textContent = `PK ${pk2} (${pk2Meters.toFixed(3)} m)`;
+                document.getElementById('modal-delta-d').textContent = deltaD.toFixed(3);
+                encadrantsInfo.style.display = 'block';
+                
+                // Prévisualiser en temps réel
+                distanceInput.oninput = function() {
+                    const distanceValue = parseFloat(this.value);
+                    
+                    if (isNaN(distanceValue) || distanceValue <= 0 || distanceValue >= deltaD) {
+                        document.getElementById('modal-d').textContent = '-';
+                        document.getElementById('modal-ratio').textContent = '-';
+                        document.getElementById('modal-new-pk-display').textContent = '-';
+                        return;
+                    }
+                    
+                    const pkNewMeters = pk1Meters + distanceValue;
+                    const pkNewFormatted = metersToPK(pkNewMeters);
+                    const ratio = distanceValue / deltaD;
+                    
+                    document.getElementById('modal-new-pk-display').textContent = pkNewFormatted;
+                    document.getElementById('modal-d').textContent = distanceValue.toFixed(3);
+                    document.getElementById('modal-ratio').textContent = (ratio * 100).toFixed(2);
+                };
+            } else {
+                // Mode avec sélection de PK1 et PK2
+                pkSelectionContainer.style.display = 'block';
+                encadrantsInfo.style.display = 'none';
+                
+                // Récupérer tous les PK uniques de la station
+                const uniquePKs = [];
+                const pkData = {};
+                
+                globalSelectedPoints.forEach(point => {
+                    if (point.stationNum === stationNum) {
+                        if (!pkData[point.pkValue]) {
+                            pkData[point.pkValue] = {
+                                pkValue: point.pkValue,
+                                pkInMeters: point.pkInMeters
+                            };
+                            uniquePKs.push(point.pkValue);
+                        }
+                    }
+                });
+                
+                // Trier les PK
+                uniquePKs.sort((a, b) => parsePKToMeters(a) - parsePKToMeters(b));
+                
+                // Remplir les selects avec des options améliorées
+                pk1Select.innerHTML = '<option value="">-- Choisissez un PK disponible --</option>';
+                pk2Select.innerHTML = '<option value="">-- Choisissez un PK disponible --</option>';
+                
+                uniquePKs.forEach((pk, index) => {
+                    const pkMeters = pkData[pk].pkInMeters;
+                    
+                    const option1 = document.createElement('option');
+                    option1.value = pk;
+                    option1.textContent = `📍 PK ${pk} (${pkMeters.toFixed(2)} m)`;
+                    option1.style.fontWeight = '600';
+                    option1.style.padding = '8px';
+                    pk1Select.appendChild(option1);
+                    
+                    const option2 = document.createElement('option');
+                    option2.value = pk;
+                    option2.textContent = `📍 PK ${pk} (${pkMeters.toFixed(2)} m)`;
+                    option2.style.fontWeight = '600';
+                    option2.style.padding = '8px';
+                    pk2Select.appendChild(option2);
+                });
+                
+                // Gérer les changements de sélection
+                const updatePreview = () => {
+                    const selectedPK1 = pk1Select.value;
+                    const selectedPK2 = pk2Select.value;
+                    const distance = parseFloat(distanceInput.value);
+                    
+                    if (!selectedPK1 || !selectedPK2) {
+                        encadrantsInfo.style.display = 'none';
+                        return;
+                    }
+                    
+                    const pk1Data = pkData[selectedPK1];
+                    const pk2Data = pkData[selectedPK2];
+                    const pk1M = pk1Data.pkInMeters;
+                    const pk2M = pk2Data.pkInMeters;
+                    
+                    if (pk1M >= pk2M) {
+                        alert('Le PK2 doit être supérieur au PK1');
+                        encadrantsInfo.style.display = 'none';
+                        return;
+                    }
+                    
+                    const deltaD = pk2M - pk1M;
+                    
+                    document.getElementById('modal-pk-avant').textContent = `PK ${selectedPK1} (${pk1M.toFixed(3)} m)`;
+                    document.getElementById('modal-pk-apres').textContent = `PK ${selectedPK2} (${pk2M.toFixed(3)} m)`;
+                    document.getElementById('modal-delta-d').textContent = deltaD.toFixed(3);
+                    encadrantsInfo.style.display = 'block';
+                    
+                    if (!isNaN(distance) && distance > 0 && distance < deltaD) {
+                        const pkNewMeters = pk1M + distance;
+                        const pkNewFormatted = metersToPK(pkNewMeters);
+                        const ratio = distance / deltaD;
+                        
+                        document.getElementById('modal-new-pk-display').textContent = pkNewFormatted;
+                        document.getElementById('modal-d').textContent = distance.toFixed(3);
+                        document.getElementById('modal-ratio').textContent = (ratio * 100).toFixed(2);
+                    } else {
+                        document.getElementById('modal-new-pk-display').textContent = '-';
+                        document.getElementById('modal-d').textContent = '-';
+                        document.getElementById('modal-ratio').textContent = '-';
+                    }
+                };
+                
+                pk1Select.onchange = updatePreview;
+                pk2Select.onchange = updatePreview;
+                distanceInput.oninput = updatePreview;
+            }
+            
+            modal.style.display = 'block';
+            
+            document.getElementById('modal-confirm').onclick = () => {
+                let finalPK1, finalPK2, finalPK1Meters, finalPK2Meters;
+                
+                if (isManualMode) {
+                    finalPK1 = pk1;
+                    finalPK2 = pk2;
+                    finalPK1Meters = pk1Meters;
+                    finalPK2Meters = pk2Meters;
+                } else {
+                    const selectedPK1 = pk1Select.value;
+                    const selectedPK2 = pk2Select.value;
+                    
+                    if (!selectedPK1 || !selectedPK2) {
+                        alert('Veuillez sélectionner les deux PK de référence');
+                        return;
+                    }
+                    
+                    const pkData1 = globalSelectedPoints.find(p => p.pkValue === selectedPK1 && p.stationNum === stationNum);
+                    const pkData2 = globalSelectedPoints.find(p => p.pkValue === selectedPK2 && p.stationNum === stationNum);
+                    
+                    finalPK1 = selectedPK1;
+                    finalPK2 = selectedPK2;
+                    finalPK1Meters = pkData1.pkInMeters;
+                    finalPK2Meters = pkData2.pkInMeters;
+                    
+                    if (finalPK1Meters >= finalPK2Meters) {
+                        alert('Le PK2 doit être supérieur au PK1');
+                        return;
+                    }
+                }
+                
+                const distance = parseFloat(distanceInput.value);
+                const deltaD = finalPK2Meters - finalPK1Meters;
+                
+                if (isNaN(distance) || distance <= 0) {
+                    alert('Veuillez entrer une distance valide (nombre positif)');
+                    return;
+                }
+                
+                if (distance >= deltaD) {
+                    alert(`La distance doit être inférieure à ${deltaD.toFixed(3)} mètres`);
+                    return;
+                }
+                
+                const pkNewMeters = finalPK1Meters + distance;
+                const pkNewVal = metersToPK(pkNewMeters);
+                
+                // Insérer les lignes interpolées
+                insertInterpolatedRows(stationNum, pkNewVal, pkNewMeters, finalPK1, finalPK2, finalPK1Meters, finalPK2Meters, tolerance);
+                
+                modal.style.display = 'none';
+            };
+            
+            document.getElementById('modal-cancel').onclick = () => {
+                modal.style.display = 'none';
+            };
+        }
+        
+        // Insérer les lignes interpolées pour toutes les côtes
+        function insertInterpolatedRows(stationNum, pkNewVal, pkNewMeters, pk1, pk2, pk1Meters, pk2Meters, tolerance) {
+            const tbody = document.getElementById(`tbody-station-${stationNum}`);
+            
+            // Récupérer tous les points de la station
+            const allPointsData = [];
+            globalSelectedPoints.forEach(point => {
+                if (point.stationNum === stationNum) {
+                    allPointsData.push({
+                        pkValue: point.pkValue,
+                        pkInMeters: point.pkInMeters,
+                        coteName: point.coteName,
+                        coteTheorique: point.coteTheorique
+                    });
+                }
+            });
+            
+            // Calculer le ratio d'interpolation
+            const deltaD = pk2Meters - pk1Meters;
+            const d = pkNewMeters - pk1Meters;
+            const ratio = d / deltaD;
+            
+            console.log(`🔍 Interpolation: PK ${pkNewVal}, ratio = ${(ratio * 100).toFixed(2)}%`);
+            
+            // Grouper les points par côte pour PK1 et PK2
+            const pointsPK1ByCote = {};
+            const pointsPK2ByCote = {};
+            
+            allPointsData.forEach(point => {
+                if (point.pkValue === pk1) {
+                    pointsPK1ByCote[point.coteName] = point;
+                }
+                if (point.pkValue === pk2) {
+                    pointsPK2ByCote[point.coteName] = point;
+                }
+            });
+            
+            let insertedCount = 0;
+            const newRows = [];
+            
+            console.log(`📊 Interpolation des côtes:`);
+            console.log(`   Points PK1 (${pk1}):`, Object.keys(pointsPK1ByCote));
+            console.log(`   Points PK2 (${pk2}):`, Object.keys(pointsPK2ByCote));
+            
+            // Interpoler pour chaque côte
+            Object.keys(pointsPK1ByCote).forEach(coteName => {
+                const cotePK1 = pointsPK1ByCote[coteName];
+                const cotePK2 = pointsPK2ByCote[coteName];
+                
+                if (!cotePK2) {
+                    console.warn(`   ⚠️ Côte ${coteName} manquante au PK2`);
+                    return;
+                }
+                
+                const C1 = cotePK1.coteTheorique;
+                const C2 = cotePK2.coteTheorique;
+                
+                // Interpolation linéaire : C_nouveau = C1 + ratio × (C2 - C1)
+                const coteInterpolated = C1 + ratio * (C2 - C1);
+                
+                console.log(`   ✅ ${coteName}: ${C1.toFixed(3)} → ${coteInterpolated.toFixed(3)} → ${C2.toFixed(3)}`);
+                
+                // Créer la nouvelle ligne
+                const elementLabel = cotePK1.label || coteName;
+                const tr = document.createElement('tr');
+                tr.className = 'data-row row-interpolated';
+                tr.setAttribute('data-pk', pkNewVal);
+                tr.setAttribute('data-cote-name', coteName);
+                tr.setAttribute('data-cote-theorique', coteInterpolated);
+                tr.setAttribute('data-element-label', elementLabel);
+                tr.innerHTML = window.generateRowHTML(stationNum, pkNewVal, pkNewMeters.toFixed(3), coteInterpolated, true, elementLabel);
+                
+                console.log(`      HTML généré: ${tr.innerHTML.substring(0, 100)}...`);
+                
+                newRows.push(tr);
+                insertedCount++;
+            });
+            
+            // Trouver où insérer les nouvelles lignes
+            const allRows = Array.from(tbody.querySelectorAll('tr'));
+            let insertBeforeRow = null;
+            
+            console.log(`📍 Recherche position d'insertion pour PK ${pkNewVal} entre ${pk1} et ${pk2}`);
+            console.log(`   Nombre total de lignes: ${allRows.length}`);
+            
+            // Trouver la première ligne du PK2 ou le bouton d'interpolation
+            for (let i = 0; i < allRows.length; i++) {
+                const row = allRows[i];
+                if (row.classList.contains('interpolation-row')) {
+                    const btn = row.querySelector('.btn-add-interpolation');
+                    if (btn && btn.dataset.pk1 === pk1) {
+                        insertBeforeRow = row;
+                        console.log(`   ✅ Insertion avant le bouton d'interpolation (ligne ${i})`);
+                        break;
+                    }
+                } else if (row.getAttribute('data-pk') === pk2) {
+                    insertBeforeRow = row;
+                    console.log(`   ✅ Insertion avant la première ligne du PK2 (ligne ${i})`);
+                    break;
+                }
+            }
+            
+            // Insérer les nouvelles lignes
+            if (insertBeforeRow) {
+                console.log(`   ✅ Insertion de ${newRows.length} lignes`);
+                newRows.forEach((tr, idx) => {
+                    insertBeforeRow.parentNode.insertBefore(tr, insertBeforeRow);
+                    console.log(`      - Ligne ${idx + 1} insérée`);
+                });
+            } else {
+                console.warn(`   ⚠️ Position d'insertion non trouvée, ajout à la fin du tbody`);
+                newRows.forEach(tr => {
+                    tbody.appendChild(tr);
+                });
+            }
+            
+            // Réattacher les calculateurs
+            attachStationCalculators(stationNum, tolerance);
+            
+            alert(`Point interpolé ajouté : PK ${pkNewVal}\n${insertedCount} côte(s) interpolée(s)`);
+        }
+        
+        // Gestionnaires de calcul pour une station
+        function attachStationCalculators(stationNum, tolerance) {
+            const coteRepereInput = document.querySelector(`.cote-repere-station[data-station="${stationNum}"]`);
+            const larInput = document.querySelector(`.lar-station[data-station="${stationNum}"]`);
+            const coteBleueInput = document.querySelector(`.cote-bleue-station[data-station="${stationNum}"]`);
+            const lavInputs = document.querySelectorAll(`.lav-input[data-station="${stationNum}"]`);
+            
+            // Calculer la cote bleue
+            function updateCoteBleue() {
+                const coteRepere = parseFloat(coteRepereInput.value);
+                const lar = parseFloat(larInput.value);
+                
+                if (!isNaN(coteRepere) && !isNaN(lar)) {
+                    const coteBleue = coteRepere + lar;
+                    coteBleueInput.value = coteBleue.toFixed(3);
+                    updateAllPoints();
+                } else {
+                    coteBleueInput.value = '-';
+                }
+            }
+            
+            // Mettre à jour tous les points
+            function updateAllPoints() {
+                const coteBleue = parseFloat(coteBleueInput.value);
+                const lar = parseFloat(larInput.value);
+                if (isNaN(coteBleue)) return;
+                
+                const toleranceMetres = tolerance; // Convertir cm en mètres
+                
+                lavInputs.forEach(lavInput => {
+                    const lav = parseFloat(lavInput.value);
+                    const row = lavInput.closest('tr');
+                    const larCell = row.querySelector('.lar-cell');
+                    const coteMesureeCell = row.querySelector('.cote-mesuree-cell');
+                    const ecartPositifCell = row.querySelector('.ecart-positif-cell');
+                    const ecartNegatifCell = row.querySelector('.ecart-negatif-cell');
+                    const observationCell = row.querySelector('.observation-cell');
+                    const coteTheorique = parseFloat(lavInput.dataset.theorique);
+                    
+                    // Afficher la LAR dans toutes les lignes
+                    if (!isNaN(lar)) {
+                        larCell.textContent = lar.toFixed(3);
+                    } else {
+                        larCell.textContent = '-';
+                    }
+                    
+                    if (!isNaN(lav)) {
+                        // Cote mesurée = Cote bleue - L.A.V
+                        const coteMesuree = coteBleue - lav;
+                        coteMesureeCell.textContent = coteMesuree.toFixed(3);
+                        
+                        // Écart en mètres
+                        const ecartMetres = coteMesuree - coteTheorique;
+                        
+                        // Séparer les écarts positifs et négatifs
+                        if (ecartMetres > 0) {
+                            ecartPositifCell.textContent = ecartMetres.toFixed(3);
+                            ecartNegatifCell.textContent = '-';
+                            ecartPositifCell.style.background = '#fecaca';
+                            ecartNegatifCell.style.background = '';
+                        } else if (ecartMetres < 0) {
+                            ecartPositifCell.textContent = '-';
+                            ecartNegatifCell.textContent = ecartMetres.toFixed(3);
+                            ecartNegatifCell.style.background = '#bfdbfe';
+                            ecartPositifCell.style.background = '';
+                        } else {
+                            ecartPositifCell.textContent = '0.000';
+                            ecartNegatifCell.textContent = '0.000';
+                            ecartPositifCell.style.background = '#dcfce7';
+                            ecartNegatifCell.style.background = '#dcfce7';
+                        }
+                        
+                        // Observation automatique
+                        if (Math.abs(ecartMetres) <= toleranceMetres) {
+                            observationCell.textContent = 'Côte conforme';
+                            observationCell.style.color = '#16a34a';
+                            row.classList.remove('ecart-positif', 'ecart-negatif');
+                            row.classList.add('ecart-ok');
+                        } else {
+                            observationCell.textContent = 'Côte non conforme';
+                            observationCell.style.color = '#dc2626';
+                            row.classList.remove('ecart-ok');
+                            if (ecartMetres > 0) {
+                                row.classList.add('ecart-positif');
+                                row.classList.remove('ecart-negatif');
+                            } else {
+                                row.classList.add('ecart-negatif');
+                                row.classList.remove('ecart-positif');
+                            }
+                        }
+                    } else {
+                        coteMesureeCell.textContent = '-';
+                        ecartPositifCell.textContent = '-';
+                        ecartNegatifCell.textContent = '-';
+                        observationCell.textContent = '-';
+                        observationCell.style.color = '#000';
+                        ecartPositifCell.style.background = '';
+                        ecartNegatifCell.style.background = '';
+                        row.classList.remove('ecart-positif', 'ecart-negatif', 'ecart-ok');
+                    }
+                });
+            }
+            
+            coteRepereInput.addEventListener('input', updateCoteBleue);
+            larInput.addEventListener('input', updateCoteBleue);
+            lavInputs.forEach(input => input.addEventListener('input', updateAllPoints));
+        }
+        
+        // Bouton pour ajouter une nouvelle station
+        document.getElementById('add-station-btn').addEventListener('click', () => {
+            stationCounter++;
+            addStation(stationCounter);
+        });
+        
+        // Bouton de bascule entre Assainissement et Terrassement - Vérifier si le bouton existe
+        const toggleReceptionTypeBtn = document.getElementById('toggle-reception-type');
+        if (toggleReceptionTypeBtn) {
+            toggleReceptionTypeBtn.addEventListener('click', () => {
+                const button = document.getElementById('toggle-reception-type');
+                
+                if (receptionMode === 'assainissement') {
+                    receptionMode = 'terrassement';
+                    button.innerHTML = 'Mode Assainissement';
+                    button.style.background = '#10b981';
+                } else {
+                    receptionMode = 'assainissement';
+                    button.innerHTML = 'Mode Terrassement';
+                    button.style.background = '';
+                }
+                
+                // Régénérer tous les tableaux avec le nouveau format
+                regenerateAllStations();
+            });
+        }
+        
+        // Fonction pour régénérer tous les tableaux selon le mode (exposée globalement)
+        window.regenerateAllStations = function() {
+            // Récupérer toutes les stations existantes
+            const stations = document.querySelectorAll('[id^="station-"]');
+            
+            stations.forEach(stationDiv => {
+                const stationNum = parseInt(stationDiv.id.replace('station-', ''));
+                const tbody = stationDiv.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                // Afficher/masquer le champ pente selon le mode
+                const penteContainer = document.getElementById(`pente-container-${stationNum}`);
+                if (penteContainer) {
+                    penteContainer.style.display = receptionMode === 'terrassement' ? 'block' : 'none';
+                }
+                
+                // Recréer l'en-tête du tableau
+                const table = stationDiv.querySelector('table');
+                const thead = table.querySelector('thead');
+                thead.innerHTML = generateTableHeader();
+                
+                // Recréer chaque ligne avec le nouveau format
+                rows.forEach(row => {
+                    const pkValue = row.getAttribute('data-pk');
+                    const coteName = row.getAttribute('data-cote-name');
+                    const coteTheorique = parseFloat(row.getAttribute('data-cote-theorique'));
+                    const isInterpolated = row.classList.contains('row-interpolated');
+                    
+                    // Récupérer les valeurs existantes si présentes
+                    const lavInput = row.querySelector('.lav-input');
+                    const lavValue = lavInput ? lavInput.value : '';
+                    
+                    // Récupérer la distance métrique
+                    const distanceMetrique = row.querySelector('.distance-metrique-cell')?.textContent || '0.000';
+                    // Récupérer le label de l'élément
+                    const elementLabel = row.getAttribute('data-element-label') || coteName || '';
+
+                    // Régénérer la ligne
+                    row.innerHTML = generateRowHTML(stationNum, pkValue, distanceMetrique, coteTheorique, isInterpolated, elementLabel);
+                    
+                    // Restaurer la valeur LAV si elle existait
+                    if (lavValue) {
+                        row.querySelector('.lav-input').value = lavValue;
+                    }
+                });
+                
+                // Réattacher les calculateurs (tolérance en mm -> mètres)
+                const toleranceMM = parseFloat(document.getElementById('tolerance').value) || 2;
+                const tolerance = toleranceMM / 1000;
+                attachStationCalculators(stationNum, tolerance);
+            });
+        }
+        
+        // Fonction globale pour calculer la cote depuis la distance
+        window.calculateCoteFromDistance = function(input) {
+            const row = input.closest('tr');
+            const stationNum = input.dataset.station;
+            const coteAxe = parseFloat(input.dataset.coteAxe);
+            const distance = parseFloat(input.value);
+            
+            if (isNaN(distance)) return;
+            
+            // Récupérer la pente de la station
+            const penteInput = document.querySelector(`.pente-station[data-station="${stationNum}"]`);
+            if (!penteInput) return;
+            
+            const pente = parseFloat(penteInput.value);
+            if (isNaN(pente)) {
+                alert('Veuillez définir la pente transversale en haut de la station');
+                return;
+            }
+            
+            // Calculer la nouvelle cote théorique : Z_point = Z_axe + (distance × pente/100)
+            const nouvelleCote = coteAxe + (distance * pente / 100);
+            
+            // Mettre à jour la cote théorique affichée
+            const coteTheoriqueCell = row.querySelector('.cote-theorique-cell');
+            if (coteTheoriqueCell) {
+                coteTheoriqueCell.textContent = nouvelleCote.toFixed(3);
+            }
+            
+            // Mettre à jour l'attribut data-theorique pour les calculs
+            const lavInput = row.querySelector('.lav-input');
+            if (lavInput) {
+                lavInput.dataset.theorique = nouvelleCote;
+            }
+            
+            // Recalculer les écarts (tolérance en mm -> mètres)
+            const toleranceMM = parseFloat(document.getElementById('tolerance').value) || 2;
+            const tolerance = toleranceMM / 1000;
+            recalculateRowEcarts(row, stationNum, tolerance);
+        };
+        
+        // Fonction globale pour recalculer toutes les cotes théoriques d'une station
+        window.recalculateAllCotes = function(stationNum) {
+            console.log('🔄 Recalcul de toutes les cotes pour la station', stationNum);
+            
+            // Récupérer la pente de la station
+            const penteInput = document.querySelector(`.pente-station[data-station="${stationNum}"]`);
+            if (!penteInput) {
+                alert('Erreur: impossible de trouver la pente de la station');
+                return;
+            }
+            
+            const pente = parseFloat(penteInput.value);
+            if (isNaN(pente)) {
+                alert('Veuillez d\'abord définir la pente transversale');
+                return;
+            }
+            
+            // Trouver toutes les lignes avec des distances à l'axe pour cette station
+            const stationDiv = document.getElementById(`station-${stationNum}`);
+            if (!stationDiv) return;
+            
+            const distInputs = stationDiv.querySelectorAll('.dist-axe-input');
+            let count = 0;
+            
+            distInputs.forEach(input => {
+                const distance = parseFloat(input.value);
+                if (isNaN(distance)) return;
+                
+                const coteAxe = parseFloat(input.dataset.coteAxe);
+                if (isNaN(coteAxe)) return;
+                
+                // Calculer la nouvelle cote théorique
+                const nouvelleCote = coteAxe + (distance * pente / 100);
+                
+                const row = input.closest('tr');
+                
+                // Mettre à jour la cote théorique affichée
+                const coteTheoriqueCell = row.querySelector('.cote-theorique-cell');
+                if (coteTheoriqueCell) {
+                    coteTheoriqueCell.textContent = nouvelleCote.toFixed(3);
+                }
+                
+                // Mettre à jour l'attribut data-theorique
+                const lavInput = row.querySelector('.lav-input');
+                if (lavInput) {
+                    lavInput.dataset.theorique = nouvelleCote;
+                }
+                
+                // Recalculer les écarts (tolérance en mm -> mètres)
+                const toleranceMM = parseFloat(document.getElementById('tolerance').value) || 2;
+                const tolerance = toleranceMM / 1000;
+                recalculateRowEcarts(row, stationNum, tolerance);
+                
+                count++;
+            });
+            
+            alert(`${count} cote(s) théorique(s) recalculée(s) avec succès`);
+        };
+        
+        // Fonction pour recalculer les écarts d'une ligne
+        function recalculateRowEcarts(row, stationNum, tolerance) {
+            const lavInput = row.querySelector('.lav-input');
+            if (!lavInput || !lavInput.value) return;
+            
+            const lav = parseFloat(lavInput.value);
+            if (isNaN(lav)) return;
+            
+            // Récupérer la cote bleue
+            const coteBleueInput = document.querySelector(`.cote-bleue-station[data-station="${stationNum}"]`);
+            if (!coteBleueInput) return;
+            
+            const coteBleue = parseFloat(coteBleueInput.value);
+            if (isNaN(coteBleue)) return;
+            
+            // Calculer cote mesurée
+            const coteMesuree = coteBleue - lav;
+            const coteMesureeCell = row.querySelector('.cote-mesuree-cell');
+            if (coteMesureeCell) {
+                coteMesureeCell.textContent = coteMesuree.toFixed(3);
+            }
+            
+            // Calculer écart
+            const coteTheorique = parseFloat(lavInput.dataset.theorique);
+            if (isNaN(coteTheorique)) return;
+            
+            const ecart = coteMesuree - coteTheorique;
+            const ecartPositifCell = row.querySelector('.ecart-positif-cell');
+            const ecartNegatifCell = row.querySelector('.ecart-negatif-cell');
+            
+            if (ecart > 0) {
+                ecartPositifCell.textContent = `+${ecart.toFixed(3)}`;
+                ecartNegatifCell.textContent = '-';
+                
+                if (Math.abs(ecart) > tolerance) {
+                    ecartPositifCell.style.background = '#fecaca';
+                    ecartPositifCell.style.fontWeight = 'bold';
+                } else {
+                    ecartPositifCell.style.background = '';
+                    ecartPositifCell.style.fontWeight = '';
+                }
+            } else if (ecart < 0) {
+                ecartPositifCell.textContent = '-';
+                ecartNegatifCell.textContent = ecart.toFixed(3);
+                
+                if (Math.abs(ecart) > tolerance) {
+                    ecartNegatifCell.style.background = '#bfdbfe';
+                    ecartNegatifCell.style.fontWeight = 'bold';
+                } else {
+                    ecartNegatifCell.style.background = '';
+                    ecartNegatifCell.style.fontWeight = '';
+                }
+            } else {
+                ecartPositifCell.textContent = '0.000';
+                ecartNegatifCell.textContent = '-';
+            }
+        }
+        
+        // Fonction globale pour ajouter un sous-point
+        window.addSubPoint = function(button, pkValue, coteAxe, distanceMetrique, stationNum) {
+            const row = button.closest('tr');
+            const tbody = row.parentNode;
+            
+            // Récupérer la pente de la station
+            const penteInput = document.querySelector(`.pente-station[data-station="${stationNum}"]`);
+            if (!penteInput) {
+                alert('Erreur: impossible de trouver la pente de la station');
+                return;
+            }
+            
+            const pente = parseFloat(penteInput.value);
+            if (isNaN(pente)) {
+                alert('Veuillez d\'abord définir la pente transversale en haut de la station');
+                return;
+            }
+            
+            // Demander la distance à l'axe
+            const distanceAxe = prompt('Entrez la distance à l\'axe (en mètres) :\n\nExemple: 3.5 pour 3,50 m', '0.000');
+            
+            if (distanceAxe === null) return; // Annulé
+            
+            const distance = parseFloat(distanceAxe);
+            if (isNaN(distance)) {
+                alert('Distance invalide. Veuillez entrer un nombre.');
+                return;
+            }
+            
+            // Calculer la nouvelle cote théorique : Z_point = Z_axe + (distance × pente/100)
+            const nouvelleCote = coteAxe + (distance * pente / 100);
+            
+            // Créer une nouvelle ligne pour le sous-point
+            const newRow = document.createElement('tr');
+            newRow.className = 'data-row sub-point-row';
+            newRow.style.background = 'var(--accent-orange-light)';
+            newRow.setAttribute('data-pk', pkValue);
+            newRow.setAttribute('data-cote-theorique', coteAxe);
+            
+            newRow.innerHTML = `
+                <td style="padding-left:20px; font-style: italic;">└ ${pkValue}</td>
+                <td class="distance-metrique-cell">${distanceMetrique}</td>
+                <td>
+                    <input type="number" step="0.001" class="dist-axe-input table-input" placeholder="0.000" 
+                           data-cote-axe="${coteAxe}" data-pk="${pkValue}" data-station="${stationNum}"
+                           value="${distance.toFixed(3)}"
+                           style="background: var(--accent-orange-light);"
+                           oninput="calculateCoteFromDistance(this)">
+                </td>
+                <td class="lar-cell computed">-</td>
+                <td>
+                    <input type="number" step="0.001" class="lav-input table-input" data-station="${stationNum}" 
+                           data-theorique="${nouvelleCote}" placeholder="1.234">
+                </td>
+                <td class="cote-mesuree-cell computed">-</td>
+                <td class="cote-theorique-cell cote-theorique-value">${nouvelleCote.toFixed(3)}</td>
+                <td class="ecart-positif-cell">-</td>
+                <td class="ecart-negatif-cell">-</td>
+                <td class="observation-cell">-</td>
+                <td>
+                    <button class="btn-mini" style="background: var(--accent-red-light); color: #dc2626; border-color: #fca5a5;"
+                            onclick="this.closest('tr').remove()" 
+                            title="Supprimer ce sous-point">×</button>
+                </td>
+            `;
+            
+            // Insérer après la ligne courante
+            row.parentNode.insertBefore(newRow, row.nextSibling);
+            
+            // Réattacher les événements (tolérance en mm -> mètres)
+            const toleranceMM = parseFloat(document.getElementById('tolerance').value) || 2;
+            const tolerance = toleranceMM / 1000;
+            attachStationCalculators(stationNum, tolerance);
+        };
+        
+        // Générer l'en-tête du tableau selon le mode (exposée globalement)
+        window.generateTableHeader = function() {
+            if (receptionMode === 'assainissement') {
+                return `
+                    <tr>
+                        <th rowspan="2">REPERE/PK</th>
+                        <th rowspan="2">ÉLÉMENT</th>
+                        <th rowspan="2">DISTANCES<br>(m)</th>
+                        <th colspan="2">LECTURES</th>
+                        <th colspan="2">COTES</th>
+                        <th colspan="2">ECARTS</th>
+                        <th rowspan="2">OBSERVATIONS</th>
+                    </tr>
+                    <tr>
+                        <th>LAR</th>
+                        <th>LAV</th>
+                        <th>Pratique</th>
+                        <th>Théorique</th>
+                        <th>+</th>
+                        <th>-</th>
+                    </tr>
+                `;
+            } else { // terrassement
+                return `
+                    <tr>
+                        <th rowspan="2">REPERE/PK</th>
+                        <th rowspan="2">ÉLÉMENT</th>
+                        <th rowspan="2">DISTANCES<br>(m)</th>
+                        <th rowspan="2">DIST. à l'axe<br>(m)</th>
+                        <th colspan="2">LECTURES</th>
+                        <th colspan="2">COTES</th>
+                        <th colspan="2">ECARTS</th>
+                        <th rowspan="2">OBSERVATIONS</th>
+                        <th rowspan="2">ACTION</th>
+                    </tr>
+                    <tr>
+                        <th>LAR</th>
+                        <th>LAV</th>
+                        <th>Pratique</th>
+                        <th>Théorique</th>
+                        <th>+</th>
+                        <th>-</th>
+                    </tr>
+                `;
+            }
+        }
+        
+        // Générer le HTML d'une ligne selon le mode (exposée globalement)
+        window.generateRowHTML = function(stationNum, pkValue, distanceMetrique, coteTheorique, isInterpolated, elementLabel) {
+            const interpolatedMarker = isInterpolated ? ' <span class="interpolated-badge">INT</span>' : '';
+            const elemLabel = elementLabel || '';
+
+            if (receptionMode === 'assainissement') {
+                return `
+                    <td>${pkValue}${interpolatedMarker}</td>
+                    <td class="element-label-cell" style="font-size:0.78rem; color:var(--text-secondary); white-space:nowrap;">${elemLabel}</td>
+                    <td class="distance-metrique-cell">${distanceMetrique}</td>
+                    <td class="lar-cell computed">-</td>
+                    <td>
+                        <input type="number" step="0.001" class="lav-input table-input" data-station="${stationNum}"
+                               data-theorique="${coteTheorique}" placeholder="1.234">
+                    </td>
+                    <td class="cote-mesuree-cell computed">-</td>
+                    <td class="cote-theorique-value">${coteTheorique.toFixed(3)}</td>
+                    <td class="ecart-positif-cell">-</td>
+                    <td class="ecart-negatif-cell">-</td>
+                    <td class="observation-cell">-</td>
+                `;
+            } else { // terrassement
+                return `
+                    <td>${pkValue}${interpolatedMarker}</td>
+                    <td class="element-label-cell" style="font-size:0.78rem; color:var(--text-secondary); white-space:nowrap;">${elemLabel}</td>
+                    <td class="distance-metrique-cell">${distanceMetrique}</td>
+                    <td>
+                        <input type="number" step="0.001" class="dist-axe-input table-input" placeholder="0.000"
+                               data-cote-axe="${coteTheorique}" data-pk="${pkValue}" data-station="${stationNum}"
+                               oninput="calculateCoteFromDistance(this)">
+                    </td>
+                    <td class="lar-cell computed">-</td>
+                    <td>
+                        <input type="number" step="0.001" class="lav-input table-input" data-station="${stationNum}"
+                               data-theorique="${coteTheorique}" placeholder="1.234">
+                    </td>
+                    <td class="cote-mesuree-cell computed">-</td>
+                    <td class="cote-theorique-cell cote-theorique-value">${coteTheorique.toFixed(3)}</td>
+                    <td class="ecart-positif-cell">-</td>
+                    <td class="ecart-negatif-cell">-</td>
+                    <td class="observation-cell">-</td>
+                    <td>
+                        <button class="btn-mini btn-add-sub" onclick="addSubPoint(this, '${pkValue}', ${coteTheorique}, '${distanceMetrique}', ${stationNum})"
+                                title="Ajouter un sous-point">+</button>
+                    </td>
+                `;
+            }
+        }
+        
+        // Mettre à jour la tolérance quand elle change
+        document.getElementById('tolerance').addEventListener('input', function() {
+            const toleranceDisplay = document.getElementById('display-tolerance');
+            if (toleranceDisplay) {
+                toleranceDisplay.textContent = this.value;
+            }
+        });
+        
+        // Supprimer une station
+        window.removeStation = function(stationNum) {
+            const station = document.getElementById(`station-${stationNum}`);
+            if (station && confirm('Êtes-vous sûr de vouloir supprimer cette station ?')) {
+                station.remove();
+            }
+        };
+        
+        // Export PDF - Génère une fiche de réception professionnelle
+        document.getElementById('export-reception-pdf').addEventListener('click', async () => {
+            // Collecter toutes les données de la fiche
+            const receptionData = collectReceptionDataForPDF();
+
+            if (!receptionData) {
+                alert('Aucune donnée à exporter. Veuillez générer la fiche de réception d\'abord.');
+                return;
+            }
+
+            try {
+                // Afficher un indicateur de chargement
+                const btn = document.getElementById('export-reception-pdf');
+                const originalText = btn.textContent;
+                btn.textContent = 'Génération en cours...';
+                btn.disabled = true;
+
+                // Appeler l'API pour générer le PDF
+                const response = await fetch('/api/generate-pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(receptionData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la génération du PDF');
+                }
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (contentType && contentType.includes('application/pdf')) {
+                    // Télécharger le PDF
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Fiche_Reception_${new Date().toISOString().slice(0,10)}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                } else {
+                    // Ouvrir le HTML dans une nouvelle fenêtre pour impression
+                    const htmlContent = await response.text();
+                    const printWindow = window.open('', '_blank');
+                    printWindow.document.write(htmlContent);
+                    printWindow.document.close();
+                    setTimeout(() => {
+                        printWindow.print();
+                    }, 500);
+                }
+
+                btn.textContent = originalText;
+                btn.disabled = false;
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur lors de la génération du PDF: ' + error.message);
+                const btn = document.getElementById('export-reception-pdf');
+                btn.textContent = 'Imprimer / PDF';
+                btn.disabled = false;
+            }
+        });
+
+        // Fonction pour collecter toutes les données de la fiche de réception
+        function collectReceptionDataForPDF() {
+            // Vérifier qu'il y a des stations
+            const stationsContainer = document.getElementById('stations-container');
+            console.log('Container stations:', stationsContainer);
+            console.log('Enfants du container:', stationsContainer?.children?.length || 0);
+
+            if (!stationsContainer || stationsContainer.children.length === 0) {
+                console.log('Pas de stations trouvées dans le container');
+                return null;
+            }
+
+            // Informations générales
+            const data = {
+                projet: document.getElementById('display-projet')?.textContent || '',
+                date: document.getElementById('display-date')?.textContent || '',
+                operateur: document.getElementById('display-operateur')?.textContent || '',
+                section: document.getElementById('display-sheet')?.textContent || '',
+                meteo: document.getElementById('display-meteo')?.textContent || '',
+                tolerance: document.getElementById('display-tolerance')?.textContent || '2',
+                mode: receptionMode || 'assainissement',
+
+                // Signatures - informations textuelles
+                // Lire directement depuis les inputs (toujours à jour, même si la fiche n'a pas été regénérée)
+                controleur_nom: document.getElementById('controleur-nom')?.value || '',
+                controleur_fonction: document.getElementById('controleur-fonction')?.value || '',
+                controleur_date: document.getElementById('controleur-date')?.value || '',
+                entreprise_nom: document.getElementById('entreprise-nom')?.value || '',
+                entreprise_societe: document.getElementById('entreprise-societe')?.value || '',
+                entreprise_date: document.getElementById('entreprise-date')?.value || '',
+                
+                // Signatures dessinées en base64
+                signature_controleur: getSignatureBase64('controleur'),
+                signature_entreprise: getSignatureBase64('entreprise'),
+
+                stations: []
+            };
+
+            // Parcourir toutes les stations (classe .station-card)
+            const stationElements = stationsContainer.querySelectorAll('.station-card');
+            console.log('Stations trouvées:', stationElements.length);
+
+            stationElements.forEach((stationEl, index) => {
+                const stationNum = index + 1;
+
+                // Paramètres de la station
+                const coteRepereInput = stationEl.querySelector('.cote-repere-station');
+                const larInput = stationEl.querySelector('.lar-station');
+                const coteBleueInput = stationEl.querySelector('.cote-bleue-station');
+                const penteInput = stationEl.querySelector('.pente-station');
+
+                const station = {
+                    numero: stationNum,
+                    nom: stationEl.querySelector('.station-title')?.textContent || `Station ${stationNum}`,
+                    cote_repere: coteRepereInput?.value || '',
+                    lar: larInput?.value || '',
+                    cote_bleue: coteBleueInput?.value || '',
+                    pente: penteInput?.value || '',
+                    rows: []
+                };
+
+                // Parcourir les lignes du tableau de la station
+                const tbody = stationEl.querySelector('tbody');
+                if (tbody) {
+                    const rows = tbody.querySelectorAll('tr.data-row');
+                    console.log(`Station ${stationNum}: ${rows.length} lignes de données`);
+
+                    rows.forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        const lavInput = row.querySelector('.lav-input');
+                        const lavVal = lavInput?.value || '';
+                        const isInterpolatedRow = row.classList.contains('row-interpolated');
+
+                        // Exporter uniquement les lignes avec une valeur LAV
+                        if (lavVal.trim() !== '') {
+                            // Structure assainissement: PK, ÉLÉMENT, Distance, LAR, LAV, CoteMes, CoteTheo, Ecart+, Ecart-, Obs
+                            // Structure terrassement:  PK, ÉLÉMENT, Distance, DistAxe, LAR, LAV, CoteMes, CoteTheo, Ecart+, Ecart-, Obs, Action
+
+                            const isTerrass = cells.length >= 11;
+                            let pk, elementLabel, distance, lar, coteMes, coteTheo, ecartPos, ecartNeg, obs;
+
+                            if (isTerrass) {
+                                pk = cells[0]?.textContent?.trim() || '';
+                                elementLabel = cells[1]?.textContent?.trim() || '';
+                                distance = cells[2]?.textContent?.trim() || '';
+                                lar = cells[4]?.textContent?.trim() || '';
+                                coteMes = cells[6]?.textContent?.trim() || '';
+                                coteTheo = cells[7]?.textContent?.trim() || '';
+                                ecartPos = cells[8]?.textContent?.trim() || '';
+                                ecartNeg = cells[9]?.textContent?.trim() || '';
+                                obs = cells[10]?.textContent?.trim() || '';
+                            } else {
+                                pk = cells[0]?.textContent?.trim() || '';
+                                elementLabel = cells[1]?.textContent?.trim() || '';
+                                distance = cells[2]?.textContent?.trim() || '';
+                                lar = cells[3]?.textContent?.trim() || '';
+                                coteMes = cells[5]?.textContent?.trim() || '';
+                                coteTheo = cells[6]?.textContent?.trim() || '';
+                                ecartPos = cells[7]?.textContent?.trim() || '';
+                                ecartNeg = cells[8]?.textContent?.trim() || '';
+                                obs = cells[9]?.textContent?.trim() || '';
+                            }
+
+                            // Déterminer le statut via la classe CSS de la ligne
+                            // (ecart-ok, ecart-positif, ecart-negatif sont appliqués sur le <tr>)
+                            let ecartStatus = 'ok';
+                            if (row.classList.contains('ecart-positif') || row.classList.contains('ecart-negatif')) {
+                                ecartStatus = 'error';
+                            }
+
+                            // Combiner les écarts
+                            let ecart = '-';
+                            if (ecartPos && ecartPos !== '-') {
+                                ecart = '+' + ecartPos;
+                            } else if (ecartNeg && ecartNeg !== '-') {
+                                ecart = ecartNeg; // ecartNeg contient déjà le signe '-'
+                            }
+
+                            station.rows.push({
+                                pk: pk,
+                                element_label: elementLabel || '',
+                                cote_label: distance,
+                                cote_theorique: coteTheo,
+                                cote_repere: lar,
+                                lav: lavVal,
+                                lai: '-',
+                                cote_mesuree: coteMes,
+                                cote_pratique: coteMes,
+                                ecart: ecart,
+                                ecart_status: ecartStatus,
+                                observation: obs !== '-' ? obs : '',
+                                is_interpolated: isInterpolatedRow
+                            });
+                        }
+                    });
+                }
+
+                // Ajouter la station seulement si elle a des données
+                if (station.rows.length > 0) {
+                    data.stations.push(station);
+                }
+            });
+
+            return data.stations.length > 0 ? data : null;
+        }
+        
+        document.getElementById('export-reception-excel').addEventListener('click', () => {
+            exportReceptionExcel();
+        });
+        
+        // Export Excel - Exporte uniquement les lignes remplies
+        function exportReceptionExcel() {
+            const rows = document.querySelectorAll('#reception-tbody tr');
+            if (rows.length === 0) {
+                alert('Aucune fiche générée à exporter');
+                return;
+            }
+            
+            let csvContent = '\ufeff'; // BOM UTF-8
+            
+            // === INFORMATIONS PERSONNELLES ET DU CONTRÔLE ===
+            csvContent += `FICHE DE RÉCEPTION TOPOGRAPHIQUE\n\n`;
+            csvContent += `INFORMATIONS DU CONTRÔLE\n`;
+            csvContent += `Projet;${document.getElementById('display-projet').textContent}\n`;
+            csvContent += `Date;${document.getElementById('display-date').textContent}\n`;
+            csvContent += `Opérateur;${document.getElementById('display-operateur').textContent}\n`;
+            csvContent += `Partie chaussée;${document.getElementById('display-sheet').textContent}\n`;
+            csvContent += `Météo;${document.getElementById('display-meteo').textContent}\n\n`;
+            
+            // === INFORMATIONS DES SIGNATAIRES ===
+            csvContent += `INFORMATIONS DES SIGNATAIRES\n`;
+            csvContent += `\n`;
+            csvContent += `CONTRÔLEUR\n`;
+            csvContent += `Nom;${document.getElementById('display-controleur-nom').textContent}\n`;
+            csvContent += `Fonction;${document.getElementById('display-controleur-fonction').textContent}\n`;
+            csvContent += `Date de signature;${document.getElementById('display-controleur-date').textContent}\n`;
+            csvContent += `\n`;
+            csvContent += `ENTREPRISE\n`;
+            csvContent += `Nom;${document.getElementById('display-entreprise-nom').textContent}\n`;
+            csvContent += `Société;${document.getElementById('display-entreprise-societe').textContent}\n`;
+            csvContent += `Date de signature;${document.getElementById('display-entreprise-date').textContent}\n\n`;
+            
+            // === RELEVÉ TOPOGRAPHIQUE ===
+            csvContent += `RELEVÉ TOPOGRAPHIQUE\n`;
+            csvContent += `PK;CÔTE;COTES Théoriques;Côte du repère;L.A.V;L.A.I;Côte mesurée;COTES Pratiques;ÉCART (cm);OBSERVATION\n`;
+            
+            // === FILTRER ET EXPORTER UNIQUEMENT LES LIGNES REMPLIES ===
+            let exportedRowsCount = 0;
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const inputs = row.querySelectorAll('input');
+                
+                // Vérifier si au moins un champ a été rempli
+                const coteRepere = inputs[0].value || '';
+                const lav = inputs[1].value || '';
+                const lai = inputs[2].value || '';
+                const observation = inputs[3].value || '';
+                
+                // Si au moins un des champs de saisie est rempli, on exporte cette ligne
+                const isRowFilled = coteRepere.trim() !== '' || 
+                                   lav.trim() !== '' || 
+                                   lai.trim() !== '' || 
+                                   observation.trim() !== '';
+                
+                if (isRowFilled) {
+                    const pk = cells[0].textContent;
+                    const cote = cells[1].textContent;
+                    const theorique = cells[2].textContent;
+                    const coteMesuree = cells[6].textContent;
+                    const cotePratique = cells[7].textContent;
+                    const ecart = cells[8].textContent;
+                    
+                    csvContent += `"${pk}";"${cote}";"${theorique}";"${coteRepere}";"${lav}";"${lai}";"${coteMesuree}";"${cotePratique}";"${ecart}";"${observation}"\n`;
+                    exportedRowsCount++;
+                }
+            });
+            
+            // Vérifier qu'il y a au moins des lignes à exporter
+            if (exportedRowsCount === 0) {
+                alert('Aucune ligne remplie à exporter. Veuillez remplir au moins une ligne du relevé topographique.');
+                return;
+            }
+            
+            // Télécharger le fichier
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `fiche_reception_${timestamp}.csv`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            
+            // Message de confirmation
+            alert(`Export réussi ! ${exportedRowsCount} ligne(s) remplie(s) exportée(s).`);
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('loading-message').style.display = 'none';
+        }
+        
+        // ========================================
+        // GESTION DES DONNÉES MANUELLES
+        // ========================================
+        
+        // Gestionnaires pour la sélection manuelle
+        function setupManualSelectionHandlers() {
+            // Boutons tout sélectionner / désélectionner pour les PK
+            const selectAllManualPK = document.getElementById('select-all-manual-pk');
+            if (selectAllManualPK) {
+                selectAllManualPK.addEventListener('click', () => {
+                    document.querySelectorAll('#manual-pk-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = true);
+                });
+            }
+            
+            const deselectAllManualPK = document.getElementById('deselect-all-manual-pk');
+            if (deselectAllManualPK) {
+                deselectAllManualPK.addEventListener('click', () => {
+                    document.querySelectorAll('#manual-pk-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+                });
+            }
+            
+            // Boutons tout sélectionner / désélectionner pour les côtes
+            const selectAllManualCotes = document.getElementById('select-all-manual-cotes');
+            if (selectAllManualCotes) {
+                selectAllManualCotes.addEventListener('click', () => {
+                    document.querySelectorAll('#manual-cotes-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = true);
+                });
+            }
+            
+            const deselectAllManualCotes = document.getElementById('deselect-all-manual-cotes');
+            if (deselectAllManualCotes) {
+                deselectAllManualCotes.addEventListener('click', () => {
+                    document.querySelectorAll('#manual-cotes-checkboxes input[type="checkbox"]').forEach(cb => cb.checked = false);
+                });
+            }
+            
+            // Bouton générer la fiche de réception depuis données manuelles
+            const generateManualBtn = document.getElementById('generate-manual-reception');
+            if (generateManualBtn) {
+                console.log('Event listener ajouté au bouton generate-manual-reception');
+                generateManualBtn.addEventListener('click', () => {
+                    console.log('Bouton générer (manuel) cliqué!');
+                    generateManualReceptionSheet();
+                });
+            } else {
+                console.error('Bouton generate-manual-reception NON TROUVÉ!');
+            }
+        }
+        
+        // Générer la fiche de réception depuis les données manuelles
+        function generateManualReceptionSheet() {
+            console.log('=== generateManualReceptionSheet appelée ===');
+            console.log('manualReceptionData au départ:', manualReceptionData);
+            
+            // Recharger les données depuis sessionStorage si nécessaires
+            if (!manualReceptionData) {
+                console.log('manualReceptionData est null, tentative de chargement depuis sessionStorage...');
+                const storedData = sessionStorage.getItem('receptionData');
+                console.log('Données dans sessionStorage:', storedData ? 'présentes' : 'absentes');
+                if (storedData) {
+                    try {
+                        manualReceptionData = JSON.parse(storedData);
+                        console.log('Données rechargées depuis sessionStorage:', manualReceptionData);
+                    } catch (e) {
+                        console.error('Erreur parsing données manuelles:', e);
+                        alert('Erreur lors du chargement des données: ' + e.message);
+                        return;
+                    }
+                }
+            }
+            
+            if (!manualReceptionData) {
+                console.error('Aucune donnée manuelle disponible');
+                alert('Aucune donnée manuelle disponible. Veuillez d\'abord importer des points depuis l\'éditeur et la page Points kilométriques.');
+                return;
+            }
+            
+            console.log('Données manuelles disponibles:', manualReceptionData);
+            
+            // Récupérer les PK et côtes sélectionnés
+            const pkCheckboxes = document.querySelectorAll('#manual-pk-checkboxes input[type="checkbox"]:checked');
+            const coteCheckboxes = document.querySelectorAll('#manual-cotes-checkboxes input[type="checkbox"]:checked');
+            
+            console.log('Checkboxes PK trouvées:', pkCheckboxes.length);
+            console.log('Checkboxes côtes trouvées:', coteCheckboxes.length);
+            
+            const selectedPKIndices = [];
+            pkCheckboxes.forEach(cb => {
+                selectedPKIndices.push(parseInt(cb.value));
+            });
+            
+            const selectedCoteIndices = [];
+            coteCheckboxes.forEach(cb => {
+                selectedCoteIndices.push(parseInt(cb.value));
+            });
+            
+            console.log('PK indices sélectionnés:', selectedPKIndices);
+            console.log('Côte indices sélectionnés:', selectedCoteIndices);
+            
+            if (selectedPKIndices.length === 0) {
+                alert('Veuillez sélectionner au moins un PK');
+                return;
+            }
+            
+            if (selectedCoteIndices.length === 0) {
+                alert('Veuillez sélectionner au moins une côte');
+                return;
+            }
+            
+            // Adapter les données au format attendu par generateReceptionSheet
+            const selectedPKs = selectedPKIndices.map(i => ({
+                value: i,
+                checked: true
+            }));
+            
+            const selectedCotes = selectedCoteIndices.map(i => ({
+                value: manualReceptionData.cotes[i].name,
+                checked: true
+            }));
+            
+            // Créer un objet currentSheetData compatible
+            currentSheetData = {
+                pks: manualReceptionData.pks,
+                data: [],
+                cote_columns: manualReceptionData.cotes.map(c => c.name)
+            };
+            
+            // Créer les données pour chaque PK
+            manualReceptionData.pks.forEach((pk, pkIndex) => {
+                const rowData = {};
+                manualReceptionData.cotes.forEach(cote => {
+                    // Récupérer les coordonnées recalculées si disponibles
+                    let zValue = cote.z;
+                    if (manualReceptionData.recalculated && manualReceptionData.recalculated[pk]) {
+                        const recalcData = manualReceptionData.recalculated[pk].find(r => r.id === cote.id);
+                        if (recalcData) {
+                            zValue = recalcData.z_recalcule;
+                        }
+                    }
+                    rowData[cote.name] = zValue;
+                });
+                currentSheetData.data.push(rowData);
+            });
+            
+            // Mettre à jour selectedSheet pour l'affichage
+            selectedSheet = 'Saisie manuelle';
+            
+            console.log('Données adaptées pour generateReceptionSheet:', {
+                selectedPKs: selectedPKs,
+                selectedCotes: selectedCotes,
+                currentSheetData: currentSheetData
+            });
+            
+            // Utiliser la fonction generateReceptionSheet existante
+            try {
+                generateReceptionSheet(selectedPKs, selectedCotes);
+            } catch (e) {
+                console.error('Erreur lors de generateReceptionSheet:', e);
+                alert('Erreur lors de la génération: ' + e.message);
+            }
+        }
+        
+        // Initialiser les gestionnaires manuels
+        try {
+            setupManualSelectionHandlers();
+            console.log('setupManualSelectionHandlers exécuté avec succès');
+        } catch (e) {
+            console.error('Erreur dans setupManualSelectionHandlers:', e);
+        }
+
+        // ========================================
+        // SECTION RÉSULTATS — VISUALISATION
+        // ========================================
+
+        const ROW_COLORS = {
+            ok:           { bg: '#eff6ff', border: '#bfdbfe', text: '#1e40af', badge: '#dbeafe' },
+            warning:      { bg: '#fffbeb', border: '#fde68a', text: '#78350f', badge: '#fef3c7' },
+            error:        { bg: '#fef2f2', border: '#fecaca', text: '#7f1d1d', badge: '#fee2e2' },
+            interpolated: { bg: '#f8fafc', border: '#e2e8f0', text: '#64748b', badge: '#f1f5f9' }
+        };
+
+        document.getElementById('visualiser-resultats-btn').addEventListener('click', () => {
+            const data = collectReceptionDataForPDF();
+            if (!data) {
+                alert('Générez d\'abord la fiche de réception en saisissant des mesures.');
+                return;
+            }
+            renderResultatsSection(data);
+            document.getElementById('resultats-section').style.display = 'block';
+            document.getElementById('resultats-section').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        function renderResultatsSection(data) {
+            // --- Calcul des stats globales ---
+            let total = 0, conformes = 0, nonConformes = 0, warnings = 0, interpolated = 0;
+            data.stations.forEach(st => {
+                st.rows.forEach(row => {
+                    total++;
+                    if (row.is_interpolated) { interpolated++; return; }
+                    if (row.ecart_status === 'ok') conformes++;
+                    else if (row.ecart_status === 'warning') { warnings++; nonConformes++; }
+                    else nonConformes++;
+                });
+            });
+            const pct = total > 0 ? Math.round((conformes / (total - interpolated || 1)) * 100) : 0;
+            const pctColor = pct >= 95 ? '#166534' : pct >= 80 ? '#92400e' : '#7f1d1d';
+            const pctBg   = pct >= 95 ? '#dcfce7'  : pct >= 80 ? '#fef9c3'  : '#fee2e2';
+
+            // --- Badges dans le header ---
+            const modeBadgeColor = data.mode === 'terrassement'
+                ? 'background:#fef3c7;color:#d97706;border:1px solid #fcd34d;'
+                : 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;';
+            document.getElementById('resultats-badges').innerHTML = `
+                <span style="padding:4px 12px;border-radius:4px;font-size:0.8rem;font-weight:600;text-transform:uppercase;${modeBadgeColor}">${data.mode}</span>
+                <span style="padding:4px 12px;border-radius:4px;font-size:0.85rem;font-weight:700;background:${pctBg};color:${pctColor};">${pct}% conformes</span>
+            `;
+
+            // --- Stats ---
+            const statsHTML = [
+                { label: 'Points mesurés', val: total, col: '#1e3a5f', bg: '#eff6ff' },
+                { label: 'Conformité', val: pct + '%', col: pctColor, bg: pctBg },
+                { label: 'Conformes', val: conformes, col: '#166534', bg: '#dcfce7' },
+                { label: 'Non conformes', val: nonConformes, col: '#7f1d1d', bg: '#fee2e2' }
+            ].map(s => `
+                <div style="text-align:center;padding:16px;background:${s.bg};border-radius:8px;">
+                    <div style="font-size:1.6rem;font-weight:800;color:${s.col};">${s.val}</div>
+                    <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;">${s.label}</div>
+                </div>
+            `).join('');
+            document.getElementById('resultats-stats').innerHTML = statsHTML;
+
+            // --- Tableaux par station ---
+            let tablesHTML = '';
+            data.stations.forEach((station, idx) => {
+                const stationConformes = station.rows.filter(r => !r.is_interpolated && r.ecart_status === 'ok').length;
+                const stationTotal     = station.rows.filter(r => !r.is_interpolated).length;
+                const stPct = stationTotal > 0 ? Math.round(stationConformes / stationTotal * 100) : 0;
+                const stColor = stPct >= 95 ? '#166534' : stPct >= 80 ? '#92400e' : '#7f1d1d';
+                const stBg    = stPct >= 95 ? '#dcfce7'  : stPct >= 80 ? '#fef9c3'  : '#fee2e2';
+
+                let rows = station.rows.map(row => {
+                    const type = row.is_interpolated ? 'interpolated' : (row.ecart_status || 'ok');
+                    const c = ROW_COLORS[type] || ROW_COLORS.ok;
+                    const interp = row.is_interpolated ? '<span style="font-size:0.7rem;background:#e2e8f0;color:#64748b;padding:1px 5px;border-radius:3px;margin-left:4px;">INT</span>' : '';
+                    const statusIcon = row.is_interpolated ? '◦' : (row.ecart_status === 'ok' ? '✓' : row.ecart_status === 'warning' ? '⚠' : '✗');
+                    const statusColor = row.is_interpolated ? '#94a3b8' : (row.ecart_status === 'ok' ? '#16a34a' : row.ecart_status === 'warning' ? '#d97706' : '#dc2626');
+                    return `<tr style="background:${c.bg};border-left:3px solid ${c.border};">
+                        <td style="font-weight:600;color:${c.text};padding:7px 10px;">${row.pk || '-'}${interp}</td>
+                        <td style="font-size:0.8rem;color:#475569;padding:7px 10px;">${row.element_label || ''}</td>
+                        <td style="text-align:center;padding:7px 10px;">${row.cote_label || '-'}</td>
+                        <td style="text-align:center;padding:7px 10px;">${row.lav || '-'}</td>
+                        <td style="text-align:center;font-weight:600;padding:7px 10px;">${row.cote_mesuree || '-'}</td>
+                        <td style="text-align:center;padding:7px 10px;">${row.cote_theorique || '-'}</td>
+                        <td style="text-align:center;font-weight:700;color:${statusColor};padding:7px 10px;">${row.ecart || '-'}</td>
+                        <td style="text-align:center;font-size:1.1rem;color:${statusColor};padding:7px 10px;">${statusIcon}</td>
+                        <td style="font-size:0.8rem;color:#64748b;padding:7px 10px;">${row.observation || ''}</td>
+                    </tr>`;
+                }).join('');
+
+                tablesHTML += `
+                <div style="margin-bottom:24px;border:1px solid var(--border-color);border-radius:10px;overflow:hidden;">
+                    <div style="background:linear-gradient(135deg,#1e3a5f 0%,#0f2744 100%);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;">
+                        <span style="color:white;font-weight:700;">${station.nom || 'Station ' + (idx+1)}</span>
+                        <span style="padding:3px 10px;border-radius:4px;font-size:0.82rem;font-weight:700;background:${stBg};color:${stColor};">${stPct}% (${stationConformes}/${stationTotal})</span>
+                    </div>
+                    <div style="padding:8px 12px;background:var(--surface-2);font-size:0.82rem;color:var(--text-secondary);display:flex;gap:16px;">
+                        <span>Côte repère : <strong>${station.cote_repere || '-'}</strong></span>
+                        <span>LAR : <strong>${station.lar || '-'}</strong></span>
+                        <span>Cote bleue : <strong>${station.cote_bleue || '-'}</strong></span>
+                        ${station.pente ? '<span>Pente : <strong>' + station.pente + '%</strong></span>' : ''}
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                            <thead>
+                                <tr style="background:#f1f5f9;">
+                                    <th style="padding:8px 10px;text-align:left;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">PK</th>
+                                    <th style="padding:8px 10px;text-align:left;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Élément</th>
+                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Distance</th>
+                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">LAV</th>
+                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Mesurée</th>
+                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Théorique</th>
+                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Écart</th>
+                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Statut</th>
+                                    <th style="padding:8px 10px;text-align:left;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Observation</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+            });
+
+            // Légende
+            tablesHTML += `
+            <div style="display:flex;gap:16px;align-items:center;font-size:0.78rem;color:var(--text-secondary);margin-top:4px;flex-wrap:wrap;">
+                <span style="font-weight:600;">Légende :</span>
+                <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;border-radius:2px;background:#eff6ff;border:1px solid #bfdbfe;display:inline-block;"></span> Conforme</span>
+                <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;border-radius:2px;background:#fffbeb;border:1px solid #fde68a;display:inline-block;"></span> Avertissement</span>
+                <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;border-radius:2px;background:#fef2f2;border:1px solid #fecaca;display:inline-block;"></span> Non conforme</span>
+                <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;border-radius:2px;background:#f8fafc;border:1px solid #e2e8f0;display:inline-block;"></span> Interpolé (INT)</span>
+            </div>`;
+
+            document.getElementById('resultats-tables').innerHTML = tablesHTML;
+        }
+
+        // Export PDF depuis la section résultats
+        document.getElementById('export-resultats-pdf-btn').addEventListener('click', async () => {
+            const data = collectReceptionDataForPDF();
+            if (!data) { alert('Aucune donnée à exporter.'); return; }
+            data.observations_generales = document.getElementById('observations-generales').value;
+
+            const btn = document.getElementById('export-resultats-pdf-btn');
+            const origText = btn.textContent;
+            btn.textContent = 'Génération en cours...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/generate-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.headers.get('Content-Type')?.includes('application/pdf')) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Fiche_Reception_${new Date().toISOString().split('T')[0]}.pdf`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    const html = await response.text();
+                    const w = window.open('', '_blank');
+                    w.document.write(html);
+                    w.document.close();
+                    w.print();
+                }
+            } catch (e) {
+                alert('Erreur lors de l\'export PDF : ' + e.message);
+            } finally {
+                btn.textContent = origText;
+                btn.disabled = false;
+            }
+        });
+
+        // Impression depuis la section résultats
+        document.getElementById('print-resultats-btn').addEventListener('click', async () => {
+            const data = collectReceptionDataForPDF();
+            if (!data) { alert('Aucune donnée à imprimer.'); return; }
+            data.observations_generales = document.getElementById('observations-generales').value;
+
+            try {
+                const response = await fetch('/api/preview-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const html = await response.text();
+                const w = window.open('', '_blank');
+                w.document.write(html);
+                w.document.close();
+                setTimeout(() => w.print(), 500);
+            } catch (e) {
+                alert('Erreur : ' + e.message);
+            }
+        });
+
+    })();
+    </script>
+    
+    <!-- Barre de navigation workflow -->
+    <div class="workflow-nav-bar">
+        <div class="workflow-nav-container">
+            <a href="/points-kilometriques" class="workflow-nav-item prev">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Phase 2 : Points km</span>
+            </a>
+            <div class="workflow-nav-progress">
+                <div class="progress-step completed">
+                    <span class="step-dot"></span>
+                    <span class="step-label">Phase 1</span>
+                </div>
+                <div class="progress-line completed"></div>
+                <div class="progress-step completed">
+                    <span class="step-dot"></span>
+                    <span class="step-label">Phase 2</span>
+                </div>
+                <div class="progress-line completed"></div>
+                <div class="progress-step active">
+                    <span class="step-dot"></span>
+                    <span class="step-label">Réception topographique</span>
+                </div>
+            </div>
+            <a href="/" class="workflow-nav-item home">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Retour à l'accueil</span>
+            </a>
+        </div>
+    </div>
+    <style>
+    .workflow-nav-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        padding: 16px 32px;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+        z-index: 100;
+    }
+    .workflow-nav-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+    }
+    .workflow-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 8px;
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .workflow-nav-item:hover {
+        background: rgba(255,255,255,0.2);
+        transform: translateY(-2px);
+    }
+    .workflow-nav-item.home {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        border-color: transparent;
+    }
+    .workflow-nav-item.home:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    .workflow-nav-progress {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        justify-content: center;
+    }
+    .progress-step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .step-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.3);
+        border: 2px solid rgba(255,255,255,0.5);
+    }
+    .progress-step.active .step-dot {
+        background: #10b981;
+        border-color: #10b981;
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+    .progress-step.completed .step-dot {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+    .step-label {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .progress-step.active .step-label {
+        color: white;
+        font-weight: 600;
+    }
+    .progress-line {
+        width: 40px;
+        height: 2px;
+        background: rgba(255,255,255,0.3);
+    }
+    .progress-line.completed {
+        background: #3b82f6;
+    }
+    @media (max-width: 900px) {
+        .workflow-nav-progress {
+            display: none;
+        }
+        .workflow-nav-bar {
+            padding: 12px 16px;
+        }
+        .workflow-nav-item span {
+            display: none;
+        }
+        .workflow-nav-item {
+            padding: 12px;
+        }
+    }
+    @media print {
+        .workflow-nav-bar {
+            display: none !important;
+        }
+    }
+    body {
+        padding-bottom: 80px;
+    }
+    </style>
+</body>
+</html>

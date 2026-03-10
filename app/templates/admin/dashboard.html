@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration — PTT BTP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body { font-family:'Inter',sans-serif; background:#f0f4f8; margin:0; }
+        .admin-header {
+            background:#1e3a5f; color:#fff; padding:1rem 2rem;
+            display:flex; align-items:center; justify-content:space-between;
+        }
+        .admin-header h1 { margin:0; font-size:1.3rem; }
+        .admin-header a  { color:#93c5fd; text-decoration:none; font-size:.9rem; }
+        .admin-body { padding:2rem; max-width:1100px; margin:0 auto; }
+        .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+        .card { background:#fff; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.08); padding:1.5rem; }
+        .card h2 { margin:0 0 1rem; font-size:1.1rem; color:#1e3a5f; display:flex; justify-content:space-between; align-items:center; }
+        table { width:100%; border-collapse:collapse; font-size:.88rem; }
+        th { text-align:left; padding:.5rem .75rem; background:#f8fafc; color:#64748b; font-weight:600; border-bottom:2px solid #e2e8f0; }
+        td { padding:.55rem .75rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+        tr:last-child td { border-bottom:none; }
+        .badge { display:inline-block; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+        .badge-ok  { background:#dcfce7; color:#16a34a; }
+        .badge-off { background:#fee2e2; color:#dc2626; }
+        .badge-admin { background:#dbeafe; color:#1d4ed8; }
+        .btn-sm { padding:.3rem .7rem; border-radius:6px; border:none; cursor:pointer; font-size:.8rem; font-weight:600; }
+        .btn-primary { background:#1e3a5f; color:#fff; }
+        .btn-danger  { background:#fee2e2; color:#dc2626; }
+        .btn-success { background:#dcfce7; color:#16a34a; }
+        .flash { padding:.7rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:.9rem; }
+        .flash.success{ background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+        .flash.danger { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+        .flash.info   { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+        .upload-form { display:flex; gap:.5rem; align-items:center; margin-top:.5rem; }
+        .upload-form input[type=file] { flex:1; font-size:.82rem; }
+    </style>
+</head>
+<body>
+<div class="admin-header">
+    <h1>PTT BTP — Administration</h1>
+    <div>
+        Connecté : <strong>{{ current_user.nom }}</strong> &nbsp;|&nbsp;
+        <a href="{{ url_for('pages.home') }}">App</a> &nbsp;|&nbsp;
+        <a href="{{ url_for('auth.logout') }}">Déconnexion</a>
+    </div>
+</div>
+
+<div class="admin-body">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="grid-2">
+
+        <!-- CLIENTS -->
+        <div class="card">
+            <h2>
+                Clients ({{ clients|length }})
+                <a href="{{ url_for('admin.nouveau_client') }}" class="btn-sm btn-primary">+ Nouveau</a>
+            </h2>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Nom</th><th>Projet</th><th>Excel</th><th>Statut</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                {% for c in clients %}
+                <tr>
+                    <td>{{ c.id }}</td>
+                    <td><strong>{{ c.nom }}</strong></td>
+                    <td>{{ c.projet_label or '—' }}</td>
+                    <td>
+                        {% if c.excel_key %}
+                            <span class="badge badge-ok">Chargé</span>
+                        {% else %}
+                            <span class="badge badge-off">Manquant</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.actif %}
+                            <span class="badge badge-ok">Actif</span>
+                        {% else %}
+                            <span class="badge badge-off">Inactif</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.upload_excel', client_id=c.id) }}"
+                              enctype="multipart/form-data" style="display:inline;">
+                            <div class="upload-form">
+                                <input type="file" name="excel_file" accept=".xlsx,.xls">
+                                <button type="submit" class="btn-sm btn-primary">Upload</button>
+                            </div>
+                        </form>
+                        <form method="POST" action="{{ url_for('admin.toggle_client', client_id=c.id) }}"
+                              style="display:inline; margin-top:.3rem;">
+                            <button type="submit"
+                                    class="btn-sm {{ 'btn-danger' if c.actif else 'btn-success' }}">
+                                {{ 'Désactiver' if c.actif else 'Activer' }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="color:#94a3b8; text-align:center;">Aucun client encore.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- UTILISATEURS -->
+        <div class="card">
+            <h2>
+                Utilisateurs ({{ users|length }})
+                <a href="{{ url_for('admin.nouvel_utilisateur') }}" class="btn-sm btn-primary">+ Nouveau</a>
+            </h2>
+            <table>
+                <thead>
+                    <tr><th>Email</th><th>Nom</th><th>Rôle</th><th>Client</th><th>Statut</th></tr>
+                </thead>
+                <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.nom }}</td>
+                    <td>
+                        {% if u.is_admin %}
+                            <span class="badge badge-admin">Admin</span>
+                        {% else %}
+                            <span class="badge" style="background:#f1f5f9;color:#475569;">Client</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.client.nom if u.client else '—' }}</td>
+                    <td>
+                        {% if u.actif %}
+                            <span class="badge badge-ok">Actif</span>
+                        {% else %}
+                            <span class="badge badge-off">Inactif</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="color:#94a3b8; text-align:center;">Aucun utilisateur encore.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+Flask>=2.3
+pandas>=2.0
+openpyxl>=3.1
+waitress>=3.0
+# Serveur WSGI production Linux (Render / VPS)
+gunicorn>=21.2
+# Base de données
+Flask-SQLAlchemy>=3.1
+psycopg2-binary>=2.9
+# Authentification
+Flask-Login>=0.6
+# Variables d'environnement
+python-dotenv>=1.0
+# Sécurité mots de passe (inclus dans Flask/Werkzeug mais explicite)
+Werkzeug>=3.0
+# Stockage cloud Cloudflare R2 (compatible S3)
+boto3>=1.34

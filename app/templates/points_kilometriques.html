@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTT BTP - Points kilométriques</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .nav-active {
+            background: rgba(59, 130, 246, 0.3) !important;
+            border-color: rgba(59, 130, 246, 0.5) !important;
+            font-weight: 600 !important;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: 200ms ease;
+            margin-left: 8px;
+        }
+        .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        /* Styles spécifiques à la page Points km */
+        .section-card {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-md);
+        }
+        .section-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .section-header.primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+        .section-header.orange {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        .section-header.green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        .section-header.blue {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        .section-header h3 {
+            margin: 0;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .section-header .step-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .section-header-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .section-body {
+            padding: 24px;
+        }
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        @media (max-width: 900px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+        .sub-section {
+            background: var(--bg);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        .sub-section h4 {
+            margin: 0 0 16px 0;
+            font-size: 0.95rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sub-section h4 .icon {
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        .form-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            margin-bottom: 12px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .form-group label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        .form-group input, .form-group select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .file-upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            text-align: center;
+            background: white;
+            transition: all 0.2s ease;
+        }
+        .file-upload-zone:hover {
+            border-color: var(--accent);
+            background: #f0f9ff;
+        }
+        .file-upload-zone input[type="file"] {
+            display: none;
+        }
+        .file-upload-zone label {
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .file-upload-zone .upload-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        .file-upload-zone .upload-text {
+            font-weight: 600;
+            color: var(--text);
+        }
+        .file-upload-zone .upload-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .origins-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .origin-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+        .origin-item:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-sm);
+        }
+        .origin-item .origin-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .origin-item .origin-name {
+            font-weight: 600;
+            color: var(--text);
+        }
+        .origin-item .origin-coords {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+        .origin-item .btn-delete {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        .origin-item .btn-delete:hover {
+            background: #fecaca;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .data-table th {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .data-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        .data-table tbody tr:hover {
+            background: #f0f9ff;
+        }
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: white;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state .empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        .export-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .export-buttons .btn {
+            font-size: 0.85rem;
+            padding: 8px 16px;
+        }
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: var(--radius);
+            padding: 12px 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .info-box .info-icon {
+            color: #3b82f6;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .info-box p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #1e40af;
+        }
+        .points-count-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .select-origin-box {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .select-origin-box select {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 12px;
+            border: 2px solid var(--primary);
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-title">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-weight:700; font-size: 20px; letter-spacing: -0.5px;">PTT BTP</div>
+                <div style="font-size:12px; opacity:0.8;">Phase 2 : Points kilométriques</div>
+            </div>
+        </div>
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <nav class="mobile-nav" id="mobileNav">
+            <button onclick="window.location.href='/'">
+                Accueil
+            </button>
+            <button onclick="window.location.href='/editeur'">
+                Phase 1 : Profil en travers type
+            </button>
+            <button onclick="window.location.href='/points-kilometriques'" class="nav-active">
+                Phase 2 : Points kilométriques
+            </button>
+            <button onclick="window.location.href='/reception'">
+                Réception topographique
+            </button>
+            <div class="user-avatar">
+                U
+            </div>
+        </nav>
+        <script>
+            function toggleMobileMenu() {
+                document.getElementById('mobileNav').classList.toggle('active');
+            }
+        </script>
+    </header>
+    <div class="container" style="max-width:1400px; margin:32px auto; padding:0 32px;">
+        <!-- En-tête de page -->
+        <div style="margin-bottom:32px;">
+            <span style="display:inline-block; background:#f59e0b; color:white; padding:4px 12px; border-radius:12px; font-size:12px; font-weight:600; margin-bottom:8px;">PHASE 2</span>
+            <h1 style="margin:0 0 8px 0; font-size:1.75rem;">Points kilométriques</h1>
+            <p style="margin:0; color:var(--text-light);">Définissez les origines (PK) et visualisez les coordonnées recalculées de tous les points du profil.</p>
+            <!-- Boutons cachés pour la navigation (utilisés par le script) -->
+            <div style="display:none;">
+                <button id="go-to-reception">Réception topographique</button>
+                <button id="back-to-editor">Retour à l'éditeur</button>
+            </div>
+        </div>
+
+        <!-- ÉTAPE 1 : Chargement des données -->
+        <div class="section-card">
+            <div class="section-header orange">
+                <div class="section-header-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3>Étape 1 : Charger les données</h3>
+                <span class="step-badge">Import</span>
+            </div>
+            <div class="section-body">
+                <div class="two-columns">
+                    <!-- Import fichier PK -->
+                    <div class="sub-section">
+                        <h4>
+                            <span class="icon">📁</span>
+                            Importer des points kilométriques
+                        </h4>
+                        <div class="file-upload-zone">
+                            <input type="file" id="km-file-input" accept=".csv,.xlsx,.xls,text/csv">
+                            <label for="km-file-input">
+                                <div class="upload-icon">📄</div>
+                                <span class="upload-text">Cliquez ou glissez un fichier ici</span>
+                                <span class="upload-hint">Formats acceptés : CSV, Excel (.xlsx, .xls)</span>
+                            </label>
+                        </div>
+                        <div style="margin-top:12px; text-align:center;">
+                            <button id="import-km-points" class="btn" style="background:#f59e0b;">
+                                Importer les points km
+                            </button>
+                        </div>
+                        <div class="info-box" style="margin-top:16px;">
+                            <span class="info-icon">ℹ️</span>
+                            <p>Format attendu : ID | Nom | X | Z<br>Exemple : 1 | PK 0+000 | 123.456 | 789.012</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Points chargés depuis l'éditeur -->
+                    <div class="sub-section">
+                        <h4>
+                            <span class="icon">📍</span>
+                            Points du profil (Phase 1)
+                        </h4>
+                        <div id="loaded-points-info" style="margin-bottom:12px; padding:12px; background:white; border-radius:var(--radius); border:1px solid var(--border);">
+                            <span style="color:var(--text-muted); font-style:italic;">Aucun point chargé</span>
+                        </div>
+                        <div class="table-container" style="max-height:200px;">
+                            <table id="original-points-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nom</th>
+                                        <th>X</th>
+                                        <th>Z</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Points originaux seront affichés ici -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÉTAPE 2 : Configuration des PK (origines) -->
+        <div class="section-card">
+            <div class="section-header primary">
+                <div class="section-header-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h3>Étape 2 : Définir les Points Kilométriques</h3>
+                <span class="step-badge">Configuration</span>
+            </div>
+            <div class="section-body">
+                <div class="two-columns">
+                    <!-- Ajout manuel d'un PK -->
+                    <div class="sub-section">
+                        <h4>
+                            <span class="icon">➕</span>
+                            Ajouter un PK manuellement
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group" style="flex:2;">
+                                <label>Nom du PK</label>
+                                <input id="origin-name" type="text" placeholder="Ex: PK 0+000">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1;">
+                                <label>Coordonnée X</label>
+                                <input id="origin-x" type="number" step="any" placeholder="0.000">
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label>Coordonnée Z</label>
+                                <input id="origin-z" type="number" step="any" placeholder="0.000">
+                            </div>
+                            <button id="add-origin" class="btn" style="height:42px; margin-bottom:0;">
+                                Ajouter
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Liste des PK définis -->
+                    <div class="sub-section">
+                        <h4>
+                            <span class="icon">📋</span>
+                            Points kilométriques définis
+                            <span id="pk-count" class="points-count-badge" style="margin-left:auto;">0 PK</span>
+                        </h4>
+                        <div id="origins-list" class="origins-list">
+                            <div class="empty-state">
+                                <div class="empty-icon">📍</div>
+                                <p>Aucun PK défini.<br>Importez un fichier ou ajoutez manuellement.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ÉTAPE 3 : Visualisation et calculs -->
+        <div class="section-card">
+            <div class="section-header green">
+                <div class="section-header-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 11L12 14L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3>Étape 3 : Coordonnées recalculées</h3>
+                <span class="step-badge">Résultats</span>
+            </div>
+            <div class="section-body">
+                <!-- Sélection de l'origine active -->
+                <div class="select-origin-box" style="margin-bottom:20px;">
+                    <label style="font-weight:600; color:var(--text);">Origine active :</label>
+                    <select id="active-origin">
+                        <option value="">Repère original (0,0)</option>
+                    </select>
+                    <button id="refresh-calc" class="btn secondary">
+                        🔄 Recalculer
+                    </button>
+                </div>
+                
+                <!-- Tableau des points recalculés -->
+                <div class="table-container" style="max-height:400px;">
+                    <table id="recalc-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Point</th>
+                                <th>X original</th>
+                                <th>Z original</th>
+                                <th>X recalculé</th>
+                                <th>Z recalculé</th>
+                                <th>Distance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Points recalculés seront générés ici -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Zone d'export -->
+                <div class="export-buttons">
+                    <span style="font-weight:600; color:var(--text); margin-right:8px;">Exporter :</span>
+                    <button id="export-recalc-csv" class="btn secondary">📄 CSV</button>
+                    <button id="export-recalc-json" class="btn secondary">📋 JSON</button>
+                    <button id="export-recalc-excel" class="btn secondary">📊 Excel</button>
+                    <div style="flex:1;"></div>
+                    <button id="export-all-pk-excel" class="btn" style="background:#16a34a;">
+                        📊 Export multi-PK (Excel)
+                    </button>
+                    <button id="export-all-pk-json" class="btn secondary">📋 Export multi-PK (JSON)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Gestion des points kilométriques
+    (function(){
+        let originalPoints = [];
+        let origins = []; // {name, x, z}
+        let activeOriginIndex = -1; // -1 = repère original
+        
+        // Charger les points depuis l'éditeur
+        function loadPointsFromEditor() {
+            const storedPoints = sessionStorage.getItem('currentPoints');
+            const infoEl = document.getElementById('loaded-points-info');
+            
+            if (storedPoints) {
+                originalPoints = JSON.parse(storedPoints);
+                infoEl.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
+                        <span style="color:var(--success); font-weight:600;">
+                            ✓ ${originalPoints.length} points chargés depuis le profil
+                        </span>
+                        <span class="points-count-badge">${originalPoints.length} pts</span>
+                    </div>
+                `;
+                renderOriginalPointsTable();
+            } else {
+                infoEl.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px; color:var(--warning);">
+                        <span>⚠️</span>
+                        <span>Aucun point chargé - <a href="/editeur" style="color:var(--accent);">retournez à l'éditeur</a> pour charger des points</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Afficher le tableau des points originaux
+        function renderOriginalPointsTable() {
+            const tbody = document.querySelector('#original-points-table tbody');
+            tbody.innerHTML = '';
+            
+            if (originalPoints.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align:center; padding:24px; color:var(--text-muted); font-style:italic;">
+                            Aucun point disponible
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            originalPoints.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${p.id}</td><td>${p.label||''}</td><td>${p.x.toFixed(3)}</td><td>${p.z.toFixed(3)}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Ajouter une nouvelle origine
+        document.getElementById('add-origin').onclick = () => {
+            const name = document.getElementById('origin-name').value.trim();
+            const x = parseFloat(document.getElementById('origin-x').value) || 0;
+            const z = parseFloat(document.getElementById('origin-z').value) || 0;
+            
+            if (!name) {
+                alert('Veuillez saisir un nom pour l\'origine');
+                return;
+            }
+            
+            origins.push({ name, x, z });
+            document.getElementById('origin-name').value = '';
+            document.getElementById('origin-x').value = '';
+            document.getElementById('origin-z').value = '';
+            
+            renderOriginsList();
+            updateActiveOriginSelect();
+        };
+
+        // Import des points kilométriques depuis fichier
+        document.getElementById('import-km-points').onclick = () => {
+            const inp = document.getElementById('km-file-input');
+            if (!inp.files || inp.files.length === 0) {
+                alert('Veuillez sélectionner un fichier CSV ou Excel');
+                return;
+            }
+            
+            const file = inp.files[0];
+            const fr = new FileReader();
+            fr.onload = () => {
+                try {
+                    const kmPoints = parseKmFileContent(fr.result, file.name || '');
+                    if (kmPoints.length === 0) {
+                        alert('Aucun point kilométrique trouvé dans le fichier');
+                        return;
+                    }
+                    
+                    // Ajouter tous les points km comme nouvelles origines
+                    kmPoints.forEach(kmPoint => {
+                        origins.push({
+                            name: kmPoint.name,
+                            x: kmPoint.x,
+                            z: kmPoint.z
+                        });
+                    });
+                    
+                    renderOriginsList();
+                    updateActiveOriginSelect();
+                    alert(`${kmPoints.length} points kilométriques importés avec succès`);
+                } catch (err) {
+                    alert('Erreur lors de l\'import: ' + (err.message || err));
+                }
+            };
+            fr.readAsText(file);
+        };
+
+        // Parser le contenu du fichier points kilométriques
+        function parseKmFileContent(text, fileName) {
+            console.log('Parsing KM file:', fileName);
+            console.log('File content preview:', text.substring(0, 200));
+            
+            const kmPoints = [];
+            const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+            
+            if (lines.length < 2) {
+                throw new Error('Fichier trop court (moins de 2 lignes)');
+            }
+            
+            // Auto-detect separator
+            const firstLine = lines[0];
+            let sep = ',';
+            if (firstLine.split(';').length > firstLine.split(',').length) {
+                sep = ';';
+            }
+            if (firstLine.split('\t').length > firstLine.split(sep).length) {
+                sep = '\t';
+            }
+            
+            console.log('Using separator for KM file:', sep);
+            
+            // Parse header
+            const header = lines[0].split(sep).map(h => h.trim().toLowerCase());
+            console.log('KM Header:', header);
+            
+            // Recherche des colonnes importantes
+            const idIdx = header.findIndex(h => h === 'id' || h === 'index' || h === 'n°' || h === 'numero');
+            const nameIdx = header.findIndex(h => h === 'nom' || h === 'name' || h === 'pk' || h === 'point');
+            const xIdx = header.findIndex(h => h === 'x' || h === 'abscisse' || h === 'est');
+            const zIdx = header.findIndex(h => h === 'z' || h === 'y' || h === 'altitude' || h === 'nord' || h === 'ordonnee');
+            
+            console.log('Column indices:', { idIdx, nameIdx, xIdx, zIdx });
+            
+            // Parse data lines
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(sep).map(p => p.trim());
+                
+                if (parts.length < 3) continue;
+                
+                let id, name, x, z;
+                
+                // Mapping des colonnes
+                if (nameIdx >= 0 && xIdx >= 0 && zIdx >= 0) {
+                    // Format standard avec colonnes nommées
+                    name = parts[nameIdx] || `PK ${i}`;
+                    x = parseFloat(parts[xIdx]);
+                    z = parseFloat(parts[zIdx]);
+                } else {
+                    // Format automatique: essayer de détecter les colonnes
+                    const nums = [];
+                    let nameFound = '';
+                    
+                    for (let j = 0; j < parts.length; j++) {
+                        const num = parseFloat(parts[j]);
+                        if (!isNaN(num)) {
+                            nums.push(num);
+                        } else if (parts[j].length > 0 && !nameFound) {
+                            nameFound = parts[j];
+                        }
+                    }
+                    
+                    if (nums.length >= 2) {
+                        x = nums[nums.length - 2]; // Avant-dernière valeur numérique = X
+                        z = nums[nums.length - 1]; // Dernière valeur numérique = Z
+                        name = nameFound || `PK ${i}`;
+                    } else {
+                        continue; // Ligne invalide
+                    }
+                }
+                
+                if (!isNaN(x) && !isNaN(z) && name) {
+                    kmPoints.push({
+                        name: name,
+                        x: x,
+                        z: z
+                    });
+                    console.log(`Added KM point: ${name} (${x}, ${z})`);
+                }
+            }
+            
+            console.log('Parsed', kmPoints.length, 'KM points:', kmPoints);
+            return kmPoints;
+        }
+
+        // Afficher la liste des origines
+        function renderOriginsList() {
+            const list = document.getElementById('origins-list');
+            const countEl = document.getElementById('pk-count');
+            list.innerHTML = '';
+            
+            // Mettre à jour le compteur
+            if (countEl) {
+                countEl.textContent = origins.length + ' PK';
+            }
+            
+            if (origins.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📍</div>
+                        <p>Aucun PK défini.<br>Importez un fichier ou ajoutez manuellement.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            origins.forEach((origin, index) => {
+                const div = document.createElement('div');
+                div.className = 'origin-item';
+                div.innerHTML = `
+                    <div class="origin-info">
+                        <span class="origin-name">${origin.name}</span>
+                        <span class="origin-coords">X: ${origin.x.toFixed(3)} | Z: ${origin.z.toFixed(3)}</span>
+                    </div>
+                    <button class="btn-delete" onclick="removeOrigin(${index})" title="Supprimer">✕</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // Supprimer une origine
+        window.removeOrigin = (index) => {
+            origins.splice(index, 1);
+            renderOriginsList();
+            updateActiveOriginSelect();
+        };
+
+        // Mettre à jour le select des origines actives
+        function updateActiveOriginSelect() {
+            const select = document.getElementById('active-origin');
+            select.innerHTML = '<option value="">Repère original (0,0)</option>';
+            origins.forEach((origin, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${origin.name} (X: ${origin.x.toFixed(3)}, Z: ${origin.z.toFixed(3)})`;
+                select.appendChild(option);
+            });
+            recalculatePoints();
+        }
+
+        // Recalculer les points selon l'origine active
+        function recalculatePoints() {
+            const tbody = document.querySelector('#recalc-table tbody');
+            tbody.innerHTML = '';
+            
+            const activeIndex = parseInt(document.getElementById('active-origin').value);
+            activeOriginIndex = isNaN(activeIndex) ? -1 : activeIndex;
+            
+            const origin = activeOriginIndex >= 0 ? origins[activeOriginIndex] : { x: 0, z: 0 };
+            
+            if (originalPoints.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align:center; padding:40px; color:var(--text-muted);">
+                            <div style="font-size:32px; margin-bottom:8px; opacity:0.5;">📊</div>
+                            <p style="margin:0;">Aucun point à afficher.<br>Chargez des points depuis l'éditeur (Phase 1).</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            originalPoints.forEach(p => {
+                const newX = p.x - origin.x;
+                const newZ = p.z - origin.z;
+                const distance = Math.sqrt(newX * newX + newZ * newZ);
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${p.label || 'Point ' + p.id}</td>
+                    <td style="font-family:monospace;">${p.x.toFixed(3)}</td>
+                    <td style="font-family:monospace;">${p.z.toFixed(3)}</td>
+                    <td style="color:#059669; font-weight:600; font-family:monospace; background:#ecfdf5;">${newX.toFixed(3)}</td>
+                    <td style="color:#059669; font-weight:600; font-family:monospace; background:#ecfdf5;">${newZ.toFixed(3)}</td>
+                    <td style="font-family:monospace; color:var(--text-light);">${distance.toFixed(3)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Export handlers
+        document.getElementById('export-recalc-csv').onclick = () => {
+            exportRecalculatedPoints('csv');
+        };
+        
+        document.getElementById('export-recalc-json').onclick = () => {
+            exportRecalculatedPoints('json');
+        };
+        
+        document.getElementById('export-recalc-excel').onclick = () => {
+            exportRecalculatedPoints('excel');
+        };
+        
+        // Export récapitulatif multi-PK
+        document.getElementById('export-all-pk-excel').onclick = () => {
+            exportAllPkRecap('excel');
+        };
+        
+        document.getElementById('export-all-pk-json').onclick = () => {
+            exportAllPkRecap('json');
+        };
+
+        // Export récapitulatif de tous les PK
+        function exportAllPkRecap(format) {
+            if (originalPoints.length === 0) {
+                alert('Aucun point à exporter');
+                return;
+            }
+            
+            if (origins.length === 0) {
+                alert('Aucun point kilométrique défini. Ajoutez au moins un PK pour générer le récapitulatif.');
+                return;
+            }
+            
+            // Calculer pour tous les PK + repère original
+            const allCalculations = [];
+            
+            // Ajouter repère original
+            const originalCalc = {
+                pkName: 'Repere_Original',
+                pkCoords: { x: 0, z: 0 },
+                points: originalPoints.map(p => ({
+                    label: p.label || 'P' + p.id,
+                    x_original: p.x,
+                    z_original: p.z,
+                    x_recalcule: p.x,
+                    z_recalcule: p.z,
+                    distance: Math.sqrt(p.x * p.x + p.z * p.z)
+                }))
+            };
+            allCalculations.push(originalCalc);
+            
+            // Ajouter tous les PK
+            origins.forEach(origin => {
+                const calc = {
+                    pkName: origin.name.replace(/[^a-zA-Z0-9]/g, '_'),
+                    pkCoords: { x: origin.x, z: origin.z },
+                    points: originalPoints.map(p => {
+                        const newX = p.x - origin.x;
+                        const newZ = p.z - origin.z;
+                        return {
+                            label: p.label || 'P' + p.id,
+                            x_original: p.x,
+                            z_original: p.z,
+                            x_recalcule: newX,
+                            z_recalcule: newZ,
+                            distance: Math.sqrt(newX * newX + newZ * newZ)
+                        };
+                    })
+                };
+                allCalculations.push(calc);
+            });
+            
+            if (format === 'excel') {
+                exportExcelMultiSheet(allCalculations);
+            } else if (format === 'json') {
+                exportJsonMultiPk(allCalculations);
+            }
+        }
+        
+        // Export Excel avec plusieurs onglets (simulation CSV)
+        function exportExcelMultiSheet(calculations) {
+            let content = '';
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            
+            // Générer un fichier CSV avec séparateurs d'onglets
+            calculations.forEach((calc, index) => {
+                if (index > 0) content += '\n\n'; // Séparateur entre onglets
+                
+                // En-tête de l'onglet
+                content += `=== ONGLET: ${calc.pkName} ===\n`;
+                content += `PK Origine: ${calc.pkName} (X: ${calc.pkCoords.x.toFixed(3)}, Z: ${calc.pkCoords.z.toFixed(3)})\n`;
+                content += `Nombre de points: ${calc.points.length}\n`;
+                content += `Date d'export: ${new Date().toLocaleString('fr-FR')}\n\n`;
+                
+                // En-tête du tableau
+                content += 'Point;X_original;Z_original;X_recalcule;Z_recalcule;Distance\n';
+                
+                // Données
+                calc.points.forEach(p => {
+                    content += `"${p.label}";${p.x_original.toFixed(6)};${p.z_original.toFixed(6)};${p.x_recalcule.toFixed(6)};${p.z_recalcule.toFixed(6)};${p.distance.toFixed(3)}\n`;
+                });
+            });
+            
+            // Télécharger
+            const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `recapitulatif_tous_PK_${timestamp}.csv`;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            
+            alert(`Récapitulatif exporté avec ${calculations.length} onglets (${origins.length + 1} PK)`);
+        }
+        
+        // Export JSON multi-PK
+        function exportJsonMultiPk(calculations) {
+            const timestamp = new Date().toISOString();
+            const exportData = {
+                metadata: {
+                    export_type: 'recapitulatif_multi_pk',
+                    exported_at: timestamp,
+                    total_pk: calculations.length,
+                    total_points: originalPoints.length,
+                    software: 'PTT BTP - Points kilométriques'
+                },
+                pk_calculations: calculations.map(calc => ({
+                    pk_info: {
+                        name: calc.pkName,
+                        coordinates: calc.pkCoords
+                    },
+                    recalculated_points: calc.points
+                })),
+                original_points: originalPoints
+            };
+            
+            const content = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([content], { type: 'application/json;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `recapitulatif_tous_PK_${timestamp.replace(/[:.]/g, '-')}.json`;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            
+            alert(`Récapitulatif JSON exporté avec ${calculations.length} PK`);
+        }
+
+        function exportRecalculatedPoints(format) {
+            if (originalPoints.length === 0) {
+                alert('Aucun point à exporter');
+                return;
+            }
+            
+            const origin = activeOriginIndex >= 0 ? origins[activeOriginIndex] : { x: 0, z: 0, name: 'Original' };
+            const originName = activeOriginIndex >= 0 ? origins[activeOriginIndex].name : 'Repère original';
+            
+            const recalcData = originalPoints.map(p => ({
+                label: p.label || 'P' + p.id,
+                x_original: p.x,
+                z_original: p.z,
+                x_recalcule: p.x - origin.x,
+                z_recalcule: p.z - origin.z,
+                distance: Math.sqrt((p.x - origin.x) * (p.x - origin.x) + (p.z - origin.z) * (p.z - origin.z))
+            }));
+            
+            let content, filename, type;
+            
+            if (format === 'csv') {
+                content = 'Point,X_original,Z_original,X_recalcule,Z_recalcule,Distance,Origine\n';
+                recalcData.forEach(p => {
+                    content += `"${p.label}",${p.x_original},${p.z_original},${p.x_recalcule},${p.z_recalcule},${p.distance.toFixed(3)},"${originName}"\n`;
+                });
+                filename = `points_kilometriques_${originName.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+                type = 'text/csv';
+            } else if (format === 'json') {
+                const exportData = {
+                    origine: { name: originName, x: origin.x, z: origin.z },
+                    points: recalcData,
+                    exported_at: new Date().toISOString()
+                };
+                content = JSON.stringify(exportData, null, 2);
+                filename = `points_kilometriques_${originName.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
+                type = 'application/json';
+            } else if (format === 'excel') {
+                content = '\ufeffPoint;X_original;Z_original;X_recalcule;Z_recalcule;Distance;Origine\n';
+                recalcData.forEach(p => {
+                    content += `"${p.label}";${p.x_original};${p.z_original};${p.x_recalcule};${p.z_recalcule};${p.distance.toFixed(3)};"${originName}"\n`;
+                });
+                filename = `points_kilometriques_${originName.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx.csv`;
+                type = 'text/csv';
+            }
+            
+            const blob = new Blob([content], { type: type + ';charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
+        // Event listeners
+        document.getElementById('refresh-calc').onclick = recalculatePoints;
+        document.getElementById('active-origin').onchange = recalculatePoints;
+        
+        // Navigation
+        document.getElementById('back-to-editor').onclick = () => {
+            window.location.href = '/editeur';
+        };
+        
+        document.getElementById('go-to-reception').onclick = () => {
+            // Vérifier qu'on a des données à transférer
+            if (origins.length === 0) {
+                alert('Veuillez d\'abord ajouter au moins un point kilométrique (PK)');
+                return;
+            }
+            if (originalPoints.length === 0) {
+                alert('Aucun point chargé. Retournez à l\'éditeur pour charger des points.');
+                return;
+            }
+            
+            // Préparer les données pour la réception
+            // Les "origins" deviennent les PK
+            // Les "originalPoints" avec leurs coordonnées deviennent les côtes disponibles
+            const receptionData = {
+                source: 'manual', // Indique que les données viennent de la saisie manuelle
+                pks: origins.map(o => o.name),
+                pkDetails: origins, // {name, x, z}
+                cotes: originalPoints.map(p => ({
+                    id: p.id,
+                    name: p.label || 'Point ' + p.id,
+                    x: p.x,
+                    z: p.z
+                })),
+                // Calculer les coordonnées recalculées pour chaque PK
+                recalculated: {}
+            };
+            
+            // Pour chaque PK, calculer les coordonnées recalculées de chaque point
+            origins.forEach(origin => {
+                receptionData.recalculated[origin.name] = originalPoints.map(p => ({
+                    id: p.id,
+                    name: p.label || 'Point ' + p.id,
+                    x_original: p.x,
+                    z_original: p.z,
+                    x_recalcule: p.x - origin.x,
+                    z_recalcule: p.z - origin.z,
+                    distance: Math.sqrt((p.x - origin.x) ** 2 + (p.z - origin.z) ** 2)
+                }));
+            });
+            
+            // Sauvegarder dans sessionStorage
+            sessionStorage.setItem('receptionData', JSON.stringify(receptionData));
+            
+            // Rediriger vers la page de réception
+            window.location.href = '/reception';
+        };
+
+        // Initialisation
+        loadPointsFromEditor();
+        recalculatePoints();
+    })();
+    </script>
+    
+    <!-- Barre de navigation workflow -->
+    <div class="workflow-nav-bar">
+        <div class="workflow-nav-container">
+            <a href="/editeur" class="workflow-nav-item prev">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Phase 1 : Profil en travers type</span>
+            </a>
+            <div class="workflow-nav-progress">
+                <div class="progress-step completed">
+                    <span class="step-dot"></span>
+                    <span class="step-label">Phase 1</span>
+                </div>
+                <div class="progress-line completed"></div>
+                <div class="progress-step active">
+                    <span class="step-dot"></span>
+                    <span class="step-label">Phase 2 : Points km</span>
+                </div>
+                <div class="progress-line"></div>
+                <div class="progress-step">
+                    <span class="step-dot"></span>
+                    <span class="step-label">Réception</span>
+                </div>
+            </div>
+            <a href="#" class="workflow-nav-item next" onclick="goToReception(); return false;">
+                <span>Étape suivante : Réception</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+    <script>
+    function goToReception() {
+        document.getElementById('go-to-reception').click();
+    }
+    </script>
+    <style>
+    .workflow-nav-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        padding: 16px 32px;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+        z-index: 100;
+    }
+    .workflow-nav-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+    }
+    .workflow-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 8px;
+        color: white;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .workflow-nav-item:hover {
+        background: rgba(255,255,255,0.2);
+        transform: translateY(-2px);
+    }
+    .workflow-nav-item.next {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-color: transparent;
+    }
+    .workflow-nav-item.next:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    }
+    .workflow-nav-progress {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        justify-content: center;
+    }
+    .progress-step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .step-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.3);
+        border: 2px solid rgba(255,255,255,0.5);
+    }
+    .progress-step.active .step-dot {
+        background: #10b981;
+        border-color: #10b981;
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+    .progress-step.completed .step-dot {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+    .step-label {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .progress-step.active .step-label {
+        color: white;
+        font-weight: 600;
+    }
+    .progress-line {
+        width: 40px;
+        height: 2px;
+        background: rgba(255,255,255,0.3);
+    }
+    .progress-line.completed {
+        background: #3b82f6;
+    }
+    @media (max-width: 900px) {
+        .workflow-nav-progress {
+            display: none;
+        }
+        .workflow-nav-bar {
+            padding: 12px 16px;
+        }
+        .workflow-nav-item span {
+            display: none;
+        }
+        .workflow-nav-item {
+            padding: 12px;
+        }
+    }
+    body {
+        padding-bottom: 80px;
+    }
+    </style>
+</body>
+</html>

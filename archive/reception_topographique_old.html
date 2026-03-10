@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTT BTP - Réception topographique</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .reception-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .reception-table th,
+        .reception-table td {
+            border: 1px solid #000;
+            padding: 4px;
+            text-align: center;
+        }
+        .reception-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+        .reception-table input {
+            width: 100%;
+            border: none;
+            text-align: center;
+            padding: 2px;
+            font-size: 11px;
+        }
+        .ecart-positif { background-color: #fecaca; }
+        .ecart-negatif { background-color: #bfdbfe; }
+        .ecart-ok { background-color: #dcfce7; }
+        .signature-area {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .signature-box {
+            border: 1px solid #000;
+            padding: 10px;
+            flex: 1;
+            min-height: 80px;
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-title">
+            <div class="logo">PT</div>
+            <div>
+                <div style="font-weight:700">PTT BTP</div>
+                <div style="font-size:12px; color:var(--muted)">Réception topographique</div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h1>Fiche de réception topographique</h1>
+            <button id="back-to-km" class="btn secondary">Retour aux PK</button>
+        </div>
+
+        <!-- En-tête de la fiche -->
+        <div class="card" style="margin-bottom:20px;">
+            <h3>Informations du contrôle</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                <div>
+                    <label>Projet: <input id="projet-nom" type="text" placeholder="Nom du projet" style="width:100%; padding:6px;"></label>
+                </div>
+                <div>
+                    <label>Date de contrôle: <input id="date-controle" type="date" style="width:100%; padding:6px;"></label>
+                </div>
+                <div>
+                    <label>Opérateur: <input id="operateur-nom" type="text" placeholder="Nom de l'opérateur" style="width:100%; padding:6px;"></label>
+                </div>
+                <div>
+                    <label>Tolérance (cm): <input id="tolerance" type="number" step="0.01" value="2.0" style="width:100%; padding:6px;"></label>
+                </div>
+                <div>
+                    <label>Météo: <input id="meteo" type="text" placeholder="Conditions météo" style="width:100%; padding:6px;"></label>
+                </div>
+                <div>
+                    <label>Matériel: <input id="materiel" type="text" placeholder="Matériel utilisé" style="width:100%; padding:6px;"></label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sélection du point à contrôler et des PK -->
+        <div class="card" style="margin-bottom:20px;">
+            <h3>Configuration du contrôle</h3>
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <h4>Point du profil à contrôler</h4>
+                    <select id="point-selector" style="width:100%; padding:8px; margin-bottom:10px;">
+                        <option value="">Sélectionnez un point...</option>
+                    </select>
+                    <div id="point-info" style="font-size:12px; color:var(--muted);">
+                        Aucun point sélectionné
+                    </div>
+                </div>
+                <div style="flex: 1;">
+                    <h4>Points kilométriques à inclure</h4>
+                    <div id="pk-checkboxes" style="max-height:150px; overflow-y:auto;">
+                        <!-- Checkboxes des PK seront générées ici -->
+                    </div>
+                    <div style="margin-top:8px;">
+                        <button id="select-all-pk" class="btn secondary" style="font-size:12px;">Tout sélectionner</button>
+                        <button id="generate-table" class="btn" style="font-size:12px; margin-left:8px;">Générer la fiche</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fiche de réception générée -->
+        <div id="reception-sheet" class="card" style="margin-bottom:20px; display:none;">
+            <h3>FICHE DE RÉCEPTION TOPOGRAPHIQUE</h3>
+            
+            <div style="margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; font-size:12px;">
+                <div><strong>Projet:</strong> <span id="display-projet"></span></div>
+                <div><strong>Date:</strong> <span id="display-date"></span></div>
+                <div><strong>Opérateur:</strong> <span id="display-operateur"></span></div>
+                <div><strong>Point contrôlé:</strong> <span id="display-point"></span></div>
+                <div><strong>Tolérance:</strong> <span id="display-tolerance"></span> cm</div>
+                <div><strong>Météo:</strong> <span id="display-meteo"></span></div>
+            </div>
+
+            <table class="reception-table">
+                <thead>
+                    <tr>
+                        <th rowspan="3">DESIGNATION<br>PK</th>
+                        <th rowspan="3">COTES<br>Théoriques</th>
+                        <th colspan="4">NIVELLEMENT</th>
+                        <th colspan="2">COTES</th>
+                        <th rowspan="3">ÉCART<br>(cm)</th>
+                        <th rowspan="3">OBSERVATION</th>
+                    </tr>
+                    <tr>
+                        <th rowspan="2">Côte du<br>repère</th>
+                        <th colspan="2">LECTURES</th>
+                        <th rowspan="2">Côte<br>mesurée</th>
+                        <th rowspan="2">Pratiques</th>
+                    </tr>
+                    <tr>
+                        <th>L.A.V<br>(repère)</th>
+                        <th>L.A.I<br>(point)</th>
+                    </tr>
+                </thead>
+                <tbody id="reception-tbody">
+                    <!-- Lignes seront générées dynamiquement -->
+                </tbody>
+            </table>
+
+            <!-- Zone de signatures -->
+            <div class="signature-area">
+                <div class="signature-box">
+                    <div style="text-align:center; margin-bottom:50px;"><strong>CONTRÔLEUR</strong></div>
+                    <div>Nom: <span id="display-operateur2"></span></div>
+                    <div>Date: <span id="display-date2"></span></div>
+                    <div>Signature:</div>
+                </div>
+                <div class="signature-box">
+                    <div style="text-align:center; margin-bottom:50px;"><strong>ENTREPRISE</strong></div>
+                    <div>Nom: _________________________</div>
+                    <div>Date: _________________________</div>
+                    <div>Signature:</div>
+                </div>
+                <div class="signature-box">
+                    <div style="text-align:center; margin-bottom:50px;"><strong>MAÎTRE D'ŒUVRE</strong></div>
+                    <div>Nom: _________________________</div>
+                    <div>Date: _________________________</div>
+                    <div>Signature:</div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="margin-top:20px; display:flex; gap:12px; justify-content:center;">
+                <button id="export-reception-pdf" class="btn">Exporter en PDF</button>
+                <button id="export-reception-excel" class="btn secondary">Exporter en Excel</button>
+                <button id="print-reception" class="btn secondary">🖨️ Imprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Gestion de la réception topographique
+    (function(){
+        let kmOrigins = [];
+        let kmPoints = [];
+        let selectedPoint = null;
+        let selectedPKs = [];
+        
+        // Charger les données depuis la page des PK
+        function loadDataFromKM() {
+            const originsData = sessionStorage.getItem('kmOrigins');
+            const pointsData = sessionStorage.getItem('kmPoints');
+            
+            if (originsData) {
+                kmOrigins = JSON.parse(originsData);
+            }
+            
+            if (pointsData) {
+                kmPoints = JSON.parse(pointsData);
+                populatePointSelector();
+            }
+            
+            if (kmOrigins.length > 0) {
+                populatePKCheckboxes();
+            }
+            
+            // Initialiser la date d'aujourd'hui
+            document.getElementById('date-controle').value = new Date().toISOString().split('T')[0];
+        }
+        
+        // Remplir le sélecteur de points
+        function populatePointSelector() {
+            const selector = document.getElementById('point-selector');
+            kmPoints.forEach(point => {
+                const option = document.createElement('option');
+                option.value = point.id;
+                option.textContent = `${point.label || 'P' + point.id} (${point.x.toFixed(3)}, ${point.z.toFixed(3)})`;
+                selector.appendChild(option);
+            });
+        }
+        
+        // Remplir les checkboxes des PK
+        function populatePKCheckboxes() {
+            const container = document.getElementById('pk-checkboxes');
+            container.innerHTML = '';
+            
+            // Ajouter repère original
+            const originalDiv = document.createElement('div');
+            originalDiv.innerHTML = `
+                <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <input type="checkbox" value="original" class="pk-checkbox">
+                    <span>Repère original (0,0)</span>
+                </label>
+            `;
+            container.appendChild(originalDiv);
+            
+            // Ajouter les PK
+            kmOrigins.forEach((origin, index) => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <input type="checkbox" value="${index}" class="pk-checkbox">
+                        <span>${origin.name} (${origin.x.toFixed(3)}, ${origin.z.toFixed(3)})</span>
+                    </label>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        // Gestionnaire de sélection de point
+        document.getElementById('point-selector').onchange = (e) => {
+            const pointId = parseInt(e.target.value);
+            selectedPoint = kmPoints.find(p => p.id === pointId);
+            
+            if (selectedPoint) {
+                document.getElementById('point-info').innerHTML = `
+                    <strong>${selectedPoint.label || 'P' + selectedPoint.id}</strong><br>
+                    Coordonnées: X = ${selectedPoint.x.toFixed(6)}, Z = ${selectedPoint.z.toFixed(6)}
+                `;
+            } else {
+                document.getElementById('point-info').textContent = 'Aucun point sélectionné';
+            }
+        };
+        
+        // Sélectionner tous les PK
+        document.getElementById('select-all-pk').onclick = () => {
+            const checkboxes = document.querySelectorAll('.pk-checkbox');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+        };
+        
+        // Générer la fiche de réception
+        document.getElementById('generate-table').onclick = () => {
+            if (!selectedPoint) {
+                alert('Veuillez sélectionner un point à contrôler');
+                return;
+            }
+            
+            const checkedPKs = Array.from(document.querySelectorAll('.pk-checkbox:checked'));
+            if (checkedPKs.length === 0) {
+                alert('Veuillez sélectionner au moins un point kilométrique');
+                return;
+            }
+            
+            generateReceptionSheet(checkedPKs);
+        };
+        
+        // Générer la fiche de réception
+        function generateReceptionSheet(checkedPKs) {
+            const tbody = document.getElementById('reception-tbody');
+            tbody.innerHTML = '';
+            
+            // Remplir les informations d'en-tête
+            document.getElementById('display-projet').textContent = document.getElementById('projet-nom').value || 'Non renseigné';
+            document.getElementById('display-date').textContent = document.getElementById('date-controle').value || new Date().toLocaleDateString('fr-FR');
+            document.getElementById('display-operateur').textContent = document.getElementById('operateur-nom').value || 'Non renseigné';
+            document.getElementById('display-operateur2').textContent = document.getElementById('operateur-nom').value || 'Non renseigné';
+            document.getElementById('display-date2').textContent = document.getElementById('date-controle').value || new Date().toLocaleDateString('fr-FR');
+            document.getElementById('display-point').textContent = selectedPoint.label || 'P' + selectedPoint.id;
+            document.getElementById('display-tolerance').textContent = document.getElementById('tolerance').value || '2.0';
+            document.getElementById('display-meteo').textContent = document.getElementById('meteo').value || 'Non renseigné';
+            
+            const tolerance = parseFloat(document.getElementById('tolerance').value) || 2.0;
+            
+            // Générer les lignes pour chaque PK sélectionné
+            checkedPKs.forEach(checkbox => {
+                const value = checkbox.value;
+                let pkInfo, coteTheorique;
+                
+                if (value === 'original') {
+                    pkInfo = { name: 'Repère original', x: 0, z: 0 };
+                    coteTheorique = selectedPoint.z; // Côte Z originale
+                } else {
+                    const pkIndex = parseInt(value);
+                    const origin = kmOrigins[pkIndex];
+                    pkInfo = origin;
+                    coteTheorique = selectedPoint.z - origin.z; // Côte Z recalculée
+                }
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${pkInfo.name}</td>
+                    <td>${coteTheorique.toFixed(3)}</td>
+                    <td><input type="number" step="0.001" class="cote-repere" placeholder="102.340" title="Côte connue du point de référence"></td>
+                    <td><input type="number" step="0.001" class="lecture-avant" placeholder="1.245" title="Lecture avant (L.A.V) sur le repère"></td>
+                    <td><input type="number" step="0.001" class="lecture-arriere" placeholder="0.875" title="Lecture arrière (L.A.I) sur le point mesuré"></td>
+                    <td class="cote-mesuree">-</td>
+                    <td class="cote-pratique" data-theorique="${coteTheorique}">-</td>
+                    <td class="ecart-cell">-</td>
+                    <td><input type="text" placeholder="Observation" style="width:150px;"></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Afficher la fiche
+            document.getElementById('reception-sheet').style.display = 'block';
+            
+            // Ajouter les gestionnaires pour le calcul d'écart
+            attachEcartCalculators(tolerance);
+        }
+        
+        // Calculer automatiquement les écarts et les côtes mesurées
+        function attachEcartCalculators(tolerance) {
+            const rows = document.querySelectorAll('#reception-tbody tr');
+            
+            rows.forEach(row => {
+                const coteRepere = row.querySelector('.cote-repere');
+                const lectureAvant = row.querySelector('.lecture-avant');
+                const lectureArriere = row.querySelector('.lecture-arriere');
+                const coteMesureeCell = row.querySelector('.cote-mesuree');
+                const cotePratiqueCell = row.querySelector('.cote-pratique');
+                const ecartCell = row.querySelector('.ecart-cell');
+                const coteTheorique = parseFloat(cotePratiqueCell.dataset.theorique);
+                
+                // Fonction de calcul
+                function calculateCotes() {
+                    const repere = parseFloat(coteRepere.value);
+                    const lav = parseFloat(lectureAvant.value);
+                    const lai = parseFloat(lectureArriere.value);
+                    
+                    if (!isNaN(repere) && !isNaN(lav) && !isNaN(lai)) {
+                        // Formule: Côte mesurée = Côte du repère + Lecture avant - Lecture arrière
+                        const coteMesuree = repere + lav - lai;
+                        
+                        // Afficher la côte mesurée
+                        coteMesureeCell.textContent = coteMesuree.toFixed(3);
+                        
+                        // La côte pratique = côte mesurée
+                        cotePratiqueCell.textContent = coteMesuree.toFixed(3);
+                        
+                        // Calculer l'écart par rapport à la côte théorique
+                        const ecart = (coteMesuree - coteTheorique) * 100; // En cm
+                        ecartCell.textContent = ecart.toFixed(1);
+                        
+                        // Colorier selon l'écart
+                        row.className = '';
+                        if (Math.abs(ecart) <= tolerance) {
+                            row.classList.add('ecart-ok');
+                        } else if (ecart > 0) {
+                            row.classList.add('ecart-positif');
+                        } else {
+                            row.classList.add('ecart-negatif');
+                        }
+                    } else {
+                        // Réinitialiser si données incomplètes
+                        coteMesureeCell.textContent = '-';
+                        cotePratiqueCell.textContent = '-';
+                        ecartCell.textContent = '-';
+                        row.className = '';
+                    }
+                }
+                
+                // Attacher les gestionnaires d'événements
+                [coteRepere, lectureAvant, lectureArriere].forEach(input => {
+                    input.addEventListener('input', calculateCotes);
+                });
+            });
+        }
+        
+        // Export et impression
+        document.getElementById('export-reception-pdf').onclick = () => {
+            window.print(); // Utilise la fonction d'impression du navigateur
+        };
+        
+        document.getElementById('export-reception-excel').onclick = () => {
+            exportReceptionExcel();
+        };
+        
+        document.getElementById('print-reception').onclick = () => {
+            window.print();
+        };
+        
+        // Export Excel de la fiche de réception
+        function exportReceptionExcel() {
+            const rows = document.querySelectorAll('#reception-tbody tr');
+            if (rows.length === 0) {
+                alert('Aucune fiche générée à exporter');
+                return;
+            }
+            
+            let csvContent = '\ufeff'; // BOM UTF-8
+            
+            // En-tête du fichier
+            csvContent += `FICHE DE RÉCEPTION TOPOGRAPHIQUE\n`;
+            csvContent += `Projet;${document.getElementById('display-projet').textContent}\n`;
+            csvContent += `Date;${document.getElementById('display-date').textContent}\n`;
+            csvContent += `Opérateur;${document.getElementById('display-operateur').textContent}\n`;
+            csvContent += `Point contrôlé;${document.getElementById('display-point').textContent}\n`;
+            csvContent += `Tolérance;${document.getElementById('display-tolerance').textContent} cm\n`;
+            csvContent += `Météo;${document.getElementById('display-meteo').textContent}\n\n`;
+            
+            // Tableau des mesures
+            csvContent += `DESIGNATION PK;COTES Théoriques;Côte du repère;Lecture avant (L.A.V);Lecture arrière (L.A.I);Côte mesurée;COTES Pratiques;ÉCART (cm);OBSERVATION\n`;
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const inputs = row.querySelectorAll('input');
+                
+                const designation = cells[0].textContent;
+                const theorique = cells[1].textContent;
+                const coteRepere = inputs[0].value || '';
+                const lectureAvant = inputs[1].value || '';
+                const lectureArriere = inputs[2].value || '';
+                const coteMesuree = cells[5].textContent;
+                const cotePratique = cells[6].textContent;
+                const ecart = cells[7].textContent;
+                const observation = inputs[3].value || '';
+                
+                csvContent += `"${designation}";"${theorique}";"${coteRepere}";"${lectureAvant}";"${lectureArriere}";"${coteMesuree}";"${cotePratique}";"${ecart}";"${observation}"\n`;
+            });
+            
+            // Télécharger le fichier
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `fiche_reception_${timestamp}.csv`;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+        
+        // Navigation
+        document.getElementById('back-to-km').onclick = () => {
+            window.location.href = '/points-kilometriques';
+        };
+        
+        // Initialisation
+        loadDataFromKM();
+    })();
+    </script>
+</body>
+</html>

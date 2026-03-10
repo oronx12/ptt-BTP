@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTT BTP - Générateur de profils</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="site-title">
+            <div class="logo">PT</div>
+            <div>
+                <div style="font-weight:700">PTT BTP</div>
+                <div style="font-size:12px; color:var(--muted)">Éditeur de profils en travers-types</div>
+            </div>
+        </div>
+    </header>
+    <div class="main-container">
+        <!-- Section supprimée : Générateur de profils routiers -->
+        <p class="lead">Ce site permet de visualiser et recalculer les couches d’un profil routier à partir des paramètres du projet.</p>
+
+
+
+
+
+        <!-- Éditeur orthonormé interactif -->
+        <div class="card full" style="margin-top:18px;">
+            <h3>Éditeur de profil en travers-types</h3>
+            <div class="editor-layout">
+                <div id="canvasContainer">
+                    <canvas id="editor-canvas" width="1400" height="600"></canvas>
+                    <div style="margin-top:8px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                        <button id="mode-add" class="btn">Ajouter point</button>
+                        <button id="mode-select" class="btn secondary">Sélectionner points</button>
+                        <button id="mode-connect" class="btn secondary">Connecter points</button>
+                        <button id="mode-polygon" class="btn secondary">Créer polygone</button>
+                        <button id="mode-selectgeometry" class="btn secondary">Sélectionner géométrie</button>
+                        <button id="delete-selected" class="btn secondary">Supprimer points</button>
+                        <button id="delete-selected-connections" class="btn secondary" style="margin-left:8px;">Supprimer lignes sélectionnées</button>
+                        <button id="delete-selected-polygons" class="btn secondary">Supprimer polygones sélectionnés</button>
+                        <button id="clear-connections" class="btn secondary">Effacer toutes lignes</button>
+                        <button id="clear-polygons" class="btn secondary">Effacer tous polygones</button>
+                        <button id="finish-polygon" class="btn" style="display:none; background:#16a34a;">Terminer polygone</button>
+                    </div>
+
+                </div>
+                <div id="sidebar">
+                    <div style="margin-bottom:12px">
+                        <label for="file-input">Fichier CSV :</label>
+                        <input id="file-input" type="file" accept="text/csv,.csv">
+                        <div style="margin-top:8px; display:flex; gap:8px;">
+                            <button id="parse-local" class="btn">Charger profil à droite</button>
+                            <button id="parse-local-left" class="btn secondary">Charger profil à gauche</button>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:12px">
+                        <button id="save-points" class="btn">Sauvegarder</button>
+                        <a id="export-csv" class="btn secondary" href="/api/points/export">Exporter</a>
+                        <button id="go-to-km" class="btn" style="background:#16a34a; margin-left:16px;">Points kilométriques</button>
+                    </div>
+
+                    <!-- Liste des points déplacée en dessous de la zone d'édition -->
+
+                    </div> <!-- #sidebar -->
+                </div> <!-- .editor-layout -->
+
+                <!-- Liste des points (placée sous la zone de positionnement) -->
+                <div class="card full" style="margin-top:12px;">
+                    <h4>Liste des points</h4>
+                    <div style="max-height:260px; overflow:auto;">
+                        <table id="points-table" style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr><th>ID</th><th>Nom</th><th>X</th><th>Z</th><th></th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Boutons d'export -->
+                    <div style="margin-top:16px; display:flex; gap:12px; align-items:center;">
+                        <h5 style="margin:0;">Exporter les résultats :</h5>
+                        <button id="export-csv-btn" class="btn secondary">CSV</button>
+                        <button id="export-json-btn" class="btn secondary">JSON</button>
+                        <button id="export-excel-btn" class="btn secondary">Excel</button>
+                    </div>
+                </div>
+
+                    <script>
+                    // Gestion du formulaire de recalcul et visualisation simplifiée
+                    document.getElementById('params-form').onsubmit = async function(e){
+                        e.preventDefault();
+                        const Z0 = parseFloat(document.getElementById('Z0').value) || 0;
+                        const X0 = parseFloat(document.getElementById('X0').value) || 0;
+                        const resultDiv = document.getElementById('result');
+                        const tableZone = document.getElementById('table-zone');
+                        const vizZone = document.getElementById('viz-zone');
+                        resultDiv.innerHTML = '';
+                        tableZone.innerHTML = '';
+                        vizZone.innerHTML = '';
+                        try{
+                            const resp = await fetch('/api/update', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({Z0, X0})});
+                            const data = await resp.json();
+                            if(data.error){ resultDiv.innerHTML = `<span style="color:red">Erreur: ${data.error}</span>`; return; }
+                            resultDiv.innerHTML = `<div class="card"><strong>Paramètres:</strong> Z0=${Z0}, X0=${X0} — couches: ${data.records_count||0}</div>`;
+                            // table
+                            if(Array.isArray(data.records) && data.records.length>0){
+                                let html = '<div class="card"><h4>Table des couches</h4><table><tr><th>Layer</th><th>P1</th><th>P2</th><th>P3</th><th>P4</th></tr>';
+                                data.records.forEach(rec=>{ html += `<tr><td>${rec.layer}</td><td>${Number(rec.P1_x).toFixed(4)},${Number(rec.P1_z).toFixed(4)}</td><td>${Number(rec.P2_x).toFixed(4)},${Number(rec.P2_z).toFixed(4)}</td><td>${Number(rec.P3_x).toFixed(4)},${Number(rec.P3_z).toFixed(4)}</td><td>${Number(rec.P4_x).toFixed(4)},${Number(rec.P4_z).toFixed(4)}</td></tr>`; });
+                                html += '</table></div>';
+                                tableZone.innerHTML = html;
+                                // simple viz: two canvases
+                                vizZone.innerHTML = `<h3>Visualisation schématique</h3><div style="display:flex;gap:12px;align-items:flex-start;"><canvas id="profile-canvas" width="820" height="420" style="border:1px solid #aaa;background:#fff"></canvas><canvas id="mini-canvas" width="300" height="200" style="border:1px solid #aaa;background:#fafafa"></canvas></div>`;
+                                // draw on canvases
+                                const canvas = document.getElementById('profile-canvas'); const ctx = canvas.getContext('2d');
+                                const mini = document.getElementById('mini-canvas'); const mctx = mini.getContext('2d');
+                                // collect points
+                                const pts = [];
+                                data.records.forEach((rec,i)=>{ pts.push({x:Number(rec.P1_x), z:Number(rec.P1_z), layer:rec.layer}); pts.push({x:Number(rec.P2_x), z:Number(rec.P2_z), layer:rec.layer}); pts.push({x:Number(rec.P3_x), z:Number(rec.P3_z), layer:rec.layer}); pts.push({x:Number(rec.P4_x), z:Number(rec.P4_z), layer:rec.layer}); });
+                                if(pts.length===0) return;
+                                const xs = pts.map(p=>p.x), zs = pts.map(p=>p.z); const minX = Math.min(...xs), maxX = Math.max(...xs); const minZ = Math.min(...zs), maxZ = Math.max(...zs);
+                                const pad = 40;
+                                const scale = Math.min((canvas.width-2*pad)/(maxX-minX || 1),(canvas.height-2*pad)/(maxZ-minZ || 1)) * 0.9;
+                                function sx(x){ return canvas.width/2 + (x - (minX+maxX)/2)*scale; }
+                                function sy(z){ return canvas.height/2 - (z - (minZ+maxZ)/2)*scale; }
+                                ctx.clearRect(0,0,canvas.width,canvas.height);
+                                // draw polygons per layer (simple quads)
+                                const colors = ['#e74c3c','#2980b9','#27ae60','#f39c12','#8e44ad'];
+                                data.records.forEach((rec,i)=>{
+                                    ctx.beginPath(); ctx.moveTo(sx(rec.P1_x), sy(rec.P1_z)); ctx.lineTo(sx(rec.P2_x), sy(rec.P2_z)); ctx.lineTo(sx(rec.P3_x), sy(rec.P3_z)); ctx.lineTo(sx(rec.P4_x), sy(rec.P4_z)); ctx.closePath(); ctx.strokeStyle = colors[i%colors.length]; ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha = 0.12; ctx.fillStyle = colors[i%colors.length]; ctx.fill(); ctx.globalAlpha = 1.0;
+                                });
+                                // mini
+                                mctx.clearRect(0,0,mini.width,mini.height); const mx = (minX+maxX)/2, mz = (minZ+maxZ)/2; const smini = Math.min((mini.width-10)/(maxX-minX||1),(mini.height-10)/(maxZ-minZ||1))*0.9;
+                                function msx(x){ return mini.width/2 + (x-mx)*smini; } function msy(z){ return mini.height/2 - (z-mz)*smini; }
+                                data.records.forEach((rec,i)=>{ mctx.beginPath(); mctx.moveTo(msx(rec.P1_x), msy(rec.P1_z)); mctx.lineTo(msx(rec.P2_x), msy(rec.P2_z)); mctx.lineTo(msx(rec.P3_x), msy(rec.P3_z)); mctx.lineTo(msx(rec.P4_x), msy(rec.P4_z)); mctx.closePath(); mctx.strokeStyle = colors[i%colors.length]; mctx.lineWidth = 1; mctx.stroke(); });
+                            }
+                        }catch(err){ resultDiv.innerHTML = `<span style="color:red">Erreur lors de la requête: ${err.message}</span>`; }
+                    };
+                    </script>
+    <script>
+    // Editor: interactive orthonormal canvas for points (X horizontal, Z vertical)
+    (function(){
+        const canvas = document.getElementById('editor-canvas');
+        if (!canvas) {
+            console.error('Canvas not found!');
+            return;
+        }
+        
+        const ctx = canvas.getContext('2d');
+        const pointsTableBody = document.querySelector('#points-table tbody');
+        
+        if (!pointsTableBody) {
+            console.error('Points table body not found!');
+            return;
+        }
+        
+        console.log('Editor initialized, canvas:', canvas, 'table:', pointsTableBody);
+
+        let view = { scale: 50, tx: 0, ty: 0 }; // tx/ty are pixel translations
+        let points = []; // {id,label,x,z}
+        let connections = []; // [{from: id1, to: id2, type: 'line'|'polyline', color: '#color'}]
+        let polygons = []; // [{points: [id1, id2, id3...], type: 'polygon'|'multipolygon', color: '#color', filled: boolean}]
+        let mode = 'add'; // 'add', 'select', 'connect', 'polygon'
+        let selected = new Set();
+        let selectedConnections = new Set(); // IDs des connexions sélectionnées
+        let selectedPolygons = new Set(); // IDs des polygones sélectionnés
+        let dragId = null;
+        let panActive = false;
+        let panStart = null;
+        let lastMouse = {sx: 0, sy: 0};
+        let idCounter = 1;
+        let connectionIdCounter = 1; // Pour identifier les connexions
+        let polygonIdCounter = 1; // Pour identifier les polygones
+        let connectionStart = null; // Pour le mode connexion
+        let polygonPoints = []; // Points du polygone en cours de création
+
+        function resize(){
+            // Utiliser toute la largeur disponible moins la sidebar et les marges
+            const containerWidth = window.innerWidth - 280 - 100; // sidebar + marges
+            const containerHeight = window.innerHeight - 180; // header + marges
+            
+            canvas.width = Math.max(containerWidth, 800); // minimum 800px
+            canvas.height = Math.max(containerHeight, 500); // minimum 500px
+            draw();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function worldToScreen(x,z){
+            const cx = canvas.width/2;
+            const cy = canvas.height/2;
+            return { sx: cx + x * view.scale + view.tx, sy: cy - z * view.scale + view.ty };
+        }
+        function screenToWorld(sx,sy){
+            const cx = canvas.width/2;
+            const cy = canvas.height/2;
+            return { x: (sx - cx - view.tx)/view.scale, z: (cy - sy + view.ty)/view.scale };
+        }
+
+        function drawGrid(){
+            const step = view.scale; if(step<=4) return; // avoid too dense
+            ctx.strokeStyle = '#f3f6fb'; ctx.lineWidth = 1;
+            // vertical grid
+            for(let x = 0; x < canvas.width; x += step){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+            for(let y = 0; y < canvas.height; y += step){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke(); }
+        }
+
+        function draw(){
+            if (!ctx) {
+                console.error('Canvas context not available');
+                return;
+            }
+            
+            console.log('Drawing', points.length, 'points');
+            
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            
+            // grid
+            drawGrid();
+            
+            // Axes principaux X=0 et Z=0 (en couleur)
+            const originScreen = worldToScreen(0, 0);
+            
+            // Axe Z=0 (horizontal) - en rouge
+            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+            ctx.beginPath(); 
+            ctx.moveTo(0, originScreen.sy); 
+            ctx.lineTo(canvas.width, originScreen.sy); 
+            ctx.stroke();
+            
+            // Axe X=0 (vertical) - en bleu
+            ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2;
+            ctx.beginPath(); 
+            ctx.moveTo(originScreen.sx, 0); 
+            ctx.lineTo(originScreen.sx, canvas.height); 
+            ctx.stroke();
+            
+            // Point origine (0,0) - en vert avec cercle plus grand
+            ctx.fillStyle = '#22c55e'; 
+            ctx.beginPath(); 
+            ctx.arc(originScreen.sx, originScreen.sy, 8, 0, Math.PI*2); 
+            ctx.fill();
+            ctx.strokeStyle = '#16a34a'; 
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Label du point origine
+            ctx.fillStyle = '#16a34a'; 
+            ctx.font = 'bold 14px Arial'; 
+            ctx.fillText('(0,0)', originScreen.sx + 12, originScreen.sy - 12);
+            
+            // Axes secondaires (centrés sur l'écran) - en gris clair
+            ctx.strokeStyle = '#e6eef8'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(0, canvas.height/2 + view.ty); ctx.lineTo(canvas.width, canvas.height/2 + view.ty); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(canvas.width/2 + view.tx, 0); ctx.lineTo(canvas.width/2 + view.tx, canvas.height); ctx.stroke();
+
+            // connections avec styles améliorés
+            ctx.lineWidth = 2;
+            connections.forEach(conn => {
+                const fromPoint = points.find(p => p.id === conn.from);
+                const toPoint = points.find(p => p.id === conn.to);
+                if (!fromPoint || !toPoint) return;
+                
+                const sa = worldToScreen(fromPoint.x, fromPoint.z);
+                const sb = worldToScreen(toPoint.x, toPoint.z);
+                
+                // Vérifier si la connexion est sélectionnée
+                const isSelected = selectedConnections.has(conn.id);
+                
+                // Style de ligne selon le type et la sélection
+                ctx.strokeStyle = isSelected ? '#ff6b35' : (conn.color || '#2563eb');
+                ctx.lineWidth = isSelected ? 4 : (conn.type === 'polyline' ? 3 : 2);
+                
+                if (conn.type === 'polyline') {
+                    // Ligne en pointillés pour les polylignes
+                    ctx.setLineDash([8, 4]);
+                } else {
+                    ctx.setLineDash([]);
+                }
+                
+                ctx.beginPath();
+                ctx.moveTo(sa.sx, sa.sy);
+                ctx.lineTo(sb.sx, sb.sy);
+                ctx.stroke();
+                
+                // Flèche directionnelle
+                drawArrow(sa.sx, sa.sy, sb.sx, sb.sy, isSelected ? '#ff6b35' : (conn.color || '#2563eb'));
+                
+                // Afficher l'ID de la connexion si sélectionnée
+                if (isSelected) {
+                    const midX = (sa.sx + sb.sx) / 2;
+                    const midY = (sa.sy + sb.sy) / 2;
+                    ctx.fillStyle = '#ff6b35';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.fillText(`L${conn.id}`, midX - 10, midY - 10);
+                }
+            });
+            
+            // Réinitialiser le style
+            ctx.setLineDash([]);
+            
+            // Dessiner les polygones
+            ctx.lineWidth = 2;
+            polygons.forEach((poly, polyIndex) => {
+                if (poly.points.length < 3) return; // Un polygone a besoin d'au moins 3 points
+                
+                const polyPoints = poly.points.map(pid => points.find(p => p.id === pid)).filter(p => p);
+                if (polyPoints.length < 3) return;
+                
+                const screenPoints = polyPoints.map(p => worldToScreen(p.x, p.z));
+                
+                // Vérifier si le polygone est sélectionné
+                const isSelected = selectedPolygons.has(poly.id);
+                
+                ctx.strokeStyle = isSelected ? '#ff6b35' : (poly.color || getPolygonColor(polyIndex));
+                ctx.lineWidth = isSelected ? 4 : 2;
+                
+                // Dessiner le contour du polygone
+                ctx.beginPath();
+                ctx.moveTo(screenPoints[0].sx, screenPoints[0].sy);
+                for (let i = 1; i < screenPoints.length; i++) {
+                    ctx.lineTo(screenPoints[i].sx, screenPoints[i].sy);
+                }
+                ctx.closePath();
+                ctx.stroke();
+                
+                // Remplir le polygone si nécessaire
+                if (poly.filled) {
+                    ctx.globalAlpha = isSelected ? 0.4 : 0.2;
+                    ctx.fillStyle = isSelected ? '#ff6b35' : (poly.color || getPolygonColor(polyIndex));
+                    ctx.fill();
+                    ctx.globalAlpha = 1.0;
+                }
+                
+                // Numéroter les sommets
+                screenPoints.forEach((sp, i) => {
+                    ctx.fillStyle = isSelected ? '#ff6b35' : (poly.color || getPolygonColor(polyIndex));
+                    ctx.font = 'bold 10px Arial';
+                    ctx.fillText((i + 1).toString(), sp.sx - 15, sp.sy - 15);
+                });
+                
+                // Afficher l'ID du polygone si sélectionné
+                if (isSelected) {
+                    const centerX = screenPoints.reduce((sum, sp) => sum + sp.sx, 0) / screenPoints.length;
+                    const centerY = screenPoints.reduce((sum, sp) => sum + sp.sy, 0) / screenPoints.length;
+                    ctx.fillStyle = '#ff6b35';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.fillText(`P${poly.id}`, centerX - 10, centerY);
+                }
+            });
+            
+            // Dessiner le polygone en cours de création
+            if (mode === 'polygon' && polygonPoints.length > 0) {
+                const currentScreenPoints = polygonPoints.map(pid => {
+                    const p = points.find(pt => pt.id === pid);
+                    return p ? worldToScreen(p.x, p.z) : null;
+                }).filter(sp => sp);
+                
+                if (currentScreenPoints.length > 1) {
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([5, 5]);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(currentScreenPoints[0].sx, currentScreenPoints[0].sy);
+                    for (let i = 1; i < currentScreenPoints.length; i++) {
+                        ctx.lineTo(currentScreenPoints[i].sx, currentScreenPoints[i].sy);
+                    }
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            // points avec indicateur de connexion
+            points.forEach(p => {
+                const s = worldToScreen(p.x,p.z);
+                
+                // Point principal
+                ctx.beginPath(); 
+                ctx.fillStyle = selected.has(p.id) ? '#f97316' : '#111827'; 
+                ctx.arc(s.sx, s.sy, 6, 0, Math.PI*2); 
+                ctx.fill();
+                
+                // Indicateur de mode connexion
+                if (mode === 'connect' && connectionStart === p.id) {
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+                
+                // Indicateur de mode polygone
+                if (mode === 'polygon' && polygonPoints.includes(p.id)) {
+                    const index = polygonPoints.indexOf(p.id);
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    
+                    // Numéro du point dans le polygone
+                    ctx.fillStyle = '#ef4444';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.fillText((index + 1).toString(), s.sx - 20, s.sy - 20);
+                }
+                
+                // Labels
+                ctx.fillStyle = '#111827'; 
+                ctx.font = '12px Arial'; 
+                ctx.fillText(p.label||('P'+p.id), s.sx+8, s.sy-8);
+                
+                // Affichage des coordonnées avec couleur selon la position par rapport à l'origine
+                let coordColor = '#6b7280';
+                if (p.x > 0 && p.z > 0) coordColor = '#059669'; // Quadrant 1: vert
+                else if (p.x < 0 && p.z > 0) coordColor = '#dc2626'; // Quadrant 2: rouge
+                else if (p.x < 0 && p.z < 0) coordColor = '#7c2d12'; // Quadrant 3: marron
+                else if (p.x > 0 && p.z < 0) coordColor = '#1d4ed8'; // Quadrant 4: bleu
+                else coordColor = '#16a34a'; // Sur les axes: vert foncé
+                
+                ctx.fillStyle = coordColor; 
+                ctx.font = '11px Arial'; 
+                ctx.fillText(`(${p.x.toFixed(3)}, ${p.z.toFixed(3)})`, s.sx+8, s.sy+10);
+            });
+
+            // crosshair at mouse avec coordonnées dynamiques
+            try{
+                const sx = lastMouse.sx, sy = lastMouse.sy;
+                const worldPos = screenToWorld(sx, sy);
+                
+                // Crosshair
+                ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, canvas.height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(canvas.width, sy); ctx.stroke();
+                
+                // Affichage des coordonnées du curseur
+                ctx.fillStyle = '#374151';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillRect(sx + 10, sy - 25, 120, 20);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(`X:${worldPos.x.toFixed(2)} Z:${worldPos.z.toFixed(2)}`, sx + 15, sy - 10);
+            }catch(e){}
+        }
+        
+        // Fonction pour dessiner une flèche directionnelle
+        function drawArrow(fromX, fromY, toX, toY, color) {
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            const arrowLength = 8;
+            const arrowAngle = Math.PI / 6;
+            
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 1;
+            
+            // Pointe de la flèche
+            const arrowX = toX - 15 * Math.cos(angle);
+            const arrowY = toY - 15 * Math.sin(angle);
+            
+            ctx.beginPath();
+            ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(
+                arrowX - arrowLength * Math.cos(angle - arrowAngle),
+                arrowY - arrowLength * Math.sin(angle - arrowAngle)
+            );
+            ctx.lineTo(
+                arrowX - arrowLength * Math.cos(angle + arrowAngle),
+                arrowY - arrowLength * Math.sin(angle + arrowAngle)
+            );
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function addPointAtScreen(sx,sy){
+            const w = screenToWorld(sx,sy);
+            const p = {id: idCounter++, label: 'P'+idCounter, x: Number(w.x.toFixed(6)), z: Number(w.z.toFixed(6))};
+            points.push(p); renderPointsTable(); draw();
+        }
+
+        // pointer tracking
+        canvas.addEventListener('mousemove', (ev)=>{
+            const rect = canvas.getBoundingClientRect(); const sx = ev.clientX - rect.left; const sy = ev.clientY - rect.top;
+            lastMouse.sx = sx; lastMouse.sy = sy;
+            // if dragging a point
+            if(dragId){ const w2 = screenToWorld(sx,sy); const p = points.find(pp=>pp.id===dragId); if(p){ p.x = Number(w2.x.toFixed(6)); p.z = Number(w2.z.toFixed(6)); renderPointsTable(); draw(); }}
+            // if panning
+            if(panActive && panStart){ const dx = sx - panStart.sx; const dy = sy - panStart.sy; view.tx = panStart.tx + dx; view.ty = panStart.ty + dy; draw(); }
+        });
+
+        // click handling
+        canvas.addEventListener('click', (ev)=>{
+            const rect = canvas.getBoundingClientRect(); const sx = ev.clientX - rect.left; const sy = ev.clientY - rect.top;
+            
+            if(mode === 'add'){ 
+                addPointAtScreen(sx,sy); 
+            }
+            else if(mode === 'select'){
+                // selection nearest
+                let nearest=null; let best=9999;
+                points.forEach(p=>{ const s=worldToScreen(p.x,p.z); const d = Math.hypot(sx-s.sx, sy-s.sy); if(d<best && d<12){best=d; nearest=p;}});
+                if(nearest){ if(selected.has(nearest.id)) selected.delete(nearest.id); else selected.clear(), selected.add(nearest.id); renderPointsTable(); draw(); }
+            }
+            else if(mode === 'selectgeometry'){
+                // Sélection des connexions et polygones
+                const worldPos = screenToWorld(sx, sy);
+                
+                // Vérifier d'abord les connexions (plus facile à cliquer)
+                const connectionClicked = handleConnectionClick(worldPos.x, worldPos.z);
+                
+                // Si aucune connexion n'est cliquée, vérifier les polygones
+                if (!connectionClicked) {
+                    handlePolygonClick(worldPos.x, worldPos.z);
+                }
+                
+                draw(); // Redessiner pour montrer les sélections
+            }
+            else if(mode === 'connect'){
+                // Connexion de points
+                let nearest=null; let best=9999;
+                points.forEach(p=>{ const s=worldToScreen(p.x,p.z); const d = Math.hypot(sx-s.sx, sy-s.sy); if(d<best && d<12){best=d; nearest=p;}});
+                
+                if(nearest){
+                    if(connectionStart === null){
+                        // Premier point sélectionné
+                        connectionStart = nearest.id;
+                        console.log('Point de départ sélectionné:', nearest.label);
+                        draw(); // Redessiner pour montrer la sélection
+                    } else if(connectionStart !== nearest.id){
+                        // Deuxième point sélectionné - créer la connexion
+                        const connectionColor = getConnectionColor(connections.length);
+                        connections.push({
+                            from: connectionStart,
+                            to: nearest.id,
+                            type: 'line',
+                            color: connectionColor
+                        });
+                        console.log('Connexion créée entre', connectionStart, 'et', nearest.id);
+                        connectionStart = null; // Réinitialiser
+                        draw();
+                        renderPointsTable();
+                    }
+                }
+            }
+            else if(mode === 'polygon'){
+                // Création de polygone
+                let nearest=null; let best=9999;
+                points.forEach(p=>{ const s=worldToScreen(p.x,p.z); const d = Math.hypot(sx-s.sx, sy-s.sy); if(d<best && d<12){best=d; nearest=p;}});
+                
+                if(nearest){
+                    if(!polygonPoints.includes(nearest.id)){
+                        polygonPoints.push(nearest.id);
+                        console.log('Point ajouté au polygone:', nearest.label, 'Total:', polygonPoints.length);
+                        
+                        // Afficher le bouton "Terminer polygone" si au moins 3 points
+                        if(polygonPoints.length >= 3){
+                            document.getElementById('finish-polygon').style.display = 'inline-block';
+                        }
+                        draw();
+                    }
+                }
+            }
+        });
+
+        // drag to move points (left button)
+        canvas.addEventListener('mousedown', (ev)=>{
+            const rect = canvas.getBoundingClientRect(); const sx = ev.clientX-rect.left; const sy = ev.clientY-rect.top;
+            // middle button or space = pan
+            if(ev.button === 1 || ev.shiftKey){ panActive = true; panStart = { sx, sy, tx: view.tx, ty: view.ty }; canvas.classList.add('canvas-grabbing'); return; }
+            let nearest=null; let best=9999; points.forEach(p=>{ const s=worldToScreen(p.x,p.z); const d=Math.hypot(sx-s.sx, sy-s.sy); if(d<best && d<10){best=d; nearest=p;}});
+            if(nearest){ dragId = nearest.id; }
+        });
+        window.addEventListener('mouseup', ()=>{ dragId = null; panActive = false; panStart = null; canvas.classList.remove('canvas-grabbing'); });
+
+        // wheel -> zoom
+        canvas.addEventListener('wheel', (ev)=>{
+            ev.preventDefault(); const rect = canvas.getBoundingClientRect(); const sx = ev.clientX - rect.left; const sy = ev.clientY - rect.top;
+            const before = screenToWorld(sx,sy);
+            const factor = ev.deltaY > 0 ? 0.9 : 1.1;
+            view.scale = Math.max(2, Math.min(200, view.scale * factor));
+            // after zoom, adjust tx/ty to keep mouse world fixed
+            const afterScreen = worldToScreen(before.x, before.z);
+            view.tx += sx - afterScreen.sx; view.ty += sy - afterScreen.sy;
+            draw();
+        }, { passive: false });
+
+        // UI controls
+        document.getElementById('mode-add').onclick = ()=>{ resetModes(); mode='add'; canvas.classList.add('canvas-crosshair'); };
+        document.getElementById('mode-select').onclick = ()=>{ resetModes(); mode='select'; canvas.classList.remove('canvas-crosshair', 'canvas-connect'); };
+        document.getElementById('mode-connect').onclick = ()=>{ resetModes(); mode='connect'; canvas.classList.remove('canvas-crosshair'); canvas.classList.add('canvas-connect'); };
+        document.getElementById('mode-polygon').onclick = ()=>{ resetModes(); mode='polygon'; canvas.classList.remove('canvas-crosshair'); canvas.classList.add('canvas-connect'); };
+        document.getElementById('mode-selectgeometry').onclick = ()=>{ resetModes(); mode='selectgeometry'; canvas.classList.remove('canvas-crosshair', 'canvas-connect'); canvas.classList.add('canvas-select'); };
+        
+        document.getElementById('delete-selected').onclick = ()=>{ 
+            const sel = Array.from(selected); 
+            points = points.filter(p=>!selected.has(p.id)); 
+            connections = connections.filter(c=>!sel.includes(c.from) && !sel.includes(c.to)); 
+            polygons = polygons.filter(poly => !sel.some(id => poly.points.includes(id)));
+            selected.clear(); 
+            resetModes();
+            renderPointsTable(); 
+            draw(); 
+        };
+        
+        document.getElementById('delete-selected-connections').onclick = ()=>{ 
+            // Supprimer uniquement les connexions sélectionnées
+            connections = connections.filter(conn => !selectedConnections.has(conn.id));
+            selectedConnections.clear();
+            console.log('Connexions sélectionnées supprimées');
+            draw(); 
+        };
+        
+        document.getElementById('delete-selected-polygons').onclick = ()=>{ 
+            // Supprimer uniquement les polygones sélectionnés
+            polygons = polygons.filter(poly => !selectedPolygons.has(poly.id));
+            selectedPolygons.clear();
+            console.log('Polygones sélectionnés supprimés');
+            draw(); 
+        };
+        
+        document.getElementById('clear-connections').onclick = ()=>{ 
+            connections = []; 
+            selectedConnections.clear();
+            resetModes();
+            draw(); 
+            renderPointsTable();
+        };
+        
+        document.getElementById('finish-polygon').onclick = ()=>{
+            if(polygonPoints.length >= 3){
+                const polygonColor = getPolygonColor(polygons.length);
+                polygons.push({
+                    id: ++polygonIdCounter,
+                    points: [...polygonPoints],
+                    type: 'polygon',
+                    color: polygonColor,
+                    filled: true
+                });
+                console.log('Polygone créé avec', polygonPoints.length, 'points');
+                polygonPoints = [];
+                document.getElementById('finish-polygon').style.display = 'none';
+                draw();
+                renderPointsTable();
+            }
+        };
+        
+        document.getElementById('clear-polygons').onclick = ()=>{ 
+            polygons = []; 
+            selectedPolygons.clear();
+            resetModes();
+            draw(); 
+            renderPointsTable();
+        };
+        
+        function resetModes() {
+            connectionStart = null;
+            polygonPoints = [];
+            document.getElementById('finish-polygon').style.display = 'none';
+        }
+        
+        // Fonction pour obtenir une couleur pour les connexions
+        function getConnectionColor(index) {
+            const colors = ['#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+            return colors[index % colors.length];
+        }
+        
+        // Fonction pour obtenir une couleur pour les polygones
+        function getPolygonColor(index) {
+            const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+            return colors[index % colors.length];
+        }
+        
+        // Fonctions de gestion de la sélection des connexions et polygones
+        function handleConnectionClick(worldX, worldY) {
+            const tolerance = 20 / zoom; // Tolérance ajustée au zoom
+            
+            for (let conn of connections) {
+                const p1 = points.find(p => p.id === conn.point1);
+                const p2 = points.find(p => p.id === conn.point2);
+                
+                if (p1 && p2) {
+                    const distance = distancePointToLine(worldX, worldY, p1.x, p1.z, p2.x, p2.z);
+                    if (distance < tolerance) {
+                        if (selectedConnections.has(conn.id)) {
+                            selectedConnections.delete(conn.id);
+                        } else {
+                            selectedConnections.add(conn.id);
+                        }
+                        return true; // Connexion trouvée et sélectionnée/désélectionnée
+                    }
+                }
+            }
+            return false;
+        }
+        
+        function distancePointToLine(px, py, x1, y1, x2, y2) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+            
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            let param = -1;
+            
+            if (lenSq !== 0) {
+                param = dot / lenSq;
+            }
+            
+            let xx, yy;
+            
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            } else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            } else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+            
+            const dx = px - xx;
+            const dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        function handlePolygonClick(worldX, worldY) {
+            for (let poly of polygons) {
+                if (poly.points.length < 3) continue;
+                
+                const polyPoints = poly.points.map(pid => points.find(p => p.id === pid)).filter(p => p);
+                if (polyPoints.length < 3) continue;
+                
+                // Vérifier si le point cliqué est à l'intérieur du polygone
+                if (isPointInPolygon(worldX, worldY, polyPoints)) {
+                    if (selectedPolygons.has(poly.id)) {
+                        selectedPolygons.delete(poly.id);
+                    } else {
+                        selectedPolygons.add(poly.id);
+                    }
+                    return true; // Polygone trouvé et sélectionné/désélectionné
+                }
+            }
+            return false;
+        }
+        
+        function isPointInPolygon(x, y, polygonPoints) {
+            let inside = false;
+            for (let i = 0, j = polygonPoints.length - 1; i < polygonPoints.length; j = i++) {
+                const xi = polygonPoints[i].x, yi = polygonPoints[i].z;
+                const xj = polygonPoints[j].x, yj = polygonPoints[j].z;
+                
+                if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        // Navigation vers page points kilométriques
+        document.getElementById('go-to-km').onclick = () => {
+            // Sauvegarder les points actuels dans le sessionStorage pour les passer à la nouvelle page
+            sessionStorage.setItem('currentPoints', JSON.stringify(points));
+            sessionStorage.setItem('currentConnections', JSON.stringify(connections));
+            window.location.href = '/points-kilometriques';
+        };
+
+        // save/load
+        document.getElementById('save-points').onclick = async ()=>{ 
+            const saveData = {points, connections, polygons};
+            await fetch('/api/points',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(saveData)}); 
+            alert('Points, connexions et polygones sauvegardés.'); 
+        };
+
+        // Export handlers
+        document.getElementById('export-csv-btn').onclick = () => {
+            if (points.length === 0) { alert('Aucun point à exporter'); return; }
+            let csv = 'ID,Nom,X,Z\n';
+            points.forEach(p => csv += `${p.id},"${p.label||''}",${p.x},${p.z}\n`);
+            downloadFile(csv, 'points.csv', 'text/csv');
+        };
+        
+        document.getElementById('export-json-btn').onclick = () => {
+            if (points.length === 0) { alert('Aucun point à exporter'); return; }
+            const data = { points, connections, polygons, exported_at: new Date().toISOString() };
+            downloadFile(JSON.stringify(data, null, 2), 'points_polygones.json', 'application/json');
+        };
+        
+        document.getElementById('export-excel-btn').onclick = () => {
+            if (points.length === 0) { alert('Aucun point à exporter'); return; }
+            // Create Excel-compatible CSV with UTF-8 BOM
+            let csv = '\ufeffID;Nom;X;Z\n';
+            points.forEach(p => csv += `${p.id};"${p.label||''}";${p.x};${p.z}\n`);
+            downloadFile(csv, 'points.xlsx.csv', 'text/csv');
+        };
+        
+        function downloadFile(content, filename, type) {
+            const blob = new Blob([content], { type: type + ';charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
+
+
+        // parse-local handler unchanged
+        // Parse and preview file locally (CSV/JSON/GeoJSON) without saving
+        function parseFileContent(text, fileName) {
+            console.log('Parsing file:', fileName);
+            console.log('File content preview:', text.substring(0, 200));
+            
+            const newPts = [];
+            const isCSV = fileName.toLowerCase().endsWith('.csv') || text.includes(',') || text.includes(';');
+            
+            if (isCSV) {
+                console.log('Detected as CSV file');
+                const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+                console.log('Found', lines.length, 'lines');
+                
+                if (lines.length < 2) {
+                    throw new Error('Fichier CSV trop court (moins de 2 lignes)');
+                }
+                
+                // Auto-detect separator
+                const firstLine = lines[0];
+                let sep = ',';
+                if (firstLine.split(';').length > firstLine.split(',').length) {
+                    sep = ';';
+                }
+                
+                console.log('Using separator:', sep);
+                
+                // Parse header
+                const header = lines[0].split(sep).map(h => h.trim().toLowerCase());
+                console.log('Header:', header);
+                
+                // Parse data lines
+                for (let i = 1; i < lines.length; i++) {
+                    const parts = lines[i].split(sep).map(p => p.trim());
+                    
+                    if (parts.length < 2) continue;
+                    
+                    let x, z, label = '';
+                    
+                    // Try different column mappings
+                    const xIdx = header.findIndex(h => h === 'x');
+                    const zIdx = header.findIndex(h => h === 'z' || h === 'y');
+                    const labelIdx = header.findIndex(h => h === 'label' || h === 'nom' || h === 'name');
+                    
+                    if (xIdx >= 0 && zIdx >= 0) {
+                        x = parseFloat(parts[xIdx]);
+                        z = parseFloat(parts[zIdx]);
+                        if (labelIdx >= 0) label = parts[labelIdx];
+                    } else {
+                        // Fallback: assume first two numeric columns
+                        const nums = [];
+                        for (let j = 0; j < parts.length; j++) {
+                            const num = parseFloat(parts[j]);
+                            if (!isNaN(num)) {
+                                nums.push({ value: num, index: j });
+                            }
+                        }
+                        
+                        if (nums.length >= 2) {
+                            x = nums[0].value;
+                            z = nums[1].value;
+                            // Try to find a label in non-numeric columns
+                            for (let j = 0; j < parts.length; j++) {
+                                if (isNaN(parseFloat(parts[j])) && parts[j].length > 0) {
+                                    label = parts[j];
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (!isNaN(x) && !isNaN(z)) {
+                        newPts.push({
+                            id: newPts.length + 1,
+                            label: label || ('Point ' + (newPts.length + 1)),
+                            x: x,
+                            z: z
+                        });
+                        console.log('Added point:', { x, z, label });
+                    }
+                }
+            } else {
+                console.log('Detected as JSON file');
+                // JSON/GeoJSON parsing (simplified)
+                try {
+                    const data = JSON.parse(text);
+                    
+                    if (Array.isArray(data)) {
+                        data.forEach((item, i) => {
+                            if (item.x !== undefined && item.z !== undefined) {
+                                newPts.push({
+                                    id: i + 1,
+                                    label: item.label || item.name || ('Point ' + (i + 1)),
+                                    x: parseFloat(item.x),
+                                    z: parseFloat(item.z)
+                                });
+                            }
+                        });
+                    }
+                } catch (e) {
+                    throw new Error('Fichier JSON invalide: ' + e.message);
+                }
+            }
+            
+            console.log('Parsed', newPts.length, 'points:', newPts);
+            return newPts;
+        }
+        
+        document.getElementById('parse-local').onclick = () => {
+            loadProfile(false); // Charger à droite (coordonnées normales)
+        };
+        
+        document.getElementById('parse-local-left').onclick = () => {
+            loadProfile(true); // Charger à gauche (coordonnées X négatives)
+        };
+        
+        function loadProfile(flipX = false) {
+            const inp = document.getElementById('file-input');
+            if (!inp.files || inp.files.length === 0) {
+                alert('Choisissez un fichier CSV');
+                return;
+            }
+            
+            const file = inp.files[0];
+            const fr = new FileReader();
+            fr.onload = () => {
+                try {
+                    const newPts = parseFileContent(fr.result, file.name || '');
+                    if (newPts.length === 0) {
+                        alert('Aucun point trouvé dans le fichier');
+                        return;
+                    }
+                    
+                    // Si flipX est true, inverser les coordonnées X (transposition par rapport à l'axe X)
+                    if (flipX) {
+                        newPts.forEach(p => {
+                            p.x = -p.x;
+                            p.label = p.label + '_G'; // Ajouter suffixe _G pour "gauche"
+                        });
+                    } else {
+                        // Ajouter suffixe _D pour "droite" si pas de flip
+                        newPts.forEach(p => {
+                            p.label = p.label + '_D';
+                        });
+                    }
+                    
+                    // Mettre à jour les IDs pour éviter les conflits
+                    newPts.forEach((p, index) => {
+                        p.id = idCounter + index;
+                    });
+                    idCounter += newPts.length;
+                    
+                    // Ajouter les nouveaux points aux points existants (au lieu de remplacer)
+                    points = points.concat(newPts);
+                    selected.clear();
+                    
+                    console.log('Loaded points:', newPts);
+                    renderPointsTable();
+                    draw();
+                    
+                    const side = flipX ? 'gauche (X inversé)' : 'droite';
+                    alert(`Profil chargé à ${side}: ${newPts.length} points ajoutés`);
+                } catch (err) {
+                    alert('Impossible de parser le fichier: ' + (err.message || err));
+                }
+            };
+            fr.readAsText(file);
+        }
+
+
+        
+
+
+
+
+        function renderPointsTable(){
+            if (!pointsTableBody) {
+                console.error('Table body not found');
+                return;
+            }
+            
+            console.log('Rendering table with', points.length, 'points');
+            pointsTableBody.innerHTML = '';
+            
+            points.forEach(p=>{
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${p.id}</td><td><input value="${p.label||''}" data-id="${p.id}" class="label-input"></td><td><input value="${p.x}" data-id="${p.id}" class="x-input" style="width:80px"></td><td><input value="${p.z}" data-id="${p.id}" class="z-input" style="width:80px"></td><td><button data-id="${p.id}" class="del-row">X</button></td>`;
+                pointsTableBody.appendChild(tr);
+            });
+            
+            // attach handlers
+            document.querySelectorAll('.del-row').forEach(b=>b.onclick = (ev)=>{ 
+                const id=Number(ev.target.dataset.id); 
+                points = points.filter(p=>p.id!==id); 
+                connections = connections.filter(c=>c[0]!==id && c[1]!==id); 
+                renderPointsTable(); 
+                draw(); 
+            });
+            document.querySelectorAll('.label-input').forEach(inp=>inp.onchange = (ev)=>{ 
+                const id=Number(ev.target.dataset.id); 
+                const p = points.find(pp=>pp.id===id); 
+                if(p) p.label = ev.target.value; 
+                draw(); 
+            });
+            document.querySelectorAll('.x-input').forEach(inp=>inp.onchange = (ev)=>{ 
+                const id=Number(ev.target.dataset.id); 
+                const p = points.find(pp=>pp.id===id); 
+                if(p) p.x = Number(ev.target.value); 
+                draw(); 
+            });
+            document.querySelectorAll('.z-input').forEach(inp=>inp.onchange = (ev)=>{ 
+                const id=Number(ev.target.dataset.id); 
+                const p = points.find(pp=>pp.id===id); 
+                if(p) p.z = Number(ev.target.value); 
+                draw(); 
+            });
+        }
+
+        // initial draw
+        draw();
+    })();
+    </script>
+</body>
+</html>

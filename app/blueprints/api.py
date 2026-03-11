@@ -17,6 +17,7 @@ from ..services.pdf_service import (
     build_template_context,
     render_fiche_html,
     make_pdf_bytes,
+    make_pdf_bytes_any,
 )
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -313,16 +314,15 @@ def send_fiche_email():
             }
         ]
 
-        # Joindre le PDF si WeasyPrint est disponible
-        if WEASYPRINT_AVAILABLE:
-            try:
-                pdf_bytes = make_pdf_bytes(html_content, request.host_url)
-                attachments.append({
-                    "filename": nom_pdf,
-                    "content":  list(pdf_bytes),
-                })
-            except Exception:
-                pass  # PDF non critique : on envoie quand même le HTML
+        # Joindre le PDF (WeasyPrint ou xhtml2pdf selon disponibilité)
+        try:
+            pdf_bytes = make_pdf_bytes_any(html_content, request.host_url)
+            attachments.append({
+                "filename": nom_pdf,
+                "content":  list(pdf_bytes),
+            })
+        except Exception:
+            pass  # PDF non critique : on envoie quand même le HTML
 
         params = {
             "from":        mail_from,

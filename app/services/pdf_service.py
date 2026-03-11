@@ -10,9 +10,12 @@ try:
     WEASYPRINT_AVAILABLE = True
 except ImportError:
     WEASYPRINT_AVAILABLE = False
-    current_app.logger.warning(
-        "WeasyPrint non disponible — l'export PDF utilisera le fallback HTML."
-    ) if False else None  # Pas de contexte app au import-time, log différé
+
+try:
+    from xhtml2pdf import pisa
+    XHTML2PDF_AVAILABLE = True
+except ImportError:
+    XHTML2PDF_AVAILABLE = False
 
 
 def _compute_stats(stations: list) -> dict:
@@ -78,3 +81,25 @@ def make_pdf_bytes(html_content: str, base_url: str) -> bytes:
     if not WEASYPRINT_AVAILABLE:
         raise RuntimeError("WeasyPrint n'est pas installé.")
     return WeasyHTML(string=html_content, base_url=base_url).write_pdf()
+
+
+def make_pdf_bytes_any(html_content: str, base_url: str) -> bytes:
+    """
+    Génère un PDF en utilisant le moteur disponible :
+    1. WeasyPrint (meilleure qualité, nécessite GTK)
+    2. xhtml2pdf  (pur Python, fonctionne partout)
+    Lève RuntimeError si aucun moteur n'est disponible.
+    """
+    if WEASYPRINT_AVAILABLE:
+        return WeasyHTML(string=html_content, base_url=base_url).write_pdf()
+
+    if XHTML2PDF_AVAILABLE:
+        import io
+        buf = io.BytesIO()
+        result = pisa.CreatePDF(html_content.encode("utf-8"), dest=buf,
+                                encoding="utf-8")
+        if result.err:
+            raise RuntimeError(f"xhtml2pdf : erreur de conversion ({result.err})")
+        return buf.getvalue()
+
+    raise RuntimeError("Aucun moteur PDF disponible (ni WeasyPrint ni xhtml2pdf).")

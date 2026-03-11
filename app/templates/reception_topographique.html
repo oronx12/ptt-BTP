@@ -8,13 +8,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: { DEFAULT:'#1e3a5f', dark:'#0f2744', light:'#2d5a8e' }, accent:'#3b82f6' }, fontFamily: { sans:['Inter','system-ui','sans-serif'] } } }
+        }
+    </script>
     <style>
         :root {
             --surface-1: #ffffff;
             --surface-2: #f8fafc;
             --surface-3: #f1f5f9;
-            --border-color: #e2e8f0;
-            --border-strong: #cbd5e1;
+            --border-color: #cbd5e1;
+            --border-strong: #94a3b8;
             --text-primary: #0f172a;
             --text-secondary: #475569;
             --text-muted: #94a3b8;
@@ -889,49 +895,31 @@
         .user-avatar { display: none; }
     </style>
 </head>
-<body>
-    <header class="site-header">
-        <div class="site-title">
-            <div class="logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </div>
-            <div>
-                <div style="font-weight:700; font-size: 20px; letter-spacing: -0.5px;">PTT BTP</div>
-                <div style="font-size:12px; opacity:0.8;">Réception topographique</div>
-            </div>
+<body class="font-sans bg-slate-50 min-h-screen">
+<header class="bg-gradient-to-r from-primary-dark to-primary sticky top-0 z-50 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="/" class="flex items-center gap-2.5 text-white hover:opacity-80 transition">
+                <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                </div>
+                <span class="font-bold text-lg">PTT BTP</span>
+            </a>
+            <span class="text-white/40 hidden sm:block">›</span>
+            <span class="text-white/80 text-sm hidden sm:block">Réception topographique</span>
         </div>
-        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
-        <nav class="mobile-nav" id="mobileNav">
-            <button onclick="window.location.href='/'">
-                Accueil
-            </button>
-            <button onclick="window.location.href='/editeur'">
-                Phase 1 : Profil en travers type
-            </button>
-            <button onclick="window.location.href='/points-kilometriques'">
-                Phase 2 : Points kilométriques
-            </button>
-            <button onclick="window.location.href='/reception'" class="nav-active">
-                Réception topographique
-            </button>
-            <div class="user-avatar">
-                U
-            </div>
-        </nav>
-        <script>
-            function toggleMobileMenu() {
-                document.getElementById('mobileNav').classList.toggle('active');
-            }
-        </script>
-    </header>
+        <div class="flex items-center gap-1">
+            <a href="/" class="text-white/70 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10">Accueil</a>
+            <a href="/editeur" class="text-white/70 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10 hidden sm:block">Éditeur</a>
+            <a href="/points-kilometriques" class="text-white/70 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10 hidden md:block">PK</a>
+            <a href="/historique" class="text-white/70 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10">Historique</a>
+            {% if current_user.is_admin %}
+            <a href="/admin" class="text-blue-300 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10">Admin</a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}" class="text-red-300 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-red-500/20">Déco</a>
+        </div>
+    </div>
+</header>
     
     <div class="page-wrapper">
         <!-- En-tête de page -->
@@ -1244,43 +1232,65 @@
     </div>
 
     <!-- SECTION RÉSULTATS DE RÉCEPTION -->
-    <div id="resultats-section" class="section-card" style="display:none; margin-top: 32px;">
-        <div class="section-header" style="background: linear-gradient(135deg, #0f766e 0%, #065f46 100%);">
-            <h2 style="color:white; margin:0;">Résultats de réception</h2>
+    <!-- SECTION RÉSULTATS - Design moderne -->
+    <div id="resultats-section" style="display:none; margin-top: 32px;">
+
+        <!-- Header résultats -->
+        <div style="background:linear-gradient(135deg, #0f766e 0%, #059669 100%); border-radius:16px 16px 0 0; padding:20px 28px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:40px; height:40px; background:rgba(255,255,255,0.2); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div>
+                    <div style="color:white; font-size:1.15rem; font-weight:700; letter-spacing:-0.3px;">Résultats de réception</div>
+                    <div style="color:rgba(255,255,255,0.7); font-size:0.82rem; margin-top:1px;">Analyse de conformité topographique</div>
+                </div>
+            </div>
             <div id="resultats-badges" style="display:flex; gap:8px; align-items:center;"></div>
         </div>
-        <div class="section-body">
 
-            <!-- Statistiques globales -->
-            <div id="resultats-stats" style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:28px; padding:20px; background:var(--surface-2); border-radius:10px;"></div>
+        <div style="background:white; border:1px solid #e2e8f0; border-top:none; border-radius:0 0 16px 16px; padding:28px;">
+
+            <!-- KPI Cards -->
+            <div id="resultats-stats" style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:32px;"></div>
 
             <!-- Tableaux par station -->
             <div id="resultats-tables"></div>
 
-            <!-- Résultats par observation -->
-            <div style="margin-top:28px; border:1px solid var(--border-color); border-radius:10px; overflow:hidden;">
+            <!-- Observations générales -->
+            <div style="margin-top:28px; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0;">
                 <div style="background:linear-gradient(135deg,#475569 0%,#334155 100%); padding:14px 20px; display:flex; align-items:center; gap:10px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span style="color:white; font-weight:700; font-size:0.95rem; text-transform:uppercase; letter-spacing:0.5px;">Résultats par observation</span>
-                    <span style="color:rgba(255,255,255,0.6); font-size:0.8rem; margin-left:4px;">(facultatif)</span>
+                    <div style="width:32px; height:32px; background:rgba(255,255,255,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div>
+                        <div style="color:white; font-weight:700; font-size:0.9rem;">Observations générales</div>
+                        <div style="color:rgba(255,255,255,0.6); font-size:0.75rem;">Facultatif — apparaîtra dans le PDF avant les signatures</div>
+                    </div>
                 </div>
-                <div style="padding:16px 20px; background:var(--surface-1);">
-                    <textarea id="observations-generales"
-                        rows="5"
-                        style="width:100%; border:1px solid var(--border-color); border-radius:8px; padding:12px 14px; font-family:inherit; font-size:0.9rem; color:var(--text-primary); line-height:1.6; resize:vertical; background:var(--surface-2);"
-                        placeholder="Saisissez vos observations générales sur cette réception (état de la chaussée, points de vigilance, réserves, etc.)..."></textarea>
-                    <div style="font-size:0.78rem; color:var(--text-muted); margin-top:6px;">Ces observations apparaîtront dans le PDF exporté, avant les signatures.</div>
+                <div style="padding:20px; background:#f8fafc;">
+                    <textarea id="observations-generales" rows="5"
+                        style="width:100%; border:1.5px solid #cbd5e1; border-radius:10px; padding:14px 16px; font-family:inherit; font-size:0.9rem; color:#0f172a; line-height:1.7; resize:vertical; background:white; transition:border-color 0.2s; outline:none;"
+                        onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.1)'"
+                        onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'"
+                        placeholder="Saisissez vos observations générales (état de la chaussée, points de vigilance, réserves, recommandations...)"></textarea>
                 </div>
             </div>
 
-            <!-- Export depuis la section résultats -->
-            <div class="btn-group" style="margin-top:24px;">
-                <button id="export-resultats-pdf-btn" class="btn-primary" style="background:linear-gradient(135deg,#1e3a5f 0%,#0f2744 100%); font-size:1rem; padding:14px 28px;">
+            <!-- Boutons export -->
+            <div style="display:flex; gap:12px; justify-content:center; margin-top:28px; flex-wrap:wrap;">
+                <button id="export-resultats-pdf-btn"
+                    style="display:inline-flex; align-items:center; gap:8px; padding:13px 28px; background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%); color:white; border:none; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 8px rgba(30,58,95,0.25);"
+                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(30,58,95,0.35)'"
+                    onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(30,58,95,0.25)'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Exporter en PDF
                 </button>
-                <button id="print-resultats-btn" class="btn-secondary">
+                <button id="print-resultats-btn"
+                    style="display:inline-flex; align-items:center; gap:8px; padding:13px 28px; background:white; color:#1e3a5f; border:2px solid #e2e8f0; border-radius:10px; font-weight:600; font-size:0.95rem; cursor:pointer; transition:all 0.2s;"
+                    onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1'"
+                    onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     Imprimer
                 </button>
             </div>
@@ -3710,103 +3720,130 @@
                     else nonConformes++;
                 });
             });
-            const pct = total > 0 ? Math.round((conformes / (total - interpolated || 1)) * 100) : 0;
-            const pctColor = pct >= 95 ? '#166534' : pct >= 80 ? '#92400e' : '#7f1d1d';
-            const pctBg   = pct >= 95 ? '#dcfce7'  : pct >= 80 ? '#fef9c3'  : '#fee2e2';
+            const mesures = total - interpolated;
+            const pct = mesures > 0 ? Math.round((conformes / mesures) * 100) : 0;
+            const pctColor = pct >= 95 ? '#15803d' : pct >= 80 ? '#b45309' : '#b91c1c';
+            const pctBg    = pct >= 95 ? '#f0fdf4'  : pct >= 80 ? '#fefce8'  : '#fef2f2';
+            const pctBorder= pct >= 95 ? '#86efac'  : pct >= 80 ? '#fde047'  : '#fca5a5';
+            const pctIcon  = pct >= 95 ? '✓' : pct >= 80 ? '⚠' : '✗';
 
-            // --- Badges dans le header ---
-            const modeBadgeColor = data.mode === 'terrassement'
-                ? 'background:#fef3c7;color:#d97706;border:1px solid #fcd34d;'
-                : 'background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;';
-            document.getElementById('resultats-badges').innerHTML = `
-                <span style="padding:4px 12px;border-radius:4px;font-size:0.8rem;font-weight:600;text-transform:uppercase;${modeBadgeColor}">${data.mode}</span>
-                <span style="padding:4px 12px;border-radius:4px;font-size:0.85rem;font-weight:700;background:${pctBg};color:${pctColor};">${pct}% conformes</span>
-            `;
+            // --- Badges header ---
+            const modeBadge = data.mode === 'terrassement'
+                ? '<span style="padding:5px 14px;border-radius:20px;font-size:0.78rem;font-weight:700;text-transform:uppercase;background:#fef3c7;color:#b45309;border:1px solid #fcd34d;">Terrassement</span>'
+                : '<span style="padding:5px 14px;border-radius:20px;font-size:0.78rem;font-weight:700;text-transform:uppercase;background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;">Assainissement</span>';
+            const conformeBadge = `<span style="padding:5px 14px;border-radius:20px;font-size:0.85rem;font-weight:700;background:${pctBg};color:${pctColor};border:1px solid ${pctBorder};">${pctIcon} ${pct}% conformes</span>`;
+            document.getElementById('resultats-badges').innerHTML = modeBadge + conformeBadge;
 
-            // --- Stats ---
-            const statsHTML = [
-                { label: 'Points mesurés', val: total, col: '#1e3a5f', bg: '#eff6ff' },
-                { label: 'Conformité', val: pct + '%', col: pctColor, bg: pctBg },
-                { label: 'Conformes', val: conformes, col: '#166534', bg: '#dcfce7' },
-                { label: 'Non conformes', val: nonConformes, col: '#7f1d1d', bg: '#fee2e2' }
-            ].map(s => `
-                <div style="text-align:center;padding:16px;background:${s.bg};border-radius:8px;">
-                    <div style="font-size:1.6rem;font-weight:800;color:${s.col};">${s.val}</div>
-                    <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;">${s.label}</div>
+            // --- KPI Cards modernes ---
+            const kpiCards = [
+                {
+                    icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke="#1e3a5f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+                    val: mesures, label: 'Points mesurés', bg: '#eff6ff', border: '#bfdbfe', col: '#1e3a5f', sub: `${interpolated} interpolés`
+                },
+                {
+                    icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" stroke="' + pctColor + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" stroke="' + pctColor + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+                    val: pct + '%', label: 'Taux de conformité', bg: pctBg, border: pctBorder, col: pctColor, sub: `sur ${mesures} mesures`
+                },
+                {
+                    icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+                    val: conformes, label: 'Points conformes', bg: '#f0fdf4', border: '#86efac', col: '#15803d', sub: 'dans la tolérance'
+                },
+                {
+                    icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="' + (nonConformes > 0 ? '#b91c1c' : '#15803d') + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+                    val: nonConformes, label: 'Hors tolérance', bg: nonConformes > 0 ? '#fef2f2' : '#f0fdf4', border: nonConformes > 0 ? '#fca5a5' : '#86efac', col: nonConformes > 0 ? '#b91c1c' : '#15803d', sub: 'points non conformes'
+                }
+            ];
+            document.getElementById('resultats-stats').innerHTML = kpiCards.map(k => `
+                <div style="background:${k.bg};border:1px solid ${k.border};border-radius:12px;padding:18px 16px;display:flex;flex-direction:column;gap:6px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="font-size:1.9rem;font-weight:800;color:${k.col};line-height:1;">${k.val}</div>
+                        <div style="width:38px;height:38px;background:white;border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.08);">${k.icon}</div>
+                    </div>
+                    <div style="font-size:0.78rem;font-weight:700;color:${k.col};text-transform:uppercase;letter-spacing:0.4px;">${k.label}</div>
+                    <div style="font-size:0.72rem;color:#64748b;">${k.sub}</div>
                 </div>
             `).join('');
-            document.getElementById('resultats-stats').innerHTML = statsHTML;
 
             // --- Tableaux par station ---
             let tablesHTML = '';
             data.stations.forEach((station, idx) => {
-                const stationConformes = station.rows.filter(r => !r.is_interpolated && r.ecart_status === 'ok').length;
-                const stationTotal     = station.rows.filter(r => !r.is_interpolated).length;
-                const stPct = stationTotal > 0 ? Math.round(stationConformes / stationTotal * 100) : 0;
-                const stColor = stPct >= 95 ? '#166534' : stPct >= 80 ? '#92400e' : '#7f1d1d';
-                const stBg    = stPct >= 95 ? '#dcfce7'  : stPct >= 80 ? '#fef9c3'  : '#fee2e2';
+                const stConformes = station.rows.filter(r => !r.is_interpolated && r.ecart_status === 'ok').length;
+                const stTotal     = station.rows.filter(r => !r.is_interpolated).length;
+                const stPct = stTotal > 0 ? Math.round(stConformes / stTotal * 100) : 0;
+                const stColor = stPct >= 95 ? '#15803d' : stPct >= 80 ? '#b45309' : '#b91c1c';
+                const stBg    = stPct >= 95 ? '#f0fdf4'  : stPct >= 80 ? '#fefce8'  : '#fef2f2';
+                const stBorder= stPct >= 95 ? '#86efac'  : stPct >= 80 ? '#fde047'  : '#fca5a5';
 
-                let rows = station.rows.map(row => {
+                const rows = station.rows.map(row => {
                     const type = row.is_interpolated ? 'interpolated' : (row.ecart_status || 'ok');
                     const c = ROW_COLORS[type] || ROW_COLORS.ok;
-                    const interp = row.is_interpolated ? '<span style="font-size:0.7rem;background:#e2e8f0;color:#64748b;padding:1px 5px;border-radius:3px;margin-left:4px;">INT</span>' : '';
-                    const statusIcon = row.is_interpolated ? '◦' : (row.ecart_status === 'ok' ? '✓' : row.ecart_status === 'warning' ? '⚠' : '✗');
-                    const statusColor = row.is_interpolated ? '#94a3b8' : (row.ecart_status === 'ok' ? '#16a34a' : row.ecart_status === 'warning' ? '#d97706' : '#dc2626');
-                    return `<tr style="background:${c.bg};border-left:3px solid ${c.border};">
-                        <td style="font-weight:600;color:${c.text};padding:7px 10px;">${row.pk || '-'}${interp}</td>
-                        <td style="font-size:0.8rem;color:#475569;padding:7px 10px;">${row.element_label || ''}</td>
-                        <td style="text-align:center;padding:7px 10px;">${row.cote_label || '-'}</td>
-                        <td style="text-align:center;padding:7px 10px;">${row.lav || '-'}</td>
-                        <td style="text-align:center;font-weight:600;padding:7px 10px;">${row.cote_mesuree || '-'}</td>
-                        <td style="text-align:center;padding:7px 10px;">${row.cote_theorique || '-'}</td>
-                        <td style="text-align:center;font-weight:700;color:${statusColor};padding:7px 10px;">${row.ecart || '-'}</td>
-                        <td style="text-align:center;font-size:1.1rem;color:${statusColor};padding:7px 10px;">${statusIcon}</td>
-                        <td style="font-size:0.8rem;color:#64748b;padding:7px 10px;">${row.observation || ''}</td>
+                    const interp = row.is_interpolated
+                        ? '<span style="font-size:0.65rem;background:#e2e8f0;color:#64748b;padding:1px 5px;border-radius:3px;margin-left:5px;font-weight:600;">INT</span>'
+                        : '';
+                    const statusColor = row.is_interpolated ? '#94a3b8' : (row.ecart_status === 'ok' ? '#15803d' : row.ecart_status === 'warning' ? '#d97706' : '#dc2626');
+                    const statusBadge = row.is_interpolated
+                        ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#e2e8f0;color:#64748b;font-size:0.85rem;">◦</span>'
+                        : row.ecart_status === 'ok'
+                            ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#dcfce7;color:#15803d;font-size:0.85rem;font-weight:700;">✓</span>'
+                            : row.ecart_status === 'warning'
+                                ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fef9c3;color:#d97706;font-size:0.85rem;">⚠</span>'
+                                : '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fee2e2;color:#dc2626;font-size:0.85rem;font-weight:700;">✗</span>';
+                    return `<tr style="background:${c.bg};border-left:4px solid ${c.border};">
+                        <td style="font-weight:700;color:${c.text};padding:8px 12px;white-space:nowrap;">${row.pk || '-'}${interp}</td>
+                        <td style="font-size:0.8rem;color:#475569;padding:8px 12px;">${row.element_label || ''}</td>
+                        <td style="text-align:center;padding:8px 10px;color:#64748b;">${row.cote_label || '-'}</td>
+                        <td style="text-align:center;padding:8px 10px;color:#64748b;">${row.lav || '-'}</td>
+                        <td style="text-align:center;font-weight:600;padding:8px 10px;">${row.cote_mesuree || '-'}</td>
+                        <td style="text-align:center;padding:8px 10px;color:#64748b;">${row.cote_theorique || '-'}</td>
+                        <td style="text-align:center;font-weight:700;color:${statusColor};padding:8px 10px;font-size:0.95rem;">${row.ecart || '-'}</td>
+                        <td style="text-align:center;padding:8px 10px;">${statusBadge}</td>
+                        <td style="font-size:0.78rem;color:#64748b;padding:8px 12px;font-style:italic;">${row.observation || ''}</td>
                     </tr>`;
                 }).join('');
 
                 tablesHTML += `
-                <div style="margin-bottom:24px;border:1px solid var(--border-color);border-radius:10px;overflow:hidden;">
-                    <div style="background:linear-gradient(135deg,#1e3a5f 0%,#0f2744 100%);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;">
-                        <span style="color:white;font-weight:700;">${station.nom || 'Station ' + (idx+1)}</span>
-                        <span style="padding:3px 10px;border-radius:4px;font-size:0.82rem;font-weight:700;background:${stBg};color:${stColor};">${stPct}% (${stationConformes}/${stationTotal})</span>
+                <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="width:30px;height:30px;background:rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:white;font-size:0.85rem;">${idx+1}</div>
+                            <span style="color:white;font-weight:700;font-size:0.95rem;">${station.nom || 'Station ' + (idx+1)}</span>
+                        </div>
+                        <span style="padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:700;background:${stBg};color:${stColor};border:1px solid ${stBorder};">${stPct}% — ${stConformes}/${stTotal}</span>
                     </div>
-                    <div style="padding:8px 12px;background:var(--surface-2);font-size:0.82rem;color:var(--text-secondary);display:flex;gap:16px;">
-                        <span>Côte repère : <strong>${station.cote_repere || '-'}</strong></span>
-                        <span>LAR : <strong>${station.lar || '-'}</strong></span>
-                        <span>Cote bleue : <strong>${station.cote_bleue || '-'}</strong></span>
-                        ${station.pente ? '<span>Pente : <strong>' + station.pente + '%</strong></span>' : ''}
+                    <div style="padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:0.82rem;color:#64748b;display:flex;gap:20px;flex-wrap:wrap;">
+                        <span>Côte repère : <strong style="color:#1e293b;">${station.cote_repere || '-'}</strong></span>
+                        <span>LAR : <strong style="color:#1e293b;">${station.lar || '-'}</strong></span>
+                        <span>Côte bleue : <strong style="color:#1e293b;">${station.cote_bleue || '-'}</strong></span>
+                        ${station.pente ? '<span>Pente : <strong style="color:#1e293b;">' + station.pente + '%</strong></span>' : ''}
                     </div>
                     <div style="overflow-x:auto;">
                         <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
                             <thead>
-                                <tr style="background:#f1f5f9;">
-                                    <th style="padding:8px 10px;text-align:left;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">PK</th>
-                                    <th style="padding:8px 10px;text-align:left;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Élément</th>
-                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Distance</th>
-                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">LAV</th>
-                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Mesurée</th>
-                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Théorique</th>
-                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Écart</th>
-                                    <th style="padding:8px 10px;text-align:center;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Statut</th>
-                                    <th style="padding:8px 10px;text-align:left;font-size:0.75rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;">Observation</th>
+                                <tr style="background:#f1f5f9;border-bottom:2px solid #e2e8f0;">
+                                    <th style="padding:10px 12px;text-align:left;font-size:0.72rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;white-space:nowrap;">PK</th>
+                                    <th style="padding:10px 12px;text-align:left;font-size:0.72rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Élément</th>
+                                    <th style="padding:10px 8px;text-align:center;font-size:0.72rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Dist.</th>
+                                    <th style="padding:10px 8px;text-align:center;font-size:0.72rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">LAV</th>
+                                    <th style="padding:10px 8px;text-align:center;font-size:0.72rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Mesurée</th>
+                                    <th style="padding:10px 8px;text-align:center;font-size:0.72rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Théorique</th>
+                                    <th style="padding:10px 8px;text-align:center;font-size:0.72rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Écart</th>
+                                    <th style="padding:10px 8px;text-align:center;font-size:0.72rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Statut</th>
+                                    <th style="padding:10px 12px;text-align:left;font-size:0.72rem;color:#475569;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Observation</th>
                                 </tr>
                             </thead>
                             <tbody>${rows}</tbody>
                         </table>
                     </div>
+                    <!-- Légende station -->
+                    <div style="display:flex;gap:16px;align-items:center;padding:10px 16px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:0.75rem;color:#64748b;flex-wrap:wrap;">
+                        <span style="font-weight:700;color:#475569;">Légende :</span>
+                        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:50%;background:#dcfce7;border:1px solid #86efac;display:inline-block;"></span> Conforme ✓</span>
+                        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:50%;background:#fef9c3;border:1px solid #fde047;display:inline-block;"></span> Avertissement ⚠</span>
+                        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:50%;background:#fee2e2;border:1px solid #fca5a5;display:inline-block;"></span> Non conforme ✗</span>
+                        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:50%;background:#e2e8f0;border:1px solid #cbd5e1;display:inline-block;"></span> Interpolé ◦</span>
+                    </div>
                 </div>`;
             });
-
-            // Légende
-            tablesHTML += `
-            <div style="display:flex;gap:16px;align-items:center;font-size:0.78rem;color:var(--text-secondary);margin-top:4px;flex-wrap:wrap;">
-                <span style="font-weight:600;">Légende :</span>
-                <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;border-radius:2px;background:#eff6ff;border:1px solid #bfdbfe;display:inline-block;"></span> Conforme</span>
-                <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;border-radius:2px;background:#fffbeb;border:1px solid #fde68a;display:inline-block;"></span> Avertissement</span>
-                <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;border-radius:2px;background:#fef2f2;border:1px solid #fecaca;display:inline-block;"></span> Non conforme</span>
-                <span style="display:flex;align-items:center;gap:5px;"><span style="width:14px;height:14px;border-radius:2px;background:#f8fafc;border:1px solid #e2e8f0;display:inline-block;"></span> Interpolé (INT)</span>
-            </div>`;
 
             document.getElementById('resultats-tables').innerHTML = tablesHTML;
         }

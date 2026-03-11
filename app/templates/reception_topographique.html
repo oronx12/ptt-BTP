@@ -4051,11 +4051,32 @@
                 </div>
             </div>`;
 
-        // Pré-remplir emails depuis les champs signataires
+        // Pré-remplir email par défaut
         const emailCtrl = document.getElementById('email-controleur');
-        const emailEnt  = document.getElementById('email-entreprise');
         if (emailCtrl && !emailCtrl.value) {
-            // Essaie de trouver un email saisi dans un champ controleur-email si existant
+            emailCtrl.value = 'oronx.dohou@etu.univ-amu.fr';
+        }
+
+        // Pré-remplir message descriptif avec les infos du projet
+        const msgEl = document.getElementById('email-message-perso');
+        if (msgEl && !msgEl.value) {
+            const statut = pct >= 95 ? 'CONFORME ✅' : pct >= 80 ? 'PARTIELLEMENT CONFORME ⚠️' : 'NON CONFORME ❌';
+            msgEl.value = `Bonjour,
+
+Veuillez trouver ci-joint la fiche de réception topographique concernant le projet ci-dessous.
+
+Détails du contrôle :
+• Projet     : ${projet}
+• Section    : ${section}
+• Date       : ${date}
+• Opérateur  : ${operateur}
+• Tolérance  : ±${data.tolerance || '?'} cm
+• Résultat   : ${statut} — ${pct}% (${conformes}/${total} points conformes)
+
+La fiche complète est jointe en pièce attachée (format HTML et PDF).
+
+Cordialement,
+PTT BTP — Service Topographique`;
         }
 
         // Réinitialiser status

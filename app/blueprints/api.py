@@ -302,19 +302,34 @@ def send_fiche_email():
         </div>
         """
 
-        nom_fichier = f"Fiche_Reception_{projet.replace(' ','_')}_{date.replace('/','').replace('-','')}.html"
+        base_name = f"Fiche_Reception_{projet.replace(' ','_')}_{date.replace('/','').replace('-','')}"
+        nom_html  = base_name + ".html"
+        nom_pdf   = base_name + ".pdf"
+
+        attachments = [
+            {
+                "filename": nom_html,
+                "content":  list(html_content.encode("utf-8")),
+            }
+        ]
+
+        # Joindre le PDF si WeasyPrint est disponible
+        if WEASYPRINT_AVAILABLE:
+            try:
+                pdf_bytes = make_pdf_bytes(html_content, request.host_url)
+                attachments.append({
+                    "filename": nom_pdf,
+                    "content":  list(pdf_bytes),
+                })
+            except Exception:
+                pass  # PDF non critique : on envoie quand même le HTML
 
         params = {
-            "from":    mail_from,
-            "to":      destinataires_valides,
-            "subject": sujet,
-            "html":    corps_html,
-            "attachments": [
-                {
-                    "filename": nom_fichier,
-                    "content":  list(html_content.encode("utf-8")),
-                }
-            ],
+            "from":        mail_from,
+            "to":          destinataires_valides,
+            "subject":     sujet,
+            "html":        corps_html,
+            "attachments": attachments,
         }
 
         resend.Emails.send(params)

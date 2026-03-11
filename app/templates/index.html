@@ -1282,10 +1282,23 @@
         }
     };
 
+    // Désactive le mode ajout et passe en mode sélection
+    function exitAddMode() {
+        if (addPointMode) {
+            addPointMode = false;
+            canvas.style.cursor = '';
+            const btn = document.getElementById('add-point-btn');
+            btn.innerHTML = `<span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ajouter point</span>`;
+            btn.style.background = '';
+            btn.style.color = '';
+        }
+    }
+
     document.getElementById('connect-points-btn').onclick = () => {
+        exitAddMode(); // Quitte le mode ajout si actif
         const selectedPoints = Array.from(selected);
         if (selectedPoints.length < 2) {
-            alert('Veuillez sélectionner au moins 2 points pour créer des connexions.');
+            alert('Sélectionnez au moins 2 points sur le canvas (clic simple = sélectionner, Ctrl+clic = multi-sélection) puis cliquez Connecter.');
             return;
         }
         
@@ -1321,9 +1334,10 @@
     };
 
     document.getElementById('create-polygon-btn').onclick = () => {
+        exitAddMode(); // Quitte le mode ajout si actif
         const selectedPoints = Array.from(selected);
         if (selectedPoints.length < 3) {
-            alert('Veuillez sélectionner au moins 3 points pour créer un polygone.');
+            alert('Sélectionnez au moins 3 points sur le canvas (Ctrl+clic pour multi-sélection) puis cliquez Polygone.');
             return;
         }
         
@@ -1345,6 +1359,7 @@
     };
 
     document.getElementById('delete-selected-btn').onclick = () => {
+        exitAddMode(); // Quitte le mode ajout si actif
         const selectedPoints = Array.from(selected);
         if (selectedPoints.length > 0) {
             if (confirm(`Supprimer ${selectedPoints.length} point(s) sélectionné(s) et tous les éléments liés ?`)) {
@@ -1507,26 +1522,13 @@
                 }
             });
             
-            if(nearest) { 
-                if(ev.ctrlKey || ev.metaKey) {
-                    // Sélection multiple avec Ctrl
-                    if(selected.has(nearest.id)) {
-                        selected.delete(nearest.id);
-                        console.log(`Point P${nearest.id} désélectionné`);
-                    } else {
-                        selected.add(nearest.id);
-                        console.log(`Point P${nearest.id} ajouté à la sélection (total: ${selected.size})`);
-                    }
+            if(nearest) {
+                // Clic simple = toggle sélection (s'ajoute ou se retire de la sélection)
+                // Shift ou Ctrl : même comportement multi-sélection
+                if(selected.has(nearest.id)) {
+                    selected.delete(nearest.id);
                 } else {
-                    // Sélection simple
-                    if(selected.has(nearest.id) && selected.size === 1) {
-                        selected.clear(); // Désélectionner si c'est le seul sélectionné
-                        console.log('Sélection effacée');
-                    } else {
-                        selected.clear(); 
-                        selected.add(nearest.id); 
-                        console.log(`Point P${nearest.id} sélectionné`);
-                    }
+                    selected.add(nearest.id);
                 }
                 renderPointsTable(); 
                 draw(); 

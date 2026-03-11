@@ -15,7 +15,7 @@ class Config:
 
     # PostgreSQL Supabase
     # Render fournit parfois "postgres://" (ancien format) — SQLAlchemy 2.x exige "postgresql://"
-    _db_url = os.environ.get("DATABASE_URL", "")
+    _db_url = os.environ.get("DATABASE_URL", "").strip()
     if _db_url.startswith("postgres://"):
         _db_url = _db_url.replace("postgres://", "postgresql://", 1)
     SQLALCHEMY_DATABASE_URI = _db_url or None

@@ -32,6 +32,10 @@ class Config:
     R2_ACCESS_KEY_ID    = os.environ.get("R2_ACCESS_KEY_ID", "")
     R2_SECRET_ACCESS_KEY = os.environ.get("R2_SECRET_ACCESS_KEY", "")
 
+    # Envoi d'emails via Resend (https://resend.com)
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+    MAIL_FROM      = os.environ.get("MAIL_FROM", "PTT BTP <noreply@ptt-btp.fr>")
+
     # Fichiers locaux (fallback si R2 indisponible)
     MODEL_EXCEL      = BASE_DIR / "data" / "Projet_Routier_Topographie.xlsx"
     TEMP_DIR         = BASE_DIR / "data" / "tmp"

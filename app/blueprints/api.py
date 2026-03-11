@@ -191,6 +191,145 @@ def fiche_url(fiche_id):
 
 
 # ---------------------------------------------------------------------------
+# Envoi de fiche par email
+# ---------------------------------------------------------------------------
+
+@api_bp.route("/send-fiche-email", methods=["POST"])
+@login_required
+def send_fiche_email():
+    """
+    Génère la fiche HTML puis l'envoie par email aux parties prenantes.
+    Corps JSON attendu :
+      {
+        "fiche_data": { ...même structure que generate-pdf... },
+        "destinataires": ["email1@ex.fr", "email2@ex.fr"],
+        "message_perso": "Texte optionnel ajouté dans le corps du mail"
+      }
+    """
+    try:
+        import resend
+        from flask import current_app
+
+        body = request.get_json(force=True)
+        fiche_data   = body.get("fiche_data", {})
+        destinataires = body.get("destinataires", [])
+        message_perso = body.get("message_perso", "").strip()
+
+        # Validation minimale
+        if not destinataires:
+            return jsonify({"error": "Aucun destinataire fourni."}), 400
+
+        destinataires_valides = [e.strip() for e in destinataires if "@" in e.strip()]
+        if not destinataires_valides:
+            return jsonify({"error": "Aucune adresse email valide."}), 400
+
+        # Clé API Resend
+        api_key = current_app.config.get("RESEND_API_KEY", "")
+        if not api_key:
+            return jsonify({"error": "Service email non configuré (RESEND_API_KEY manquant)."}), 503
+
+        resend.api_key = api_key
+
+        # Générer le HTML de la fiche
+        context      = build_template_context(fiche_data)
+        html_content = render_fiche_html(context)
+
+        # Archiver dans R2 (silencieux si erreur)
+        _archive_fiche(fiche_data, html_content)
+
+        # Infos pour le mail
+        projet  = fiche_data.get("projet", "Projet")
+        date    = fiche_data.get("date", "")
+        section = fiche_data.get("section", "")
+        operateur = fiche_data.get("operateur", "")
+
+        # Calcul conformité pour résumé
+        total, conformes, non_conformes = 0, 0, 0
+        for st in fiche_data.get("stations", []):
+            for row in st.get("rows", []):
+                if row.get("is_interpolated"):
+                    continue
+                total += 1
+                if row.get("ecart_status") == "ok":
+                    conformes += 1
+                else:
+                    non_conformes += 1
+        pct = round(conformes / total * 100, 1) if total > 0 else 0
+        statut_label = "✅ Conforme" if pct >= 95 else ("⚠️ Partiellement conforme" if pct >= 80 else "❌ Non conforme")
+
+        mail_from = current_app.config.get("MAIL_FROM", "PTT BTP <noreply@ptt-btp.fr>")
+        sujet     = f"Fiche de réception — {projet} | {section} — {date}"
+
+        # Corps email HTML
+        intro = f"<p style='margin:0 0 12px;'>{message_perso}</p>" if message_perso else ""
+        corps_html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#1e293b;">
+            <div style="background:linear-gradient(135deg,#0f2744,#1d4ed8);padding:24px 28px;border-radius:8px 8px 0 0;">
+                <div style="color:white;font-size:20px;font-weight:800;letter-spacing:0.5px;">PTT BTP</div>
+                <div style="color:rgba(255,255,255,0.75);font-size:13px;margin-top:4px;">Fiche de Réception Topographique</div>
+            </div>
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-top:none;padding:24px 28px;">
+                {intro}
+                <p style="margin:0 0 20px;font-size:14px;color:#475569;">
+                    Veuillez trouver ci-joint la fiche de réception topographique générée le <strong>{date}</strong>.
+                </p>
+                <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin-bottom:20px;">
+                    <table style="width:100%;font-size:13px;border-collapse:collapse;">
+                        <tr><td style="padding:5px 0;color:#94a3b8;width:130px;">Projet</td><td style="padding:5px 0;font-weight:700;">{projet}</td></tr>
+                        <tr><td style="padding:5px 0;color:#94a3b8;">Section</td><td style="padding:5px 0;font-weight:700;">{section or "—"}</td></tr>
+                        <tr><td style="padding:5px 0;color:#94a3b8;">Opérateur</td><td style="padding:5px 0;font-weight:700;">{operateur or "—"}</td></tr>
+                        <tr><td style="padding:5px 0;color:#94a3b8;">Date contrôle</td><td style="padding:5px 0;font-weight:700;">{date}</td></tr>
+                        <tr><td style="padding:5px 0;color:#94a3b8;">Résultat</td>
+                            <td style="padding:5px 0;font-weight:700;">
+                                <span style="background:{"#dcfce7" if pct >= 95 else ("#fefce8" if pct >= 80 else "#fee2e2")};
+                                             color:{"#15803d" if pct >= 95 else ("#b45309" if pct >= 80 else "#b91c1c")};
+                                             padding:3px 10px;border-radius:20px;font-size:12px;">
+                                    {statut_label} — {pct}%
+                                </span>
+                            </td>
+                        </tr>
+                        <tr><td style="padding:5px 0;color:#94a3b8;">Points mesurés</td><td style="padding:5px 0;">{total} ({conformes} conformes / {non_conformes} hors tolérance)</td></tr>
+                    </table>
+                </div>
+                <p style="font-size:12px;color:#94a3b8;margin:0;">
+                    La fiche complète est jointe à cet email au format HTML.<br>
+                    Ce document est officiel — à conserver pendant la durée légale des travaux.
+                </p>
+            </div>
+            <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:12px 28px;font-size:11px;color:#94a3b8;text-align:center;">
+                PTT BTP — Système de Réception Topographique &nbsp;·&nbsp; Envoyé automatiquement
+            </div>
+        </div>
+        """
+
+        nom_fichier = f"Fiche_Reception_{projet.replace(' ','_')}_{date.replace('/','').replace('-','')}.html"
+
+        params = {
+            "from":    mail_from,
+            "to":      destinataires_valides,
+            "subject": sujet,
+            "html":    corps_html,
+            "attachments": [
+                {
+                    "filename": nom_fichier,
+                    "content":  list(html_content.encode("utf-8")),
+                }
+            ],
+        }
+
+        resend.Emails.send(params)
+
+        return jsonify({
+            "success": True,
+            "message": f"Fiche envoyée à {len(destinataires_valides)} destinataire(s).",
+            "destinataires": destinataires_valides,
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
 # Téléchargement sécurisé
 # ---------------------------------------------------------------------------
 

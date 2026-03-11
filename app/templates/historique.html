@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des fiches — PTT BTP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: { DEFAULT:'#1e3a5f', dark:'#0f2744', light:'#2d5a8e' }, accent: '#3b82f6' }, fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="font-sans bg-slate-50 min-h-screen">
+
+<!-- HEADER -->
+<header class="bg-gradient-to-r from-primary-dark to-primary sticky top-0 z-50 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="/" class="flex items-center gap-2.5 text-white hover:opacity-80 transition">
+                <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                </div>
+                <span class="font-bold text-lg">PTT BTP</span>
+            </a>
+            <span class="text-white/40 hidden sm:block">›</span>
+            <span class="text-white/80 text-sm hidden sm:block">Historique</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="/" class="text-white/70 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10">Accueil</a>
+            <a href="/reception" class="text-white/70 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10">Réception</a>
+            {% if current_user.is_admin %}
+            <a href="/admin" class="text-blue-300 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10">Admin</a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}" class="text-red-300 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10">Déconnexion</a>
+        </div>
+    </div>
+</header>
+
+<!-- CONTENU -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- Titre -->
+    <div class="mb-8">
+        <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-accent">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Historique des fiches</h1>
+                <p class="text-slate-500 text-sm">Toutes les fiches de réception générées et archivées</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barre de recherche + stats -->
+    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+        <div class="relative flex-1">
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" id="searchInput" placeholder="Rechercher par projet, section, opérateur..."
+                   class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 bg-white">
+        </div>
+        <div class="flex items-center gap-2 text-sm text-slate-500 bg-white border border-slate-200 rounded-xl px-4 py-2.5">
+            <span id="countLabel">Chargement...</span>
+        </div>
+    </div>
+
+    <!-- Tableau -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+
+        <!-- État chargement -->
+        <div id="loadingState" class="flex flex-col items-center justify-center py-16 text-slate-400">
+            <svg class="w-8 h-8 animate-spin mb-3 text-accent" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            <p class="text-sm">Chargement des fiches...</p>
+        </div>
+
+        <!-- État vide -->
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center py-16 text-slate-400">
+            <svg class="w-12 h-12 mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <p class="font-medium">Aucune fiche archivée</p>
+            <p class="text-sm mt-1">Les fiches apparaîtront ici après génération via la réception topographique</p>
+            <a href="/reception" class="mt-4 px-4 py-2 bg-accent text-white text-sm rounded-lg hover:bg-blue-600 transition">Aller à la réception</a>
+        </div>
+
+        <!-- Tableau des données -->
+        <div id="tableContainer" class="hidden overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="text-left px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wide">Projet</th>
+                        <th class="text-left px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wide hidden md:table-cell">Section</th>
+                        <th class="text-left px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wide hidden lg:table-cell">Opérateur</th>
+                        <th class="text-left px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wide hidden sm:table-cell">Date réception</th>
+                        {% if current_user.is_admin %}
+                        <th class="text-left px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wide hidden xl:table-cell">Client</th>
+                        {% endif %}
+                        <th class="text-left px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wide">Archivée le</th>
+                        <th class="text-right px-5 py-3.5 font-semibold text-slate-600 text-xs uppercase tracking-wide">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="fichesBody" class="divide-y divide-slate-100">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<script>
+let allFiches = [];
+
+async function loadFiches() {
+    try {
+        const res = await fetch('/api/fiches');
+        allFiches = await res.json();
+        renderFiches(allFiches);
+    } catch(e) {
+        document.getElementById('loadingState').innerHTML = `
+            <svg class="w-10 h-10 mb-3 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <p class="text-sm text-red-400">Erreur de chargement</p>`;
+    }
+}
+
+function renderFiches(fiches) {
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('countLabel').textContent = `${fiches.length} fiche${fiches.length > 1 ? 's' : ''}`;
+
+    if (fiches.length === 0) {
+        document.getElementById('emptyState').classList.remove('hidden');
+        return;
+    }
+
+    document.getElementById('tableContainer').classList.remove('hidden');
+    const isAdmin = {{ 'true' if current_user.is_admin else 'false' }};
+
+    document.getElementById('fichesBody').innerHTML = fiches.map(f => `
+        <tr class="hover:bg-slate-50 transition-colors">
+            <td class="px-5 py-3.5">
+                <div class="font-semibold text-slate-800">${f.projet}</div>
+            </td>
+            <td class="px-5 py-3.5 text-slate-600 hidden md:table-cell">${f.section}</td>
+            <td class="px-5 py-3.5 text-slate-600 hidden lg:table-cell">${f.operateur}</td>
+            <td class="px-5 py-3.5 text-slate-600 hidden sm:table-cell">${f.date_reception}</td>
+            ${isAdmin ? `<td class="px-5 py-3.5 hidden xl:table-cell"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">${f.client_nom}</span></td>` : ''}
+            <td class="px-5 py-3.5 text-slate-500 text-xs">${f.created_at}</td>
+            <td class="px-5 py-3.5 text-right">
+                <button onclick="openFiche(${f.id})"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    Consulter
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+async function openFiche(id) {
+    try {
+        const res = await fetch(`/api/fiches/${id}/url`);
+        const data = await res.json();
+        if (data.url) window.open(data.url, '_blank');
+        else alert('Impossible d\'obtenir le lien : ' + (data.error || 'erreur inconnue'));
+    } catch(e) {
+        alert('Erreur réseau.');
+    }
+}
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    const filtered = allFiches.filter(f =>
+        (f.projet||'').toLowerCase().includes(q) ||
+        (f.section||'').toLowerCase().includes(q) ||
+        (f.operateur||'').toLowerCase().includes(q) ||
+        (f.client_nom||'').toLowerCase().includes(q)
+    );
+    renderFiches(filtered);
+});
+
+loadFiches();
+</script>
+
+</body>
+</html>

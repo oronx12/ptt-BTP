@@ -11,7 +11,7 @@ from flask import Blueprint, current_app, jsonify, request, Response, send_file
 from flask_login import login_required, current_user
 
 from ..services.excel_service import get_sheet_names, get_sheet_data
-from ..services.r2_service import download_excel
+from ..services.r2_service import download_excel, upload_fiche, generate_presigned_url
 from ..services.pdf_service import (
     WEASYPRINT_AVAILABLE,
     build_template_context,
@@ -72,16 +72,49 @@ def excel_data(sheet_name):
 # PDF
 # ---------------------------------------------------------------------------
 
+def _archive_fiche(data: dict, html_content: str) -> None:
+    """
+    Archive la fiche HTML dans R2 et enregistre les métadonnées en base.
+    Non critique : les erreurs sont silencieuses pour ne pas bloquer le téléchargement.
+    """
+    if not (current_user.is_authenticated and current_user.client_id):
+        return
+    try:
+        from ..models import FicheReception
+        from .. import db as _db
+
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        r2_key = f"fiches/{current_user.client_id}/{ts}.html"
+        upload_fiche(html_content.encode("utf-8"), r2_key)
+
+        fiche = FicheReception(
+            client_id=current_user.client_id,
+            user_id=current_user.id,
+            r2_key=r2_key,
+            projet=data.get("projet", ""),
+            section=data.get("section", ""),
+            date_reception=data.get("date", ""),
+            operateur=data.get("operateur", ""),
+        )
+        _db.session.add(fiche)
+        _db.session.commit()
+    except Exception:
+        pass  # archivage non critique
+
+
 @api_bp.route("/generate-pdf", methods=["POST"])
 def generate_pdf():
     """
-    Génère la fiche de réception.
+    Génère la fiche de réception et l'archive dans R2.
     Retourne un PDF (WeasyPrint) ou du HTML (fallback impression navigateur).
     """
     try:
         data = request.get_json(force=True)
         context = build_template_context(data)
         html_content = render_fiche_html(context)
+
+        # Archivage automatique dans R2
+        _archive_fiche(data, html_content)
 
         if WEASYPRINT_AVAILABLE:
             pdf_bytes = make_pdf_bytes(html_content, request.host_url)
@@ -112,6 +145,49 @@ def preview_pdf():
         return Response(html_content, mimetype="text/html; charset=utf-8")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Historique des fiches
+# ---------------------------------------------------------------------------
+
+@api_bp.route("/fiches", methods=["GET"])
+@login_required
+def list_fiches():
+    """Liste les fiches archivées — toutes si admin, sinon celles du client connecté."""
+    from ..models import FicheReception
+    if current_user.is_admin:
+        fiches = FicheReception.query.order_by(FicheReception.created_at.desc()).limit(200).all()
+    else:
+        fiches = (FicheReception.query
+                  .filter_by(client_id=current_user.client_id)
+                  .order_by(FicheReception.created_at.desc())
+                  .limit(50).all())
+
+    return jsonify([{
+        "id":             f.id,
+        "projet":         f.projet or "—",
+        "section":        f.section or "—",
+        "date_reception": f.date_reception or "—",
+        "operateur":      f.operateur or "—",
+        "created_at":     f.created_at.strftime("%d/%m/%Y %H:%M") if f.created_at else "—",
+        "client_nom":     f.client.nom if f.client else "—",
+    } for f in fiches])
+
+
+@api_bp.route("/fiches/<int:fiche_id>/url", methods=["GET"])
+@login_required
+def fiche_url(fiche_id):
+    """Génère une URL signée (1h) pour télécharger/consulter une fiche archivée."""
+    from ..models import FicheReception
+    from .. import db
+    fiche = db.get_or_404(FicheReception, fiche_id)
+
+    if not current_user.is_admin and fiche.client_id != current_user.client_id:
+        return jsonify({"error": "Accès refusé."}), 403
+
+    url = generate_presigned_url(fiche.r2_key)
+    return jsonify({"url": url})
 
 
 # ---------------------------------------------------------------------------

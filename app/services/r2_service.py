@@ -35,6 +35,29 @@ def upload_excel(file_bytes: bytes, r2_key: str) -> None:
     )
 
 
+def upload_fiche(content: bytes, r2_key: str) -> None:
+    """Upload une fiche de réception (HTML) vers R2."""
+    bucket = os.environ.get("R2_BUCKET", "ptt-btp-models")
+    client = _get_client()
+    client.put_object(
+        Bucket=bucket,
+        Key=r2_key,
+        Body=content,
+        ContentType="text/html; charset=utf-8",
+    )
+
+
+def generate_presigned_url(r2_key: str, expires_in: int = 3600) -> str:
+    """Génère une URL signée temporaire (1h) pour accéder à un fichier R2."""
+    bucket = os.environ.get("R2_BUCKET", "ptt-btp-models")
+    client = _get_client()
+    return client.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": bucket, "Key": r2_key},
+        ExpiresIn=expires_in,
+    )
+
+
 def download_excel(r2_key: str) -> bytes:
     """
     Télécharge un fichier Excel depuis R2 et retourne son contenu en bytes.

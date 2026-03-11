@@ -35,3 +35,10 @@ def points_kilometriques():
 def reception():
     """Phase 3 — Réception topographique."""
     return render_template("reception_topographique.html")
+
+
+@pages_bp.route("/historique")
+@login_required
+def historique():
+    """Historique des fiches de réception archivées."""
+    return render_template("historique.html")

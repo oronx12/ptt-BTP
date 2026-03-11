@@ -42,6 +42,9 @@
             <button onclick="window.location.href='/reception'">
                 Réception topographique
             </button>
+            <button onclick="window.location.href='/historique'">
+                Historique des fiches
+            </button>
             <div class="user-avatar" title="{{ current_user.nom }}">
                 {{ current_user.nom[0]|upper if current_user.is_authenticated else 'U' }}
             </div>

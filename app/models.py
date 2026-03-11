@@ -78,3 +78,27 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return f"<User {self.id} — {self.email} ({self.role})>"
+
+
+class FicheReception(db.Model):
+    """
+    Archive d'une fiche de réception topographique générée.
+    Le fichier HTML est stocké sur R2 ; on garde ici les métadonnées.
+    """
+    __tablename__ = "fiches_reception"
+
+    id             = db.Column(db.Integer, primary_key=True)
+    client_id      = db.Column(db.Integer, db.ForeignKey("clients.id"), nullable=True)
+    user_id        = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    r2_key         = db.Column(db.String(300), nullable=False)
+    projet         = db.Column(db.String(255), nullable=True)
+    section        = db.Column(db.String(255), nullable=True)
+    date_reception = db.Column(db.String(50),  nullable=True)
+    operateur      = db.Column(db.String(120), nullable=True)
+    created_at     = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    client = db.relationship("Client", backref=db.backref("fiches", lazy="dynamic"))
+    user   = db.relationship("User",   backref=db.backref("fiches", lazy="dynamic"))
+
+    def __repr__(self):
+        return f"<FicheReception {self.id} — {self.projet}>"

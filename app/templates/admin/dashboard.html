@@ -4,153 +4,202 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administration — PTT BTP</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
-    <style>
-        body { font-family:'Inter',sans-serif; background:#f0f4f8; margin:0; }
-        .admin-header {
-            background:#1e3a5f; color:#fff; padding:1rem 2rem;
-            display:flex; align-items:center; justify-content:space-between;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: { DEFAULT:'#1e3a5f', dark:'#0f2744', light:'#2d5a8e' }, accent:'#3b82f6' }, fontFamily: { sans:['Inter','system-ui','sans-serif'] } } }
         }
-        .admin-header h1 { margin:0; font-size:1.3rem; }
-        .admin-header a  { color:#93c5fd; text-decoration:none; font-size:.9rem; }
-        .admin-body { padding:2rem; max-width:1100px; margin:0 auto; }
-        .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
-        .card { background:#fff; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.08); padding:1.5rem; }
-        .card h2 { margin:0 0 1rem; font-size:1.1rem; color:#1e3a5f; display:flex; justify-content:space-between; align-items:center; }
-        table { width:100%; border-collapse:collapse; font-size:.88rem; }
-        th { text-align:left; padding:.5rem .75rem; background:#f8fafc; color:#64748b; font-weight:600; border-bottom:2px solid #e2e8f0; }
-        td { padding:.55rem .75rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
-        tr:last-child td { border-bottom:none; }
-        .badge { display:inline-block; padding:.2rem .6rem; border-radius:20px; font-size:.75rem; font-weight:600; }
-        .badge-ok  { background:#dcfce7; color:#16a34a; }
-        .badge-off { background:#fee2e2; color:#dc2626; }
-        .badge-admin { background:#dbeafe; color:#1d4ed8; }
-        .btn-sm { padding:.3rem .7rem; border-radius:6px; border:none; cursor:pointer; font-size:.8rem; font-weight:600; }
-        .btn-primary { background:#1e3a5f; color:#fff; }
-        .btn-danger  { background:#fee2e2; color:#dc2626; }
-        .btn-success { background:#dcfce7; color:#16a34a; }
-        .flash { padding:.7rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:.9rem; }
-        .flash.success{ background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
-        .flash.danger { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
-        .flash.info   { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
-        .upload-form { display:flex; gap:.5rem; align-items:center; margin-top:.5rem; }
-        .upload-form input[type=file] { flex:1; font-size:.82rem; }
-    </style>
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body>
-<div class="admin-header">
-    <h1>PTT BTP — Administration</h1>
-    <div>
-        Connecté : <strong>{{ current_user.nom }}</strong> &nbsp;|&nbsp;
-        <a href="{{ url_for('pages.home') }}">App</a> &nbsp;|&nbsp;
-        <a href="{{ url_for('auth.logout') }}">Déconnexion</a>
+<body class="font-sans bg-slate-50 min-h-screen">
+
+<!-- HEADER -->
+<header class="bg-gradient-to-r from-primary-dark to-primary sticky top-0 z-50 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="/" class="flex items-center gap-2.5 text-white hover:opacity-80 transition">
+                <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                </div>
+                <span class="font-bold text-lg">PTT BTP</span>
+            </a>
+            <span class="text-white/40">›</span>
+            <span class="text-white/80 text-sm">Administration</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="text-white/70 text-sm hidden sm:block">{{ current_user.nom }}</span>
+            <a href="/" class="text-white/70 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10">App</a>
+            <a href="/historique" class="text-white/70 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10">Historique</a>
+            <a href="{{ url_for('auth.logout') }}" class="text-red-300 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-red-500/20">Déconnexion</a>
+        </div>
     </div>
-</div>
+</header>
 
-<div class="admin-body">
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
+    <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
-            <div class="flash {{ category }}">{{ message }}</div>
+            <div class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+                {% if category == 'success' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                {% elif category == 'danger' %}bg-red-50 text-red-700 border border-red-200
+                {% elif category == 'info' %}bg-blue-50 text-blue-700 border border-blue-200
+                {% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
+                {{ message }}
+            </div>
         {% endfor %}
     {% endwith %}
 
-    <div class="grid-2">
+    <!-- Stats -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 px-5 py-4">
+            <div class="text-2xl font-bold text-primary">{{ clients|length }}</div>
+            <div class="text-sm text-slate-500 mt-0.5">Clients total</div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 px-5 py-4">
+            <div class="text-2xl font-bold text-emerald-600">{{ clients|selectattr('actif')|list|length }}</div>
+            <div class="text-sm text-slate-500 mt-0.5">Clients actifs</div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 px-5 py-4">
+            <div class="text-2xl font-bold text-accent">{{ users|length }}</div>
+            <div class="text-sm text-slate-500 mt-0.5">Utilisateurs</div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 px-5 py-4">
+            <div class="text-2xl font-bold text-amber-600">{{ clients|selectattr('excel_key')|list|length }}</div>
+            <div class="text-sm text-slate-500 mt-0.5">Excel chargés</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
         <!-- CLIENTS -->
-        <div class="card">
-            <h2>
-                Clients ({{ clients|length }})
-                <a href="{{ url_for('admin.nouveau_client') }}" class="btn-sm btn-primary">+ Nouveau</a>
-            </h2>
-            <table>
-                <thead>
-                    <tr><th>ID</th><th>Nom</th><th>Projet</th><th>Excel</th><th>Statut</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    </div>
+                    <h2 class="font-semibold text-slate-800">Clients <span class="text-slate-400 font-normal text-sm ml-1">({{ clients|length }})</span></h2>
+                </div>
+                <a href="{{ url_for('admin.nouveau_client') }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-dark transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Nouveau client
+                </a>
+            </div>
+
+            <div class="divide-y divide-slate-100">
                 {% for c in clients %}
-                <tr>
-                    <td>{{ c.id }}</td>
-                    <td><strong>{{ c.nom }}</strong></td>
-                    <td>{{ c.projet_label or '—' }}</td>
-                    <td>
-                        {% if c.excel_key %}
-                            <span class="badge badge-ok">Chargé</span>
-                        {% else %}
-                            <span class="badge badge-off">Manquant</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if c.actif %}
-                            <span class="badge badge-ok">Actif</span>
-                        {% else %}
-                            <span class="badge badge-off">Inactif</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <form method="POST" action="{{ url_for('admin.upload_excel', client_id=c.id) }}"
-                              enctype="multipart/form-data" style="display:inline;">
-                            <div class="upload-form">
-                                <input type="file" name="excel_file" accept=".xlsx,.xls">
-                                <button type="submit" class="btn-sm btn-primary">Upload</button>
+                <div class="px-6 py-4">
+                    <div class="flex items-center justify-between gap-4 mb-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                {{ c.nom[0]|upper }}
                             </div>
+                            <div class="min-w-0">
+                                <div class="font-semibold text-slate-800 truncate">{{ c.nom }}</div>
+                                <div class="text-xs text-slate-400 truncate">{{ c.projet_label or '—' }}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            {% if c.excel_key %}
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">
+                                    <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                    Excel
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-0.5 bg-red-50 text-red-600 text-xs font-medium rounded-full">Manquant</span>
+                            {% endif %}
+                            {% if c.actif %}
+                                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">Actif</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded-full">Inactif</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                        <form method="POST" action="{{ url_for('admin.upload_excel', client_id=c.id) }}"
+                              enctype="multipart/form-data" class="flex items-center gap-2">
+                            <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium rounded-lg transition">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                <span id="lbl-{{ c.id }}">Choisir Excel</span>
+                                <input type="file" name="excel_file" accept=".xlsx,.xls" class="hidden"
+                                       onchange="document.getElementById('lbl-{{ c.id }}').textContent=this.files[0]?.name||'Choisir Excel';document.getElementById('sbm-{{ c.id }}').classList.remove('hidden')">
+                            </label>
+                            <button type="submit" id="sbm-{{ c.id }}"
+                                    class="hidden inline-flex items-center gap-1 px-3 py-1.5 bg-accent text-white text-xs font-semibold rounded-lg hover:bg-blue-600 transition">
+                                Upload R2
+                            </button>
                         </form>
-                        <form method="POST" action="{{ url_for('admin.toggle_client', client_id=c.id) }}"
-                              style="display:inline; margin-top:.3rem;">
+
+                        <form method="POST" action="{{ url_for('admin.toggle_client', client_id=c.id) }}">
                             <button type="submit"
-                                    class="btn-sm {{ 'btn-danger' if c.actif else 'btn-success' }}">
+                                    class="px-3 py-1.5 text-xs font-medium rounded-lg transition
+                                    {% if c.actif %}border border-red-200 bg-red-50 text-red-600 hover:bg-red-100
+                                    {% else %}border border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100{% endif %}">
                                 {{ 'Désactiver' if c.actif else 'Activer' }}
                             </button>
                         </form>
-                    </td>
-                </tr>
+                    </div>
+                </div>
                 {% else %}
-                <tr><td colspan="6" style="color:#94a3b8; text-align:center;">Aucun client encore.</td></tr>
+                <div class="px-6 py-10 text-center text-slate-400 text-sm">
+                    Aucun client encore.
+                    <a href="{{ url_for('admin.nouveau_client') }}" class="text-accent hover:underline ml-1">Créer →</a>
+                </div>
                 {% endfor %}
-                </tbody>
-            </table>
+            </div>
         </div>
 
         <!-- UTILISATEURS -->
-        <div class="card">
-            <h2>
-                Utilisateurs ({{ users|length }})
-                <a href="{{ url_for('admin.nouvel_utilisateur') }}" class="btn-sm btn-primary">+ Nouveau</a>
-            </h2>
-            <table>
-                <thead>
-                    <tr><th>Email</th><th>Nom</th><th>Rôle</th><th>Client</th><th>Statut</th></tr>
-                </thead>
-                <tbody>
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                    <h2 class="font-semibold text-slate-800">Utilisateurs <span class="text-slate-400 font-normal text-sm ml-1">({{ users|length }})</span></h2>
+                </div>
+                <a href="{{ url_for('admin.nouvel_utilisateur') }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-dark transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Nouvel utilisateur
+                </a>
+            </div>
+
+            <div class="divide-y divide-slate-100">
                 {% for u in users %}
-                <tr>
-                    <td>{{ u.email }}</td>
-                    <td>{{ u.nom }}</td>
-                    <td>
+                <div class="px-6 py-3.5 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0
+                            {% if u.is_admin %}bg-gradient-to-br from-amber-400 to-orange-500
+                            {% else %}bg-gradient-to-br from-blue-400 to-blue-600{% endif %}">
+                            {{ u.nom[0]|upper }}
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-sm font-semibold text-slate-800 truncate">{{ u.nom }}</div>
+                            <div class="text-xs text-slate-400 truncate">{{ u.email }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
                         {% if u.is_admin %}
-                            <span class="badge badge-admin">Admin</span>
+                            <span class="px-2 py-0.5 bg-amber-50 text-amber-700 text-xs font-semibold rounded-full">Admin</span>
                         {% else %}
-                            <span class="badge" style="background:#f1f5f9;color:#475569;">Client</span>
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-full truncate max-w-[100px]">{{ u.client.nom if u.client else '—' }}</span>
                         {% endif %}
-                    </td>
-                    <td>{{ u.client.nom if u.client else '—' }}</td>
-                    <td>
-                        {% if u.actif %}
-                            <span class="badge badge-ok">Actif</span>
-                        {% else %}
-                            <span class="badge badge-off">Inactif</span>
-                        {% endif %}
-                    </td>
-                </tr>
+                        <span class="w-2 h-2 rounded-full flex-shrink-0 {% if u.actif %}bg-emerald-400{% else %}bg-slate-300{% endif %}"></span>
+                    </div>
+                </div>
                 {% else %}
-                <tr><td colspan="5" style="color:#94a3b8; text-align:center;">Aucun utilisateur encore.</td></tr>
+                <div class="px-6 py-10 text-center text-slate-400 text-sm">Aucun utilisateur encore.</div>
                 {% endfor %}
-                </tbody>
-            </table>
+            </div>
         </div>
 
     </div>
-</div>
+</main>
+
 </body>
 </html>

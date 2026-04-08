@@ -1,35 +1,57 @@
-# CLAUDE.md — PTT BTP : Profils Topographiques Travers BTP
+# CLAUDE.md — RECEPTA by OPTILAB : Système de Réception Topographique BTP
 
 > Fichier de référence projet. Toute personne (ou IA) travaillant sur ce code doit lire ce fichier en premier.
+> **Dernière mise à jour : 2026-04-07** — Identité visuelle RECEPTA + refonte UX réception + corrections interpolation
 
 ---
 
 ## 1. DESCRIPTION DU PROJET
 
-**PTT BTP** est une application web Flask (Python) à usage professionnel pour les ingénieurs et techniciens du BTP.
+### Identité visuelle
+- **RECEPTA** — nom commercial de l'outil (affiché en grand, en cyan `#00ffff`)
+- **OPTILAB** — suite logicielle propriétaire (affiché en sous-titre "by OPTILAB")
+- **Logo RECEPTA** : grille 2×2 de points colorés (CSS uniquement, pas de fichier image) :
+  - Point 1 (haut gauche) : `#00ffff` (cyan)
+  - Point 2 (haut droite) : `#fbbf24` (jaune)
+  - Points 3 & 4 (bas) : `#00ffff` (cyan)
+- **Page de connexion** : logo CSS dots + "RECEPTA" en `#00ffff` + badge "by OPTILAB"
+- **Écran d'accueil** : spirale animée SVG (cyan/jaune) + théodolite SVG au centre
+- **Ne jamais utiliser les fichiers `optilab_*.png`** pour représenter RECEPTA — utiliser le logo CSS
+
+---
+
+**RECEPTA** (anciennement PTT BTP / OPTILAB) est une application web Flask (Python) **SaaS multi-tenant** à usage professionnel pour les ingénieurs et techniciens du BTP.
+
 Elle permet de :
 - Créer et éditer des **profils en travers types** de routes (géométrie, couches de chaussée, éléments annexes)
 - Gérer des **points kilométriques (PK)** et recalculer des coordonnées relatives
 - Enregistrer des **mesures de réception topographique** terrain et les comparer aux côtes théoriques
 - **Visualiser les résultats** avec code couleur (conforme/non conforme/interpolé) dans une vue dédiée
-- Générer des **fiches de réception officielles** en PDF (avec signatures manuscrites, observations, légende)
+- Générer des **fiches de réception officielles** en PDF (signatures manuscrites, observations, légende)
+- **Envoyer les fiches par email** aux parties prenantes (contrôleur + entreprise) via Resend
+- **Archiver les fiches** sur Cloudflare R2 et les consulter dans un historique
 
 **Public cible** : Contrôleurs topographiques, équipes chantier BTP, chefs de projet routiers.
+
+**Modèle** : SaaS — chaque entreprise cliente a son propre compte, ses utilisateurs, et son fichier Excel modèle stocké dans le cloud.
 
 ---
 
 ## 2. STACK TECHNIQUE
 
-| Composant | Technologie | Version min |
-|-----------|------------|-------------|
-| Backend | Python / Flask | Flask >= 2.0 |
-| Lecture Excel | pandas + openpyxl | pandas >= 1.3, openpyxl >= 3.0 |
-| Génération PDF | WeasyPrint (optionnel) | >= 60.0 |
-| Frontend | HTML5 + CSS3 + Vanilla JS | Aucun framework JS |
-| Stockage inter-pages | sessionStorage navigateur | — |
-| Données | JSON, CSV, XLSX | — |
-
-**Pas de base de données backend.** Toutes les données vivent dans le navigateur (sessionStorage) pendant la session.
+| Composant | Technologie | Notes |
+|-----------|-------------|-------|
+| Backend | Python / Flask >= 2.3 | Application Factory pattern |
+| ORM / BDD | Flask-SQLAlchemy + PostgreSQL | Hébergé sur Supabase |
+| Authentification | Flask-Login | Rôles : `admin` / `client` |
+| Lecture Excel | pandas >= 2.0 + openpyxl >= 3.1 | Fichiers stockés sur R2 |
+| Génération PDF | **xhtml2pdf** (moteur principal sur Render) | WeasyPrint non disponible sur Render (pas de GTK) |
+| Stockage cloud | **Cloudflare R2** via boto3 | Fichiers Excel clients + fiches archivées |
+| Email | **Resend** (API) | Fiches de réception en pièce jointe |
+| Frontend | HTML5 + CSS3 + Vanilla JS + Tailwind (pages admin/historique) | Aucun framework JS |
+| Stockage inter-pages | sessionStorage navigateur | Données de session utilisateur |
+| Hébergement prod | **Render** (Linux) | Via gunicorn + wsgi.py |
+| Hébergement local | Waitress (Windows) | Via waitress-serve |
 
 ---
 
@@ -37,48 +59,61 @@ Elle permet de :
 
 ```
 02_2026_Setup_app_01/
-├── setup.bat                       # ← DÉMARRAGE : double-clic pour installer + lancer
+├── setup.bat                       # DÉMARRAGE Windows : double-clic pour installer + lancer
 ├── run.py                          # Point d'entrée développement  (python run.py)
-├── wsgi.py                         # Point d'entrée production      (gunicorn/waitress wsgi:app)
+├── wsgi.py                         # Point d'entrée production      (gunicorn wsgi:app)
 ├── requirements.txt                # Dépendances production
-├── requirements-dev.txt            # Dépendances développement (+ pytest)
 ├── .env.example                    # Modèle de variables d'environnement
+├── .python-version                 # Pin Python 3.11 (pour Render)
 ├── .gitignore
-├── CLAUDE.md                       # ← CE FICHIER
+├── CLAUDE.md                       # CE FICHIER
 │
 ├── app/                            # Package Flask principal
-│   ├── __init__.py                 # Application Factory — create_app()
+│   ├── __init__.py                 # Application Factory — create_app() + init extensions
 │   ├── config.py                   # DevelopmentConfig / ProductionConfig / TestingConfig
+│   ├── models.py                   # Modèles SQLAlchemy : Client, User, FicheReception
 │   │
 │   ├── blueprints/
-│   │   ├── pages.py                # Routes HTML (/, /editeur, /reception, /points-kilometriques)
-│   │   └── api.py                  # Routes API (/api/excel/*, /api/*-pdf, /api/download)
+│   │   ├── pages.py                # Routes HTML (/, /editeur, /reception, /points-kilometriques, /historique)
+│   │   ├── api.py                  # Routes API (/api/excel/*, /api/*-pdf, /api/send-email, /api/download)
+│   │   ├── auth.py                 # Authentification : /login, /logout
+│   │   └── admin.py                # Panel admin : /admin/* (CRUD clients/users, upload Excel)
 │   │
 │   ├── services/
-│   │   ├── excel_service.py        # Lecture et parsing du fichier Excel modèle
-│   │   └── pdf_service.py          # Génération PDF (WeasyPrint + fallback HTML)
+│   │   ├── excel_service.py        # Lecture et parsing du fichier Excel (local ou R2)
+│   │   ├── pdf_service.py          # Génération PDF (xhtml2pdf + fallback HTML)
+│   │   └── r2_service.py           # Cloudflare R2 : upload/download/presigned URLs
 │   │
 │   ├── templates/
+│   │   ├── auth/
+│   │   │   └── login.html          # Page de connexion
+│   │   ├── admin/
+│   │   │   ├── dashboard.html      # Dashboard admin (liste clients + users)
+│   │   │   ├── client_form.html    # Formulaire création client
+│   │   │   └── user_form.html      # Formulaire création utilisateur
 │   │   ├── home.html               # Page d'accueil + choix du pipeline
 │   │   ├── index.html              # Phase 1 : Éditeur de profil (canvas)
 │   │   ├── points_kilometriques.html  # Phase 2 : Gestion des PK
-│   │   ├── reception_topographique.html  # Phase 3 : Réception + visualisation + PDF
+│   │   ├── reception_topographique.html  # Phase 3 : Réception + visualisation + PDF + email
+│   │   ├── historique.html         # Historique des fiches archivées (R2)
 │   │   └── pdf/
 │   │       └── fiche_reception.html   # Template PDF/impression Jinja2
 │   │
 │   └── static/
-│       └── style.css               # Design system CSS global
+│       ├── style.css               # Design system CSS global
+│       └── img/                    # Images statiques (logos, icônes)
 │
 ├── core/
 │   └── profile_utils.py            # Logique géométrique pure Python (sans Flask)
 │
 ├── data/
-│   ├── Projet_Routier_Topographie.xlsx  # Fichier Excel modèle (onglets: Cote_Gauche / Cote_Droit)
+│   ├── Projet_Routier_Topographie.xlsx  # Fichier Excel modèle local (fallback dev)
+│   ├── clients/                    # Fichiers Excel par client (fallback local R2)
 │   └── tmp/                        # Fichiers générés temporaires (PDF, exports)
 │
+├── logo/                           # Assets logo OPTILAB
+│
 ├── archive/                        # Anciennes versions — NE PAS MODIFIER
-│   ├── index_old.html
-│   └── reception_topographique_old.html
 │
 ├── tests/
 │   ├── __init__.py
@@ -87,31 +122,43 @@ Elle permet de :
 └── venv/                           # Environnement virtuel Python (non commité)
 ```
 
-### Fichiers archivés
-`archive/index_old.html` et `archive/reception_topographique_old.html` sont des versions précédentes.
-**Ne pas les modifier, ne pas les utiliser en production.**
+---
+
+## 4. VARIABLES D'ENVIRONNEMENT REQUISES
+
+Créer un fichier `.env` à la racine (voir `.env.example`).
+
+| Variable | Obligatoire | Description |
+|----------|-------------|-------------|
+| `SECRET_KEY` | Prod obligatoire | Clé secrète Flask (sessions) |
+| `DATABASE_URL` | Oui | URL PostgreSQL Supabase (`postgresql://...`) |
+| `R2_ENDPOINT` | Oui | URL endpoint Cloudflare R2 |
+| `R2_BUCKET` | Oui | Nom du bucket R2 |
+| `R2_ACCESS_KEY_ID` | Oui | Clé d'accès R2 |
+| `R2_SECRET_ACCESS_KEY` | Oui | Secret R2 |
+| `RESEND_API_KEY` | Pour emails | Clé API Resend |
+| `MAIL_FROM` | Non | Expéditeur email (défaut : `OPTILAB <noreply@ptt-btp.fr>`) |
+| `FLASK_ENV` | Non | `development` / `production` (défaut : development) |
 
 ---
 
-## 4. DÉMARRAGE DU PROJET
+## 5. DÉMARRAGE DU PROJET
 
 ### Méthode simple (Windows)
-Double-cliquer sur **`setup.bat`** — il fait tout automatiquement :
-1. Vérifie Python
-2. Crée le venv si absent
-3. Installe les dépendances
-4. Lance le serveur → http://localhost:5000
+Double-cliquer sur **`setup.bat`** — il fait tout automatiquement.
 
 ### Méthode manuelle
 ```bash
-# Créer le venv (première fois)
+# Créer et activer le venv
 python -m venv venv
-
-# Activer (Windows)
-venv\Scripts\activate
+venv\Scripts\activate          # Windows
+source venv/bin/activate       # Linux/Mac
 
 # Installer les dépendances
 pip install -r requirements.txt
+
+# Créer le fichier .env (copier .env.example et remplir les valeurs)
+cp .env.example .env
 
 # Lancer en développement
 python run.py
@@ -121,361 +168,341 @@ python run.py
 waitress-serve --port=5000 wsgi:app
 ```
 
-WeasyPrint (PDF natif) nécessite GTK sur Windows — si non disponible, le fallback HTML est utilisé automatiquement.
+> Ne jamais utiliser `run.py` (debug=True) en production. Toujours passer par `wsgi.py`.
 
 ---
 
-## 5. ARCHITECTURE BACKEND
+## 6. ARCHITECTURE BACKEND
 
-### 5.1 Routes de pages (Blueprint `pages`) — `app/blueprints/pages.py`
+### 6.1 Modèles BDD — `app/models.py`
 
-| Route | Template rendu | Rôle |
-|-------|---------------|------|
-| `/` | `home.html` | Accueil — choix du pipeline de travail |
+```
+Client          → entreprise cliente
+  ├── nom           : str(120)
+  ├── excel_key     : str(255) — clé R2 du fichier Excel modèle
+  ├── projet_label  : str(200) — nom affiché dans l'app
+  └── actif         : bool
+
+User            → technicien / admin
+  ├── email         : str unique
+  ├── password_hash : str (Werkzeug)
+  ├── nom           : str
+  ├── role          : 'admin' | 'client'
+  ├── client_id     → FK Client (NULL si admin)
+  └── last_login    : datetime
+
+FicheReception  → archive d'une fiche générée
+  ├── r2_key        : chemin dans R2
+  ├── projet, section, date_reception, operateur
+  ├── client_id     → FK Client
+  └── user_id       → FK User
+```
+
+### 6.2 Blueprints
+
+| Blueprint | Préfixe | Fichier | Accès |
+|-----------|---------|---------|-------|
+| `pages` | `/` | `blueprints/pages.py` | `@login_required` sur toutes les pages |
+| `api` | `/api/` | `blueprints/api.py` | `@login_required` sur tous les endpoints |
+| `auth` | `/login`, `/logout` | `blueprints/auth.py` | Public |
+| `admin` | `/admin/` | `blueprints/admin.py` | `@admin_required` (role='admin') |
+
+### 6.3 Routes de pages (Blueprint `pages`)
+
+| Route | Template | Rôle |
+|-------|----------|------|
+| `/` | `home.html` | Accueil — choix du pipeline |
 | `/editeur` | `index.html` | Phase 1 — Éditeur de profil en travers |
 | `/points-kilometriques` | `points_kilometriques.html` | Phase 2 — Gestion PK |
 | `/reception` | `reception_topographique.html` | Phase 3 — Réception topographique |
+| `/historique` | `historique.html` | Historique des fiches archivées |
 
-### 5.2 API endpoints (Blueprint `api`) — `app/blueprints/api.py`
+### 6.4 API endpoints (Blueprint `api`)
 
 #### `GET /api/excel/sheets`
-Retourne la liste des onglets du fichier `Projet_Routier_Topographie.xlsx`.
+Retourne les onglets du fichier Excel du client connecté (depuis R2 ou fallback local).
 ```json
 { "sheets": ["Cote_Gauche", "Cote_Droit"] }
 ```
 
 #### `GET /api/excel/data/<sheet_name>`
-Retourne les données d'un onglet Excel nettoyées (NaN, Inf remplacés par null).
-- Détecte automatiquement la colonne PK (cherche `'PK'` ou `'KILOMETRIQUE'` dans le nom de colonne)
-- Détecte automatiquement les colonnes de côtes via `pd.api.types.is_numeric_dtype()` (toutes colonnes numériques non-PK)
-```json
-{
-  "pk_column": "PK",
-  "pks": ["0+000", "0+025", ...],
-  "cote_columns": ["G_Roulement", "G_Base", "D_Roulement", ...],
-  "all_columns": [...],
-  "data": [{ "PK": "0+000", "G_Roulement": 102.34, ... }, ...]
-}
-```
-
-#### `GET /api/download/<filename>`
-Téléchargement d'un fichier depuis `data/tmp/`.
-Protégé contre le path traversal (whitelist regex `^[\w\-. ]+$`).
+Données d'un onglet nettoyées (NaN/Inf → null).
+- Colonne PK : cherche `'PK'` ou `'KILOMETRIQUE'` dans le nom
+- Colonnes côtes : toutes colonnes numériques non-PK (`pd.api.types.is_numeric_dtype()`)
 
 #### `POST /api/generate-pdf`
-Génère la fiche de réception PDF (ou HTML si WeasyPrint absent).
-
-**Corps JSON attendu :**
-```json
-{
-  "projet": "Nom du projet",
-  "date": "2026-02-28",
-  "operateur": "Nom opérateur",
-  "section": "Section X",
-  "meteo": "Ensoleillé",
-  "tolerance": 2,
-  "mode": "assainissement",
-  "controleur_nom": "...",
-  "controleur_fonction": "...",
-  "controleur_date": "...",
-  "entreprise_nom": "...",
-  "entreprise_societe": "...",
-  "entreprise_date": "...",
-  "signature_controleur": "data:image/png;base64,...",
-  "signature_entreprise": "data:image/png;base64,...",
-  "observations_generales": "Texte libre d'observations...",
-  "stations": [
-    {
-      "numero": 1,
-      "nom": "Station de nivellement n°1",
-      "cote_repere": 3,
-      "lar": 3,
-      "cote_bleue": 6.000,
-      "pente": null,
-      "rows": [
-        {
-          "pk": "0+000",
-          "element_label": "Roulement (Gauche)",
-          "cote_label": "0.000",
-          "lav": "2",
-          "cote_mesuree": "4.000",
-          "cote_theorique": "4.000",
-          "ecart": "-0.002",
-          "ecart_status": "ok",
-          "observation": "Côte conforme",
-          "is_interpolated": false
-        }
-      ]
-    }
-  ]
-}
-```
-**Réponse :** PDF binaire (`application/pdf`) ou HTML (`text/html` si fallback).
+Génère la fiche de réception en PDF (xhtml2pdf) ou HTML (fallback).
+Archivage automatique sur R2 + enregistrement dans `FicheReception`.
 
 #### `POST /api/preview-pdf`
-Identique à `generate-pdf` mais retourne toujours du HTML (pour impression navigateur via `window.print()`).
-Accepte les mêmes champs JSON, incluant `signature_controleur` et `signature_entreprise`.
+Identique à `generate-pdf` mais retourne toujours du HTML (pour `window.print()`).
+
+#### `POST /api/send-fiche-email`
+Envoie la fiche par email via Resend aux signataires.
+Corps : mêmes données que `generate-pdf` + liste de destinataires.
+
+#### `GET /api/download/<filename>`
+Téléchargement depuis `data/tmp/`. Protégé contre path traversal (whitelist regex `^[\w\-. ]+$`).
+
+### 6.5 Routes admin (Blueprint `admin`)
+
+| Route | Méthode | Action |
+|-------|---------|--------|
+| `/admin/` | GET | Dashboard (liste clients + users) |
+| `/admin/clients/nouveau` | GET/POST | Créer un client |
+| `/admin/clients/<id>/excel` | POST | Uploader l'Excel modèle → R2 |
+| `/admin/clients/<id>/toggle` | POST | Activer/désactiver un client |
+| `/admin/utilisateurs/nouveau` | GET/POST | Créer un utilisateur |
 
 ---
 
-## 6. LOGIQUE MÉTIER — core/profile_utils.py
+## 7. SERVICE CLOUDFLARE R2 — `app/services/r2_service.py`
 
-Ce module est le **moteur de calcul géométrique**. Il est indépendant de Flask et peut être utilisé en standalone.
+| Fonction | Rôle |
+|----------|------|
+| `upload_excel(bytes, key)` | Upload fichier Excel client |
+| `upload_fiche(bytes, key)` | Archive fiche de réception (HTML) |
+| `download_excel(key)` | Télécharge Excel depuis R2 → bytes |
+| `generate_presigned_url(key, 3600)` | URL signée temporaire (1h) |
 
-### 6.1 Fonction principale : `Z_surf(x, params)`
-Calcule la cote Z de la surface en un point x du demi-profil.
-
-**Formule piecewise :**
-```
-Si x ≤ x_ch :  Z = Z0 - s × x
-Si x > x_ch :  Z = (Z0 - s × x_ch) - s_acc × (x - x_ch)
-```
-
-### 6.2 Fonction principale : `recalc_layers(params, layers, objects=None)`
-Recalcule les polygones de chaque couche de chaussée (4 coins P1 à P4).
-
-### 6.3 Fonction haut niveau : `update_profile_from_file(path, new_Z0, new_X0)`
-Charge un profil JSON, met à jour Z0/X0, recalcule et exporte CSV/XLSX/JSON.
+Clé R2 des Excel clients : `data/clients/{client_id}/modele.xlsx`
+Clé R2 des fiches : `fiches/{client_id}/{timestamp}_{projet}.html`
 
 ---
 
-## 7. FLUX DE TRAVAIL (DATA FLOW)
+## 8. GÉNÉRATION PDF — `app/services/pdf_service.py`
+
+- **Moteur principal** : `xhtml2pdf` (pur Python, fonctionne sur Render sans GTK)
+- **Fallback** : HTML brut retourné si xhtml2pdf échoue
+- **WeasyPrint** : retiré de la prod (nécessite GTK, incompatible Render)
+- **Template** : `app/templates/pdf/fiche_reception.html` (Jinja2)
+
+---
+
+## 9. FLUX DE TRAVAIL (DATA FLOW)
 
 ### Pipeline Excel multi-onglets (principal)
 ```
-[Chargement automatique au démarrage]
+[Chargement automatique]
+  → GET /api/excel/sheets → liste des onglets
   → Promise.all([GET /api/excel/data/Cote_Gauche, GET /api/excel/data/Cote_Droit])
   → allSheetsData = { Cote_Gauche: {...}, Cote_Droit: {...} }
   → commonPKs = intersection des PK des deux onglets
         ↓
-[Sélection des éléments à réceptionner]
+[Sélection des éléments]
   → renderColumnSelectionUI() : grille 2 colonnes (Gauche | Droite)
-  → Chaque checkbox porte data-sheet="Cote_Gauche|Cote_Droit" et data-label="Roulement (Gauche)"
   → makeElementLabel("G_Roulement", "Cote_Gauche") → "Roulement (Gauche)"
         ↓
-[Génération de la fiche de saisie]
-  → generateReceptionSheet() : tableau avec colonnes PK | ÉLÉMENT | Distance | LAV | Mesurée | Théorique | Écart+ | Écart-
-  → Côte théorique lue depuis allSheetsData[sheetName].data[pkIndex]
-  → Interpolation linéaire possible entre deux PK connus (classe row-interpolated)
-        ↓
 [Saisie des mesures terrain]
-  → Input LAV par ligne → calcul écart = coteMesuree - coteTheorique
-  → Statut par classe CSS sur <tr> : ecart-ok | ecart-positif | ecart-negatif
-  → Auto-texte observation-cell : "Côte conforme" / "Côte non conforme"
+  → Tableau avec colonnes PK | ÉLÉMENT | Distance | LAV | Mesurée | Théorique | Écart+ | Écart-
+  → Statut CSS sur <tr> : ecart-ok | ecart-positif | ecart-negatif | row-interpolated
         ↓
-[Visualisation des résultats — bouton "Visualiser les résultats"]
-  → collectReceptionDataForPDF() : lit inputs et classes CSS, construit objet JSON
-    - is_interpolated : row.classList.contains('row-interpolated')
-    - ecart_status : 'ok' si row.classList.contains('ecart-ok'), sinon 'error'
-    - ecart : valeur directe de ecartNeg (déjà signée) ou '+' + ecartPos
-    - Infos signataires lues directement depuis les <input> (pas les spans display-*)
+[Visualisation]
+  → collectReceptionDataForPDF() → objet JSON complet
   → renderResultatsSection(data) : stats + tableaux colorés + légende
-  → Textarea "observations-generales" : texte libre
         ↓
-[Export PDF]
-  → POST /api/generate-pdf avec data + observations_generales
-  → fiche_reception_pdf.html rendu côté serveur
-  → PDF téléchargé (WeasyPrint) ou fenêtre d'impression (fallback)
-```
-
-### Pipeline Manuel (3 phases)
-```
-[Phase 1 - Éditeur] → sessionStorage['editorPoints']
-[Phase 2 - PK]      → sessionStorage['pkData']
-[Phase 3 - Réception] → même saisie que ci-dessus, sans import Excel
+[Export]
+  → POST /api/generate-pdf → PDF téléchargé + archivé R2
+  → POST /api/send-fiche-email → email Resend aux signataires
 ```
 
 ---
 
-## 8. FRONTEND — PAGES ET JAVASCRIPT
+## 10. FRONTEND — PAGES ET JAVASCRIPT
 
-### 8.1 reception_topographique.html — Réception (Phase 3)
-**Module principal (~4033 lignes)**
+### 10.1 reception_topographique.html (~4000+ lignes)
 
 **Variables globales clés :**
 ```javascript
-let allSheetsData = {};       // { Cote_Gauche: {pks, data, cote_columns}, Cote_Droit: {...} }
-let commonPKs = [];           // PK communs aux deux onglets
-let globalSelectedPoints = []; // Points sélectionnés avec {pk, sheetName, label, coteTheorique}
+let allSheetsData = {};        // { Cote_Gauche: {pks, data, cote_columns}, ... }
+let commonPKs = [];            // PK communs aux deux onglets
+let globalSelectedPoints = []; // { pk, sheetName, label, coteTheorique }
 ```
 
 **Fonctions clés :**
-- `loadAllSheetsData()` — charge tous les onglets en parallèle via `Promise.all()`
+- `loadAllSheetsData()` — charge tous les onglets via `Promise.all()`
 - `renderColumnSelectionUI()` — grille Gauche/Droite avec checkboxes
-- `makeElementLabel(colName, sheetName)` — transforme `G_Roulement` → `"Roulement (Gauche)"`
+- `makeElementLabel(colName, sheetName)` — `G_Roulement` → `"Roulement (Gauche)"`
 - `generateReceptionSheet()` — construit le tableau de saisie
-- `generateRowHTML(stNum, pk, dist, coteTheo, isInterp, elementLabel)` — génère une ligne `<tr>`
-- `collectReceptionDataForPDF()` — collecte toutes les données pour l'export (lit les inputs directs)
-- `renderResultatsSection(data)` — affiche la vue résultats avec code couleur
-- `getSignatureBase64(type)` — retourne l'image canvas en base64
+- `collectReceptionDataForPDF()` — collecte données pour export (lit les `<input>` directs)
+- `renderResultatsSection(data)` — vue résultats avec code couleur
+- `getSignatureBase64(type)` — canvas → base64
 
 **Modes :**
-- `assainissement` : 9 colonnes (sans colonne pente/dist axe)
+- `assainissement` : 9 colonnes (sans pente/dist axe)
 - `terrassement` : 11 colonnes (avec dist axe et pente)
-
-**Colspan des lignes d'interpolation :** `terrassement ? 12 : 10`
 
 **Statut des lignes (classes CSS sur `<tr>`) :**
 - `ecart-ok` → conforme (|écart| ≤ tolérance)
-- `ecart-positif` → non conforme, côté positif
-- `ecart-negatif` → non conforme, côté négatif
-- `row-interpolated` → point interpolé (ne compte pas dans le bilan)
+- `ecart-positif` → non conforme, excédent positif
+- `ecart-negatif` → non conforme, déficit
+- `row-interpolated` → point interpolé (exclu du bilan)
 
-### 8.2 app/templates/pdf/fiche_reception.html — Template PDF (refonte fév. 2026)
+### 10.2 Template PDF — `app/templates/pdf/fiche_reception.html`
 
-**Variables Jinja2 disponibles :**
+**Variables Jinja2 :**
 ```
 projet, date, operateur, section, meteo, tolerance, mode
 controleur_nom, controleur_fonction, controleur_date
 entreprise_nom, entreprise_societe, entreprise_date
 signature_controleur, signature_entreprise (base64 PNG)
-observations_generales (texte libre)
-stations[] avec rows[] incluant : pk, element_label, cote_label, lav,
-  cote_mesuree, cote_theorique, ecart, ecart_status, observation, is_interpolated
+observations_generales
+stations[] → rows[] : pk, element_label, cote_label, lav,
+             cote_mesuree, cote_theorique, ecart, ecart_status,
+             observation, is_interpolated
 total_points, points_conformes, points_non_conformes, conformes_percent
 ```
 
-**Colonnes du tableau PDF :** PK | Élément | Dist.(m) | LAV | Côte mesurée | Côte théorique | Écart | Statut | Observation
-
-**Classes CSS de ligne :**
+**Classes CSS des lignes PDF :**
 ```css
 tr.row-ok          { background: #f8fffe; border-left: 3px solid #4ade80; }
-tr.row-warning     { background: #fffdf0; border-left: 3px solid #facc15; }
 tr.row-error       { background: #fff8f8; border-left: 3px solid #f87171; }
 tr.row-interpolated{ background: #f8fafc; border-left: 3px solid #cbd5e1; }
 ```
 
-**Colonne STATUT** : symboles ✓ / ⚠ / ✗ / ◦ selon `ecart_status` et `is_interpolated`
-
-**Bilan statistique** : cartes dynamiques (vert/orange/rouge) selon `conformes_percent`
-
 ---
 
-## 9. DESIGN SYSTEM — static/style.css
-
-### Palette de couleurs
-```css
---primary: #1e3a5f        /* Bleu foncé principal */
---primary-dark: #0f2744   /* Bleu très foncé */
---accent: #3b82f6         /* Bleu clair interactif */
---success: #059669        /* Vert */
---warning: #d97706        /* Orange */
---error: #dc2626          /* Rouge */
-```
-
-### Composants CSS notables
-- `.site-header` — header sticky, gradient bleu foncé
-- `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger` — boutons avec hover effects
-- `.card`, `.section-card` — cartes avec shadow et border-radius
-- Breakpoints : 1200px, 1000px, 768px, 480px
-
----
-
-## 10. CONVENTIONS ET RÈGLES DE CODE
+## 11. CONVENTIONS ET RÈGLES DE CODE
 
 ### Python (backend)
 - **Langue des commentaires** : Français
-- **Structure** : Toutes les routes dans `app.py`, logique métier dans `profile_utils.py`
-- **Gestion d'erreur** : Chaque route API retourne `{"error": str(e)}, 500` en cas d'exception
-- **NaN/Inf** : Toujours nettoyer avec `df.where(pd.notnull(df), None)` avant sérialisation JSON
-- **Colonnes côtes** : détectées par `pd.api.types.is_numeric_dtype()`, pas par nom de colonne
+- **Blueprints** : routes dans leurs fichiers respectifs (`pages.py`, `api.py`, `auth.py`, `admin.py`)
+- **Logique métier** : dans `services/` et `core/profile_utils.py`
+- **Gestion d'erreur** : `{"error": str(e)}, 500` sur toutes les routes API
+- **NaN/Inf** : `df.where(pd.notnull(df), None)` avant sérialisation JSON
+- **Auth** : `@login_required` sur toutes les routes pages/api, `@admin_required` sur `/admin/`
 
 ### JavaScript (frontend)
 - **Vanilla JS uniquement** — pas de jQuery, pas de frameworks
 - **Communication inter-pages** : uniquement via `sessionStorage`
-- **Lecture des champs signature** : toujours depuis `document.getElementById('controleur-nom').value` (inputs directs), jamais depuis les spans `display-*` qui ne sont mis à jour qu'au "Générer la fiche"
-- **Statut de conformité** : lire `row.classList.contains('ecart-positif')` / `ecart-negatif` sur le `<tr>`, pas des classes de cellule
-- **Signe de l'écart négatif** : `ecartNeg` contient déjà le signe `-`, ne pas préfixer d'un `-` supplémentaire
+- **Signatures** : lire `document.getElementById('controleur-nom').value` (inputs directs), jamais les spans `display-*`
+- **Statut conformité** : lire `row.classList.contains('ecart-positif')` sur le `<tr>`
+- **Signe écart négatif** : `ecartNeg` contient déjà le `-`, ne pas re-préfixer
 
 ### HTML/CSS
-- **Templates Jinja2** pour les pages servies par Flask
+- **Tailwind CDN** : utilisé sur les pages admin et historique uniquement
+- **CSS custom** (`style.css`) : toutes les autres pages
 - **CSS inline** dans les templates : uniquement pour overrides spécifiques à la page
 
 ---
 
-## 11. BUGS CORRIGÉS (fév. 2026)
+## 12. BUGS CORRIGÉS
 
 | Bug | Cause | Fix |
 |-----|-------|-----|
-| Écart affiché `--23.249` | `ecartNeg` contenait déjà `-23.249`, code ajoutait un `-` supplémentaire | `ecart = ecartNeg` sans préfixe |
-| Bilan toujours 100% conforme | `collectReceptionDataForPDF` cherchait classes `ecart-error`/`ecart-warning` inexistantes | Lire `ecart-positif`/`ecart-negatif` sur le `<tr>` |
-| Infos signataires absentes du PDF | Code lisait les spans `display-*` non mis à jour | Lire directement les `<input>` |
-| `preview_pdf` sans signatures | Route n'extrayait pas `signature_controleur`/`signature_entreprise` | Ajout dans `app.py` route `preview_pdf` |
-| Colonnes côtes non détectées | Logique cherchait `'COTE'` dans le nom → échec avec `G_Roulement` etc. | `pd.api.types.is_numeric_dtype()` |
+| Écart affiché `--23.249` | `ecartNeg` avait déjà le `-`, code ajoutait un `-` | `ecart = ecartNeg` sans préfixe |
+| Bilan toujours 100% conforme | Cherchait classes `ecart-error`/`ecart-warning` inexistantes | Lire `ecart-positif`/`ecart-negatif` sur `<tr>` |
+| Infos signataires absentes du PDF | Lisait les spans `display-*` non mis à jour | Lire directement les `<input>` |
+| `preview_pdf` sans signatures | Route n'extrayait pas les signatures | Ajout dans la route |
+| Colonnes côtes non détectées | Cherchait `'COTE'` dans le nom | `pd.api.types.is_numeric_dtype()` |
+| `DATABASE_URL` avec `postgres://` | SQLAlchemy 2.x exige `postgresql://` | `str.replace()` au démarrage |
+| PDF non généré sur Render | WeasyPrint nécessite GTK absent sur Render | Remplacement par xhtml2pdf |
 
 ---
 
-## 12. PROBLÈMES CONNUS ET DETTE TECHNIQUE
-
-### Sécurité
-- [ ] **`/download/<filename>`** : risque de path traversal — implémenter une whitelist
-- [ ] **Aucune authentification** : toutes les pages sont publiques
-- [ ] **Pas de validation côté serveur** des données PDF (XSS potentiel)
-
-### Architecture / Data
-- [ ] **sessionStorage** : données perdues au refresh — envisager localStorage ou API sauvegarde
-- [ ] **Export Excel simulé** : le frontend génère un CSV avec extension `.xlsx`
+## 13. PROBLÈMES CONNUS ET DETTE TECHNIQUE
 
 ### PDF
-- [ ] **WeasyPrint optionnel** : fallback HTML n'a pas le même rendu
-- [ ] **Images base64 volumineuses** : signatures peuvent dépasser 16MB (limite Flask)
+- [ ] **xhtml2pdf** : rendu moins fidèle que WeasyPrint pour les mises en page complexes
+- [ ] **Signatures base64** : peuvent être volumineuses (>1MB par signature)
 
-### Performance
-- [ ] **Pas de cache** : l'Excel est relu à chaque appel API
-- [ ] **Tableaux** : pas de virtualisation — 10 000+ points provoquerait un lag
+### Architecture / Data
+- [ ] **sessionStorage** : données perdues au refresh — envisager localStorage
+- [ ] **Export Excel simulé** : le frontend génère un CSV avec extension `.xlsx`
+- [ ] **Pas de cache Excel** : fichier R2 relu à chaque appel API
 
----
-
-## 13. AMÉLIORATIONS RECOMMANDÉES (PAR PRIORITÉ)
-
-### Priorité 1 — Sécurité
-1. Sécuriser `/download/<filename>` avec un répertoire temporaire contrôlé
-2. Ajouter validation des entrées dans les endpoints POST
-3. `app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024`
-
-### Priorité 2 — Robustesse
-4. Remplacer sessionStorage par localStorage avec sérialisation JSON robuste
-5. Ajouter route `POST /api/save-session` / `GET /api/load-session` (SQLite ou fichier)
-
-### Priorité 3 — Fonctionnalités
-6. Vrai export Excel via `openpyxl` (route `/api/export-excel`)
-7. Ajout d'un niveau "avertissement" (warning) distinct de "erreur" dans le calcul d'écart
-8. Permettre des observations libres par ligne (actuellement auto-texte uniquement)
-
-### Priorité 4 — Performance
-9. Cache serveur pour les données Excel (`functools.lru_cache` ou Flask-Caching)
-10. Virtualisation des tableaux longs (> 500 lignes)
+### Sécurité
+- [ ] **Pas de validation stricte** des données PDF côté serveur (XSS potentiel)
 
 ---
 
-## 14. RÉSUMÉ RAPIDE POUR DÉBOGAGE
+## 14. AMÉLIORATIONS RECOMMANDÉES
+
+### Priorité 1 — Robustesse
+1. Cache serveur pour les données Excel (`functools.lru_cache` ou Redis)
+2. Vraie validation et sanitization des inputs POST
+
+### Priorité 2 — Fonctionnalités
+3. Vrai export Excel via `openpyxl` (route `/api/export-excel`)
+4. Niveau "avertissement" distinct de "erreur" dans le calcul d'écart
+5. Observations libres par ligne (actuellement auto-texte uniquement)
+6. Mot de passe oubli / reset par email
+
+### Priorité 3 — Performance
+7. Virtualisation des tableaux longs (> 500 lignes)
+8. Pagination de l'historique des fiches
+
+---
+
+## 15. DÉBOGAGE RAPIDE
 
 | Problème | Cause probable | Solution |
 |----------|---------------|----------|
-| "Fichier Projet_Routier_Topographie.xlsx introuvable" | Fichier absent du répertoire racine | Placer le fichier Excel à côté de app.py |
-| "Colonne PK introuvable" | Nom de colonne sans 'PK' ou 'KILOMETRIQUE' | Renommer la colonne dans l'Excel |
-| PDF sans noms/fonctions signataires | Champs remplis après "Générer la fiche" | Déjà corrigé — lecture directe des inputs |
-| Écart avec double `--` | Bug corrigé fév. 2026 | Voir section 11 |
-| Bilan faux (100% conforme) | Bug corrigé fév. 2026 | Voir section 11 |
-| PDF non généré | WeasyPrint absent | Installer GTK + WeasyPrint ou utiliser le fallback HTML |
-| Données perdues entre pages | sessionStorage non alimenté | Vérifier que la phase précédente a bien exporté |
-| Canvas vide | Points non chargés | Vérifier `sessionStorage['editorPoints']` dans la console |
+| Redirection vers `/login` sur toutes les pages | Normal — `@login_required` actif | Se connecter |
+| "Fichier Excel introuvable" | Pas d'`excel_key` pour ce client | Admin → uploader l'Excel |
+| "Colonne PK introuvable" | Nom de colonne sans 'PK' ou 'KILOMETRIQUE' | Renommer dans l'Excel |
+| Écart avec double `--` | Bug corrigé | Voir section 12 |
+| Bilan faux (100% conforme) | Bug corrigé | Voir section 12 |
+| PDF non généré | xhtml2pdf erreur | Vérifier les logs Render |
+| Données perdues entre pages | sessionStorage non alimenté | Vérifier la phase précédente |
+| Email non envoyé | `RESEND_API_KEY` absent ou invalide | Vérifier les variables d'env Render |
+| Erreur R2 | Credentials R2 invalides ou bucket inexistant | Vérifier `R2_*` dans les env vars |
 
 ---
 
-## 15. LANCEMENT EN PRODUCTION
+## 16. DÉPLOIEMENT RENDER
 
 ```bash
-# Avec Waitress (Windows — recommandé, inclus dans requirements.txt)
-waitress-serve --port=5000 wsgi:app
+# Build command (Render)
+pip install -r requirements.txt
 
-# Avec Gunicorn (Linux/Mac)
-pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 wsgi:app
+# Start command (Render)
+gunicorn wsgi:app
+
+# Variables d'env à configurer dans le dashboard Render :
+# SECRET_KEY, DATABASE_URL, R2_ENDPOINT, R2_BUCKET,
+# R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, RESEND_API_KEY, MAIL_FROM
 ```
 
-> Ne jamais utiliser `run.py` (debug=True) en production. Toujours passer par `wsgi.py`.
+Python version : **3.11** (fichier `.python-version` à la racine).
 
 ---
 
-*Dernière mise à jour : 2026-02-28 — Refonte réception + visualisation résultats + corrections bugs*
+## 17. CHANGELOG RÉCENT (2026-04-07)
+
+### Identité visuelle — renommage RECEPTA
+- Outil renommé **RECEPTA** (OPTILAB reste la suite)
+- Logo RECEPTA = grille CSS 2×2 points (`#00ffff`, `#fbbf24`, `#00ffff`, `#00ffff`) — pas d'image
+- Page connexion (`auth/login.html`) : logo RECEPTA CSS centré dans l'en-tête de la card
+- Page accueil (`home.html`) : header "RECEPTA by OPTILAB" avec logo CSS
+
+### Écran d'accueil — spirale + théodolite
+- Spirale agrandie : `.svg-frame` 300px → 380px, SVGs 344px → 420px
+- **Théodolite SVG** ajouté au centre de la spirale (`id="topo-instrument"`) :
+  - Trépied (3 pieds + embouts)
+  - Corps instrument + lunette horizontale
+  - Objectif et oculaire
+  - Niveau à bulle (ellipse + bulle intérieure)
+  - Réticule de visée (croix)
+  - Arc de cercle gradué (symbolique)
+  - Tout en `stroke="#00FFFF"` pour cohérence avec l'animation
+
+### Réception topographique — UX
+- Couleurs côté gauche (rouge) / côté droit (bleu) sur les lignes du tableau
+- Colonne VALIDATION (bouton cyclable : — / ✓ / ⚠) avant OBSERVATIONS
+- Options PDF : séparer par côté / ignorer la distinction gauche-droit
+- Filtre nouveau point : exclut les points déjà validés dans la station précédente
+- Observations par ligne : titre + commentaire + photo (caméra ou fichier)
+- Suppression du champ "Fonction du contrôleur" (étape 5 signatures)
+
+### Interpolation — corrections
+- Bouton interpolation "entre deux PK" : discreet (petit "+" entre lignes)
+- **Option choix libre PK1/PK2 corrigée** :
+  - Pré-sélection automatique au premier appel
+  - Message d'erreur inline si PK1 ≥ PK2
+  - Lecture fraîche du DOM au clic "Confirmer" (évite les closures obsolètes)
+- `regenerateAllStations` corrigé : ne détruit plus les séparateurs `.interp-sep-row` ni les boutons "+"
+
+---
+
+*Dernière mise à jour : 2026-04-07 — Identité RECEPTA + théodolite spirale + UX réception + corrections interpolation*

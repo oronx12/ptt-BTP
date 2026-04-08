@@ -2,701 +2,395 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Fiche de Réception Topographique — {{ projet or 'PTT BTP' }}</title>
+    <title>Fiche de Réception — {{ projet or 'OPTILAB' }}</title>
     <style>
         @page {
             size: A4;
-            margin: 10mm 10mm 16mm 10mm;
+            margin: 12mm 10mm 18mm 10mm;
             @bottom-center {
-                content: "PTT BTP  ·  Fiche de Réception  ·  Page " counter(page) " / " counter(pages);
-                font-size: 7.5px;
-                color: #94a3b8;
-                font-family: 'Segoe UI', Arial, sans-serif;
+                content: "OPTILAB · Réception Topographique · Page " counter(page) " / " counter(pages);
+                font-size: 7px; color: #94a3b8;
+                font-family: Arial, sans-serif;
             }
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 9.5px;
-            line-height: 1.45;
-            color: #1e293b;
+            font-family: Arial, sans-serif;
+            font-size: 9px; line-height: 1.45; color: #1e293b;
             background: white;
         }
 
-        /* ==============================================
-           EN-TÊTE DOCUMENT
-        ============================================== */
+        /* ===== EN-TÊTE ===== */
         .doc-header {
-            background: linear-gradient(135deg, #0f2744 0%, #1e3a5f 50%, #1d4ed8 100%);
-            border-radius: 8px;
-            padding: 14px 18px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding-bottom: 10px; margin-bottom: 12px;
+            border-bottom: 2px solid #1e3a5f;
         }
-
-        .brand-block {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .brand-logo {
-            width: 44px;
-            height: 44px;
-            background: rgba(255,255,255,0.18);
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: -0.5px;
-            flex-shrink: 0;
-        }
-
         .brand-name {
-            font-size: 19px;
-            font-weight: 900;
-            color: white;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            font-size: 22px; font-weight: 900; color: #1e3a5f;
+            letter-spacing: 1.5px; line-height: 1;
         }
-
-        .brand-subtitle {
-            font-size: 9.5px;
-            color: rgba(255,255,255,0.75);
-            margin-top: 2px;
+        .brand-sub { font-size: 8px; color: #64748b; margin-top: 3px; }
+        .doc-title-block { text-align: right; }
+        .doc-title {
+            font-size: 13px; font-weight: 800; color: #1e3a5f;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
+        .doc-ref { font-size: 7.5px; color: #94a3b8; margin-top: 4px; }
 
-        .header-right {
-            text-align: right;
+        /* ===== FICHE PROJET ===== */
+        .project-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 8px; margin-bottom: 10px;
         }
-
-        .header-right-title {
-            font-size: 13px;
-            font-weight: 800;
-            color: white;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .header-right-sub {
-            font-size: 9px;
-            color: rgba(255,255,255,0.7);
-            margin-top: 3px;
-        }
-
-        .header-right-ref {
-            font-size: 8px;
-            color: rgba(255,255,255,0.5);
-            margin-top: 5px;
-            font-style: italic;
-        }
-
-        /* ==============================================
-           BADGES
-        ============================================== */
-        .badges-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 8.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-
-        .badge-assainissement { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
-        .badge-terrassement   { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
-        .badge-ok             { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
-        .badge-warning        { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
-        .badge-error          { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-
-        /* ==============================================
-           INFO CONTRÔLE (2 colonnes)
-        ============================================== */
-        .info-wrapper {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
         .info-block {
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            overflow: hidden;
+            border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;
         }
-
-        .info-block-title {
-            background: #1e3a5f;
-            color: white;
-            font-size: 8px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            padding: 5px 10px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-        }
-
-        .info-item {
-            padding: 7px 10px;
-            border-right: 1px solid #e2e8f0;
+        .info-block-head {
+            background: #f1f5f9; padding: 5px 10px;
+            font-size: 7.5px; font-weight: 700; color: #475569;
+            text-transform: uppercase; letter-spacing: 0.5px;
             border-bottom: 1px solid #e2e8f0;
         }
-
-        .info-item:nth-child(3n) { border-right: none; }
-        .info-item:nth-last-child(-n+3) { border-bottom: none; }
-
-        .info-item.span2 {
-            grid-column: span 2;
+        .info-rows { padding: 6px 10px; }
+        .info-row {
+            display: grid; grid-template-columns: 90px 1fr;
+            margin-bottom: 4px; font-size: 8.5px;
         }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-lbl { color: #94a3b8; font-weight: 500; }
+        .info-val { color: #0f172a; font-weight: 700; }
 
-        .info-label {
-            font-size: 7px;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
+        /* ===== KPI ===== */
+        .kpi-band {
+            display: grid; grid-template-columns: repeat(4,1fr);
+            gap: 6px; margin-bottom: 10px;
         }
-
-        .info-value {
-            font-size: 10.5px;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        /* ==============================================
-           KPI / BILAN
-        ============================================== */
-        .kpi-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
         .kpi-card {
-            border-radius: 8px;
-            padding: 10px 12px;
-            border: 1px solid transparent;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
+            border: 1px solid #e2e8f0; border-radius: 6px;
+            padding: 8px 10px;
         }
+        .kpi-num { font-size: 20px; font-weight: 900; line-height: 1; color: #1e3a5f; }
+        .kpi-num.green { color: #15803d; }
+        .kpi-num.red   { color: #b91c1c; }
+        .kpi-num.orange{ color: #b45309; }
+        .kpi-lbl { font-size: 7px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; }
 
-        .kpi-card-blue   { background: #eff6ff; border-color: #bfdbfe; }
-        .kpi-card-green  { background: #f0fdf4; border-color: #86efac; }
-        .kpi-card-yellow { background: #fefce8; border-color: #fde047; }
-        .kpi-card-red    { background: #fef2f2; border-color: #fca5a5; }
-
-        .kpi-value {
-            font-size: 22px;
-            font-weight: 900;
-            line-height: 1;
+        /* Barre conformité */
+        .conform-bar-wrap {
+            background: #fee2e2; border-radius: 3px; height: 6px;
+            margin-bottom: 10px; overflow: hidden; border: 1px solid #fca5a5;
         }
+        .conform-bar-fill { height: 100%; border-radius: 3px; }
 
-        .kpi-blue   { color: #1e3a5f; }
-        .kpi-green  { color: #15803d; }
-        .kpi-yellow { color: #a16207; }
-        .kpi-red    { color: #b91c1c; }
-
-        .kpi-label {
-            font-size: 7.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #64748b;
-            margin-top: 2px;
+        /* ===== STATION ===== */
+        .station-block { margin-bottom: 14px; page-break-inside: avoid; }
+        .station-head {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #1e3a5f; color: white;
+            padding: 7px 12px; border-radius: 6px 6px 0 0;
         }
-
-        .kpi-sub {
-            font-size: 7px;
-            color: #94a3b8;
-        }
-
-        /* ==============================================
-           BARRE DE PROGRESSION CONFORMITÉ
-        ============================================== */
-        .progress-bar-wrap {
-            background: #fee2e2;
-            border-radius: 4px;
-            height: 8px;
-            margin-bottom: 12px;
-            overflow: hidden;
-            border: 1px solid #fca5a5;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.3s;
-        }
-
-        /* ==============================================
-           SECTION STATION
-        ============================================== */
-        .station-section {
-            margin-bottom: 16px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            overflow: hidden;
-            page-break-inside: avoid;
-        }
-
-        .station-header {
-            background: linear-gradient(90deg, #0f2744 0%, #1d4ed8 100%);
-            color: white;
-            padding: 9px 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .station-header-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
+        .station-head-left { display: flex; align-items: center; gap: 10px; }
         .station-num {
-            width: 26px;
-            height: 26px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 900;
-            color: white;
-            flex-shrink: 0;
+            width: 24px; height: 24px; background: rgba(255,255,255,0.2);
+            border-radius: 5px; display: flex; align-items: center;
+            justify-content: center; font-size: 11px; font-weight: 900;
         }
-
-        .station-title {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.2px;
-        }
-
+        .station-name { font-size: 10px; font-weight: 700; }
         .station-badge {
-            font-size: 8.5px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 20px;
+            font-size: 7.5px; font-weight: 700; padding: 2px 8px;
+            border-radius: 12px;
         }
+        .badge-ok     { background: #dcfce7; color: #15803d; }
+        .badge-warn   { background: #fef9c3; color: #92400e; }
+        .badge-error  { background: #fee2e2; color: #b91c1c; }
 
-        .station-params-bar {
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 6px 14px;
-            font-size: 8.5px;
-            color: #64748b;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
+        .station-params-row {
+            background: #f8fafc; padding: 5px 12px;
+            border: 1px solid #e2e8f0; border-top: none;
+            font-size: 8px; color: #64748b;
+            display: flex; gap: 18px; flex-wrap: wrap;
         }
+        .station-params-row strong { color: #334155; }
 
-        .station-params-bar strong { color: #334155; }
-
-        /* ==============================================
-           TABLEAU MESURES
-        ============================================== */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
+        /* ===== TABLEAU MESURES ===== */
+        .meas-table {
+            width: 100%; border-collapse: collapse;
+            border: 1px solid #e2e8f0; border-top: none;
         }
-
-        .data-table th {
-            background: #f1f5f9;
-            color: #475569;
-            font-weight: 700;
-            padding: 7px 7px;
-            text-align: center;
-            border-bottom: 2px solid #cbd5e1;
+        .meas-table th {
+            background: #f1f5f9; color: #475569;
+            font-size: 7px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.3px;
+            padding: 5px 6px; text-align: center;
+            border-bottom: 1.5px solid #cbd5e1;
             border-right: 1px solid #e2e8f0;
-            font-size: 7.5px;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
             white-space: nowrap;
         }
-
-        .data-table th:first-child { text-align: left; padding-left: 12px; }
-        .data-table th:last-child  { border-right: none; text-align: left; }
-
-        .data-table td {
-            padding: 5px 7px;
-            text-align: center;
+        .meas-table th:last-child { border-right: none; }
+        .meas-table td {
+            padding: 4px 6px; text-align: center;
             border-bottom: 1px solid #f1f5f9;
             border-right: 1px solid #f1f5f9;
-            font-size: 9px;
+            font-size: 8.5px;
         }
+        .meas-table td:last-child { border-right: none; }
+        .td-pk  { font-weight: 700; font-size: 9px; text-align: left !important; padding-left: 10px !important; }
+        .td-elem{ font-size: 8px; text-align: left !important; }
+        .td-ecart { font-weight: 700; font-size: 9.5px; }
+        .td-obs { text-align: left !important; font-size: 7.5px; color: #64748b; }
 
-        .data-table td:last-child { border-right: none; }
-
-        .td-pk {
-            font-weight: 700;
-            font-size: 9.5px;
-            text-align: left !important;
-            padding-left: 12px !important;
-            white-space: nowrap;
-        }
-
-        .td-element { font-size: 8.5px; text-align: left !important; }
-        .td-ecart   { font-weight: 700; font-size: 10px; }
-        .td-obs     { text-align: left !important; font-size: 8px; font-style: italic; color: #64748b; }
-
-        .td-statut-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            font-size: 10px;
-            font-weight: 700;
-        }
-
-        /* Lignes colorées */
+        /* Lignes status */
         tr.row-ok {
-            background: linear-gradient(90deg, #f0fdf4 0%, #f8fffe 100%);
+            background: #f8fffe;
             border-left: 3px solid #4ade80;
         }
-        tr.row-ok .td-pk    { color: #15803d; }
-        tr.row-ok .td-ecart { color: #15803d; }
-
-        tr.row-warning {
-            background: linear-gradient(90deg, #fefce8 0%, #fffdf8 100%);
-            border-left: 3px solid #facc15;
-        }
-        tr.row-warning .td-pk    { color: #a16207; }
-        tr.row-warning .td-ecart { color: #b45309; }
-
         tr.row-error {
-            background: linear-gradient(90deg, #fef2f2 0%, #fff8f8 100%);
+            background: #fff8f8;
             border-left: 3px solid #f87171;
         }
-        tr.row-error .td-pk    { color: #991b1b; }
-        tr.row-error .td-ecart { color: #b91c1c; }
-
-        tr.row-interpolated {
+        tr.row-warn {
+            background: #fffbf0;
+            border-left: 3px solid #fbbf24;
+        }
+        tr.row-interp {
             background: #f8fafc;
             border-left: 3px solid #cbd5e1;
         }
-        tr.row-interpolated td { color: #94a3b8 !important; font-style: italic; }
+        tr.row-interp td { color: #94a3b8 !important; font-style: italic; }
 
-        /* ==============================================
-           LÉGENDE
-        ============================================== */
+        /* Badge statut validation */
+        .valid-badge {
+            display: inline-block; padding: 1px 5px; border-radius: 8px;
+            font-size: 6.5px; font-weight: 700;
+        }
+        .valid-ok   { background: #dcfce7; color: #15803d; }
+        .valid-pend { background: #f1f5f9; color: #64748b; }
+        .valid-check{ background: #fef9c3; color: #92400e; }
+
+        /* Badge côté */
+        .side-gauche { color: #dc2626; font-size: 7px; font-weight: 700; }
+        .side-droit  { color: #2563eb; font-size: 7px; font-weight: 700; }
+
+        /* ===== LÉGENDE ===== */
         .legende {
-            padding: 7px 14px;
-            background: #f8fafc;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            gap: 14px;
-            font-size: 7.5px;
-            color: #64748b;
-            align-items: center;
-            flex-wrap: wrap;
+            padding: 5px 12px; background: #f8fafc;
+            border: 1px solid #e2e8f0; border-top: none;
+            border-radius: 0 0 6px 6px;
+            display: flex; gap: 12px; flex-wrap: wrap;
+            font-size: 7px; color: #64748b;
+        }
+        .leg { display: flex; align-items: center; gap: 4px; font-weight: 600; }
+        .leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ===== OBSERVATIONS PAR LIGNE ===== */
+        .row-obs-block {
+            margin: 2px 0 6px 10px; padding: 6px 10px;
+            background: #fafafa; border: 1px solid #e2e8f0;
+            border-radius: 5px; page-break-inside: avoid;
+        }
+        .row-obs-entry { margin-bottom: 6px; }
+        .row-obs-entry:last-child { margin-bottom: 0; }
+        .row-obs-titre {
+            font-size: 8px; font-weight: 700; color: #334155;
+            margin-bottom: 2px;
+        }
+        .row-obs-comment {
+            font-size: 8px; color: #475569; line-height: 1.5;
+        }
+        .row-obs-img {
+            max-width: 180px; max-height: 120px; margin-top: 4px;
+            border-radius: 4px; border: 1px solid #e2e8f0; object-fit: cover;
         }
 
-        .leg-item { display: flex; align-items: center; gap: 5px; font-weight: 600; }
-
-        .leg-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
+        /* ===== OBSERVATIONS GÉNÉRALES ===== */
+        .obs-gen-block {
+            margin-bottom: 12px; border: 1px solid #e2e8f0;
+            border-radius: 6px; overflow: hidden; page-break-inside: avoid;
+        }
+        .obs-gen-head {
+            background: #f1f5f9; padding: 6px 12px;
+            font-size: 8px; font-weight: 700; color: #475569;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .obs-gen-body {
+            padding: 10px 14px; font-size: 9px; color: #334155;
+            line-height: 1.7; white-space: pre-wrap;
         }
 
-        .leg-dot-ok          { background: #4ade80; }
-        .leg-dot-warning     { background: #facc15; }
-        .leg-dot-error       { background: #f87171; }
-        .leg-dot-interpolated{ background: #cbd5e1; }
-
-        /* ==============================================
-           OBSERVATIONS
-        ============================================== */
-        .observations-section {
-            margin-top: 12px;
-            margin-bottom: 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            overflow: hidden;
-            page-break-inside: avoid;
+        /* ===== SIGNATURES ===== */
+        .sig-section {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 12px; margin-top: 12px; page-break-inside: avoid;
         }
-
-        .observations-titre {
-            background: linear-gradient(90deg, #334155 0%, #475569 100%);
-            color: white;
-            font-weight: 700;
-            font-size: 8.5px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            padding: 6px 12px;
+        .sig-box { border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+        .sig-head { padding: 6px 10px; font-size: 8.5px; font-weight: 700; }
+        .sig-head.ctrl { background: #eff6ff; color: #1d4ed8; border-bottom: 2px solid #3b82f6; }
+        .sig-head.entr { background: #fffbeb; color: #b45309; border-bottom: 2px solid #f59e0b; }
+        .sig-body { padding: 10px; background: white; }
+        .sig-row {
+            display: grid; grid-template-columns: 65px 1fr;
+            gap: 4px; margin-bottom: 4px; font-size: 8px;
         }
-
-        .observations-contenu {
-            padding: 10px 14px;
-            font-size: 9.5px;
-            line-height: 1.7;
-            color: #334155;
-            background: #fafafa;
-            min-height: 36px;
-            white-space: pre-wrap;
-        }
-
-        /* ==============================================
-           SIGNATURES
-        ============================================== */
-        .signatures-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-top: 14px;
-            page-break-inside: avoid;
-        }
-
-        .signature-box {
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .sig-header {
-            padding: 7px 12px;
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .sig-header.controleur {
-            background: linear-gradient(90deg, #dbeafe, #eff6ff);
-            color: #1d4ed8;
-            border-bottom: 2px solid #3b82f6;
-        }
-
-        .sig-header.entreprise {
-            background: linear-gradient(90deg, #fef3c7, #fffbeb);
-            color: #b45309;
-            border-bottom: 2px solid #f59e0b;
-        }
-
-        .sig-body { padding: 10px 12px; background: white; }
-
-        .sig-info-grid {
-            display: grid;
-            grid-template-columns: 70px 1fr;
-            row-gap: 4px;
-            column-gap: 6px;
-            font-size: 8.5px;
-            margin-bottom: 8px;
-        }
-
-        .sig-info-label { color: #94a3b8; font-weight: 500; }
-        .sig-info-value { color: #0f172a; font-weight: 700; }
-
+        .sig-lbl { color: #94a3b8; }
+        .sig-val { font-weight: 700; color: #0f172a; }
         .sig-area {
-            height: 50px;
-            border: 1px dashed #cbd5e1;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #cbd5e1;
-            font-size: 8px;
-            margin-top: 6px;
+            height: 50px; border: 1px dashed #cbd5e1; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            color: #cbd5e1; font-size: 7.5px; margin-top: 6px;
         }
+        .sig-area.signed { border-style: solid; border-color: #86efac; padding: 3px; }
+        .sig-img { max-width: 100%; max-height: 44px; object-fit: contain; }
 
-        .sig-area.has-signature {
-            border-style: solid;
-            border-color: #86efac;
-            padding: 3px;
-        }
-
-        .sig-image {
-            max-width: 100%;
-            max-height: 44px;
-            object-fit: contain;
-        }
-
-        /* ==============================================
-           FOOTER
-        ============================================== */
+        /* ===== FOOTER ===== */
         .doc-footer {
-            margin-top: 14px;
-            padding-top: 7px;
-            border-top: 2px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 7.5px;
-            color: #94a3b8;
+            margin-top: 12px; padding-top: 6px;
+            border-top: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between;
+            font-size: 7px; color: #94a3b8;
         }
-
-        .footer-left { font-weight: 600; color: #64748b; }
-        .footer-right { font-style: italic; }
     </style>
 </head>
 <body>
 
-    <!-- ====== EN-TÊTE ====== -->
+    <!-- EN-TÊTE -->
     <div class="doc-header">
-        <div class="brand-block">
-            <div class="brand-logo">PTT</div>
-            <div>
-                <div class="brand-name">PTT BTP</div>
-                <div class="brand-subtitle">Profils Topographiques Travers — Bâtiment & Travaux Publics</div>
-            </div>
+        <div>
+            <div class="brand-name">OPTILAB</div>
+            <div class="brand-sub">Suite d'outils professionnels BTP</div>
         </div>
-        <div class="header-right">
-            <div class="header-right-title">Fiche de Réception Topographique</div>
-            <div class="header-right-sub">{{ projet or 'Projet non spécifié' }}</div>
-            <div class="header-right-ref">Réf : FRT-{{ date|replace('/', '')|replace('-','')|default('000000', true) }}-001 &nbsp;·&nbsp; {{ date or 'Date non définie' }}</div>
+        <div class="doc-title-block">
+            <div class="doc-title">Fiche de Réception Topographique</div>
+            <div class="doc-ref">
+                Réf : FRT-{{ date|replace('/','')|replace('-','')|default('000000',true) }}-001
+                &nbsp;·&nbsp; {{ date or 'Date non définie' }}
+                &nbsp;·&nbsp; Mode : {{ mode|capitalize }}
+            </div>
         </div>
     </div>
 
-    <!-- Badges mode + conformité -->
-    <div class="badges-row">
-        <span class="badge badge-{{ mode }}">{{ mode|upper }}</span>
-        <span class="badge">Opérateur : {{ operateur or '-' }}</span>
-        {% if conformes_percent >= 95 %}
-        <span class="badge badge-ok">✓ {{ conformes_percent|round(1) }}% conforme</span>
-        {% elif conformes_percent >= 80 %}
-        <span class="badge badge-warning">⚠ {{ conformes_percent|round(1) }}% conforme</span>
-        {% else %}
-        <span class="badge badge-error">✗ {{ conformes_percent|round(1) }}% conforme</span>
-        {% endif %}
-        <span class="badge" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;">Tolérance : ± {{ tolerance or '2' }} mm</span>
-    </div>
-
-    <!-- ====== INFOS CONTRÔLE (2 blocs côte à côte) ====== -->
-    <div class="info-wrapper">
-        <div class="info-block">
-            <div class="info-block-title">Informations du chantier</div>
-            <div class="info-grid">
-                <div class="info-item span2" style="border-right:1px solid #e2e8f0;">
-                    <div class="info-label">Section / Zone</div>
-                    <div class="info-value">{{ section or '-' }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Conditions météo</div>
-                    <div class="info-value">{{ meteo or '-' }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Mode de contrôle</div>
-                    <div class="info-value">{{ mode|capitalize }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Nb. stations</div>
-                    <div class="info-value">{{ stations|length }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Points mesurés</div>
-                    <div class="info-value">{{ total_points }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- KPI bilan -->
+    <!-- INFORMATIONS PROJET + BILAN -->
+    <div class="project-grid">
+        <!-- Colonne 1 : Chantier + Personnel -->
         <div style="display:flex;flex-direction:column;gap:8px;">
-            <div class="kpi-row" style="margin-bottom:0;">
-                <div class="kpi-card kpi-card-blue">
-                    <div class="kpi-value kpi-blue">{{ total_points }}</div>
-                    <div class="kpi-label">Points mesurés</div>
-                </div>
-                <div class="kpi-card {% if conformes_percent >= 95 %}kpi-card-green{% elif conformes_percent >= 80 %}kpi-card-yellow{% else %}kpi-card-red{% endif %}">
-                    <div class="kpi-value {% if conformes_percent >= 95 %}kpi-green{% elif conformes_percent >= 80 %}kpi-yellow{% else %}kpi-red{% endif %}">{{ conformes_percent|round(1) }}%</div>
-                    <div class="kpi-label">Conformité</div>
-                </div>
-                <div class="kpi-card kpi-card-green">
-                    <div class="kpi-value kpi-green">{{ points_conformes }}</div>
-                    <div class="kpi-label">Conformes</div>
-                </div>
-                <div class="kpi-card {% if points_non_conformes > 0 %}kpi-card-red{% else %}kpi-card-green{% endif %}">
-                    <div class="kpi-value {% if points_non_conformes > 0 %}kpi-red{% else %}kpi-green{% endif %}">{{ points_non_conformes }}</div>
-                    <div class="kpi-label">Hors tolérance</div>
+            <div class="info-block">
+                <div class="info-block-head">Informations du chantier</div>
+                <div class="info-rows">
+                    <div class="info-row"><span class="info-lbl">Projet</span><span class="info-val">{{ projet or '-' }}</span></div>
+                    <div class="info-row"><span class="info-lbl">Section</span><span class="info-val">{{ section or '-' }}</span></div>
+                    <div class="info-row"><span class="info-lbl">Date</span><span class="info-val">{{ date or '-' }}</span></div>
+                    <div class="info-row"><span class="info-lbl">Météo</span><span class="info-val">{{ meteo or '-' }}</span></div>
+                    <div class="info-row"><span class="info-lbl">Tolérance</span><span class="info-val">± {{ tolerance or '2' }} mm</span></div>
+                    <div class="info-row"><span class="info-lbl">Opérateur</span><span class="info-val">{{ operateur or '-' }}</span></div>
                 </div>
             </div>
-            <!-- Barre progression conformité -->
-            <div>
-                <div style="display:flex;justify-content:space-between;font-size:7.5px;color:#64748b;margin-bottom:3px;">
-                    <span>Taux de conformité</span>
-                    <span style="font-weight:700;{% if conformes_percent >= 95 %}color:#15803d;{% elif conformes_percent >= 80 %}color:#b45309;{% else %}color:#b91c1c;{% endif %}">{{ conformes_percent|round(1) }}%</span>
+            <div class="info-block">
+                <div class="info-block-head">Parties prenantes</div>
+                <div class="info-rows">
+                    <div class="info-row"><span class="info-lbl">Contrôleur</span><span class="info-val">{{ controleur_nom or '-' }}</span></div>
+                    <div class="info-row"><span class="info-lbl">Entreprise</span><span class="info-val">{{ entreprise_nom or '-' }}</span></div>
+                    {% if entreprise_societe %}<div class="info-row"><span class="info-lbl">Société</span><span class="info-val">{{ entreprise_societe }}</span></div>{% endif %}
                 </div>
-                <div class="progress-bar-wrap">
-                    <div class="progress-bar-fill" style="width:{{ conformes_percent|round(1) }}%;{% if conformes_percent >= 95 %}background:linear-gradient(90deg,#4ade80,#22c55e);{% elif conformes_percent >= 80 %}background:linear-gradient(90deg,#fde047,#facc15);{% else %}background:linear-gradient(90deg,#f87171,#ef4444);{% endif %}"></div>
+            </div>
+        </div>
+
+        <!-- Colonne 2 : KPI bilan -->
+        <div>
+            <div class="kpi-band">
+                <div class="kpi-card">
+                    <div class="kpi-num">{{ total_points }}</div>
+                    <div class="kpi-lbl">Points mesurés</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-num {% if conformes_percent >= 95 %}green{% elif conformes_percent >= 80 %}orange{% else %}red{% endif %}">{{ conformes_percent|round(1) }}%</div>
+                    <div class="kpi-lbl">Conformité</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-num green">{{ points_conformes }}</div>
+                    <div class="kpi-lbl">Conformes</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-num {% if points_non_conformes > 0 %}red{% else %}green{% endif %}">{{ points_non_conformes }}</div>
+                    <div class="kpi-lbl">Hors tolérance</div>
+                </div>
+            </div>
+            <!-- Barre conformité -->
+            <div style="font-size:7.5px;color:#64748b;display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span>Taux de conformité</span>
+                <span style="font-weight:700;{% if conformes_percent >= 95 %}color:#15803d;{% elif conformes_percent >= 80 %}color:#b45309;{% else %}color:#b91c1c;{% endif %}">{{ conformes_percent|round(1) }}%</span>
+            </div>
+            <div class="conform-bar-wrap">
+                <div class="conform-bar-fill" style="width:{{ conformes_percent|round(1) }}%;{% if conformes_percent >= 95 %}background:#22c55e;{% elif conformes_percent >= 80 %}background:#fbbf24;{% else %}background:#ef4444;{% endif %}"></div>
+            </div>
+            <!-- Résumé stations -->
+            <div class="info-block" style="margin-top:6px;">
+                <div class="info-block-head">Résumé par station</div>
+                <div class="info-rows">
+                    {% for station in stations %}
+                    {% set st_ok  = station.rows | selectattr('is_interpolated','equalto',false) | selectattr('ecart_status','equalto','ok') | list | length %}
+                    {% set st_tot = station.rows | selectattr('is_interpolated','equalto',false) | list | length %}
+                    {% set st_interp = station.rows | selectattr('is_interpolated','equalto',true) | list | length %}
+                    <div class="info-row">
+                        <span class="info-lbl">Station {{ station.numero }}</span>
+                        <span class="info-val">{{ st_ok }}/{{ st_tot }} conformes{% if st_interp %} · {{ st_interp }} interpolé(s){% endif %}</span>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ====== DONNÉES PAR STATION ====== -->
+    <!-- DONNÉES PAR STATION -->
     {% for station in stations %}
-    {% set st_conformes = station.rows | selectattr('is_interpolated', 'equalto', false) | selectattr('ecart_status', 'equalto', 'ok') | list | length %}
-    {% set st_total     = station.rows | selectattr('is_interpolated', 'equalto', false) | list | length %}
-    {% set st_pct       = (st_conformes / st_total * 100) | round(1) if st_total > 0 else 0 %}
+    {% set st_ok  = station.rows | selectattr('is_interpolated','equalto',false) | selectattr('ecart_status','equalto','ok') | list | length %}
+    {% set st_tot = station.rows | selectattr('is_interpolated','equalto',false) | list | length %}
+    {% set st_pct = (st_ok / st_tot * 100) | round(1) if st_tot > 0 else 0 %}
 
-    <div class="station-section">
-        <div class="station-header">
-            <div class="station-header-left">
+    <div class="station-block">
+        <div class="station-head">
+            <div class="station-head-left">
                 <div class="station-num">{{ station.numero }}</div>
-                <div class="station-title">{{ station.nom or 'Station de nivellement n°' ~ station.numero }}</div>
+                <div class="station-name">{{ station.nom or 'Station de nivellement n°' ~ station.numero }}</div>
             </div>
-            <span class="station-badge {% if st_pct >= 95 %}badge-ok{% elif st_pct >= 80 %}badge-warning{% else %}badge-error{% endif %}">
-                {{ st_pct }}% — {{ st_conformes }}/{{ st_total }}
+            <span class="station-badge {% if st_pct >= 95 %}badge-ok{% elif st_pct >= 80 %}badge-warn{% else %}badge-error{% endif %}">
+                {{ st_pct }}% — {{ st_ok }}/{{ st_tot }}
             </span>
         </div>
 
-        <div class="station-params-bar">
-            <span>Côte repère : <strong>{{ station.cote_repere or '-' }}</strong></span>
+        <div class="station-params-row">
+            <span>Cote repère : <strong>{{ station.cote_repere or '-' }}</strong></span>
             <span>LAR : <strong>{{ station.lar or '-' }}</strong></span>
-            <span>Côte bleue : <strong>{{ station.cote_bleue or '-' }}</strong></span>
-            {% if mode == 'terrassement' and station.pente %}
-            <span>Pente : <strong>{{ station.pente }}%</strong></span>
-            {% endif %}
+            <span>Cote bleue (H.I.) : <strong>{{ station.cote_bleue or '-' }}</strong></span>
+            {% if mode == 'terrassement' and station.pente %}<span>Pente : <strong>{{ station.pente }}%</strong></span>{% endif %}
         </div>
 
-        <table class="data-table">
+        <table class="meas-table">
             <thead>
                 <tr>
-                    <th style="width:65px;">PK</th>
-                    <th style="width:100px;">Élément</th>
-                    <th style="width:52px;">Dist.(m)</th>
-                    <th style="width:38px;">LAV</th>
-                    <th style="width:72px;">Côte mesurée</th>
-                    <th style="width:72px;">Côte théorique</th>
-                    <th style="width:60px;">Écart</th>
-                    <th style="width:36px;">Statut</th>
+                    <th style="width:58px;text-align:left;padding-left:10px;">PK</th>
+                    <th style="width:90px;text-align:left;">Élément</th>
+                    <th style="width:45px;">Dist.(m)</th>
+                    <th style="width:35px;">LAV</th>
+                    <th style="width:62px;">Côte mes.</th>
+                    <th style="width:62px;">Côte théo.</th>
+                    <th style="width:50px;">Écart</th>
+                    <th style="width:30px;">Stut</th>
+                    <th style="width:40px;">Valid.</th>
                     <th>Observation</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in station.rows %}
-                <tr class="{% if row.is_interpolated %}row-interpolated{% elif row.ecart_status == 'ok' %}row-ok{% elif row.ecart_status == 'warning' %}row-warning{% else %}row-error{% endif %}">
-                    <td class="td-pk">{{ row.pk }}</td>
-                    <td class="td-element">{{ row.element_label or '' }}</td>
+                <tr class="{% if row.is_interpolated %}row-interp{% elif row.ecart_status == 'ok' %}row-ok{% elif row.ecart_status == 'warning' %}row-warn{% else %}row-error{% endif %}">
+                    <td class="td-pk">
+                        {{ row.pk }}
+                        {% if row.is_interpolated %}<span style="font-size:6px;background:#e2e8f0;color:#64748b;padding:0 3px;border-radius:3px;margin-left:2px;">INT</span>{% endif %}
+                    </td>
+                    <td class="td-elem">
+                        {% if row.side == 'gauche' %}<span class="side-gauche">G · </span>{% elif row.side == 'droit' %}<span class="side-droit">D · </span>{% endif %}
+                        {{ row.element_label or '' }}
+                    </td>
                     <td>{{ row.cote_label or '-' }}</td>
                     <td>{{ row.lav or '-' }}</td>
                     <td style="font-weight:700;">{{ row.cote_mesuree or '-' }}</td>
@@ -704,88 +398,105 @@
                     <td class="td-ecart">{{ row.ecart or '-' }}</td>
                     <td style="text-align:center;">
                         {% if row.is_interpolated %}
-                        <span class="td-statut-badge" style="background:#e2e8f0;color:#64748b;">◦</span>
+                            <span style="font-size:9px;color:#94a3b8;">◦</span>
                         {% elif row.ecart_status == 'ok' %}
-                        <span class="td-statut-badge" style="background:#dcfce7;color:#15803d;">✓</span>
-                        {% elif row.ecart_status == 'warning' %}
-                        <span class="td-statut-badge" style="background:#fef9c3;color:#b45309;">⚠</span>
+                            <span style="color:#15803d;font-size:10px;font-weight:700;">✓</span>
                         {% else %}
-                        <span class="td-statut-badge" style="background:#fee2e2;color:#b91c1c;">✗</span>
+                            <span style="color:#b91c1c;font-size:10px;font-weight:700;">✗</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align:center;">
+                        {% if row.validation_status == 'validated' %}
+                            <span class="valid-badge valid-ok">✓ Val.</span>
+                        {% elif row.validation_status == 'to-check' %}
+                            <span class="valid-badge valid-check">⚠ Vér.</span>
+                        {% else %}
+                            <span class="valid-badge valid-pend">—</span>
                         {% endif %}
                     </td>
                     <td class="td-obs">{{ row.observation or '' }}</td>
                 </tr>
+                {% if row.row_observations and row.row_observations|length > 0 %}
+                <tr>
+                    <td colspan="10" style="padding:0;border-bottom:1px solid #f1f5f9;">
+                        <div class="row-obs-block">
+                            {% for obs in row.row_observations %}
+                            <div class="row-obs-entry">
+                                {% if obs.titre %}<div class="row-obs-titre">{{ obs.titre }}</div>{% endif %}
+                                {% if obs.commentaire %}<div class="row-obs-comment">{{ obs.commentaire }}</div>{% endif %}
+                                {% if obs.image %}<img src="{{ obs.image }}" class="row-obs-img" alt="Photo observation">{% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
         </table>
 
         <div class="legende">
             <span style="font-weight:700;color:#475569;">Légende :</span>
-            <span class="leg-item"><span class="leg-dot leg-dot-ok"></span> Conforme ✓</span>
-            <span class="leg-item"><span class="leg-dot leg-dot-warning"></span> Avertissement ⚠</span>
-            <span class="leg-item"><span class="leg-dot leg-dot-error"></span> Non conforme ✗</span>
-            <span class="leg-item"><span class="leg-dot leg-dot-interpolated"></span> Interpolé ◦</span>
+            <span class="leg"><span class="leg-dot" style="background:#4ade80;"></span> Conforme ✓</span>
+            <span class="leg"><span class="leg-dot" style="background:#f87171;"></span> Non conforme ✗</span>
+            <span class="leg"><span class="leg-dot" style="background:#cbd5e1;"></span> Interpolé ◦</span>
+            <span class="leg"><span style="color:#dc2626;font-weight:700;">G</span> Gauche</span>
+            <span class="leg"><span style="color:#2563eb;font-weight:700;">D</span> Droit</span>
         </div>
     </div>
     {% endfor %}
 
-    <!-- ====== OBSERVATIONS GÉNÉRALES ====== -->
-    {% if observations_generales %}
-    <div class="observations-section">
-        <div class="observations-titre">Observations générales du contrôleur</div>
-        <div class="observations-contenu">{{ observations_generales }}</div>
+    <!-- OBSERVATIONS GÉNÉRALES -->
+    {% if observations_generales and observations_generales|length > 0 %}
+    <div class="obs-gen-block">
+        <div class="obs-gen-head">Observations générales du contrôleur</div>
+        <div class="obs-gen-body">
+            {% for obs in observations_generales %}
+            <div class="row-obs-entry" style="margin-bottom:10px;">
+                {% if obs.titre %}<div class="row-obs-titre">{{ obs.titre }}</div>{% endif %}
+                {% if obs.commentaire %}<div class="row-obs-comment">{{ obs.commentaire }}</div>{% endif %}
+                {% if obs.image %}<img src="{{ obs.image }}" class="row-obs-img" alt="Photo observation">{% endif %}
+            </div>
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
 
-    <!-- ====== SIGNATURES ====== -->
-    <div class="signatures-section">
-        <div class="signature-box">
-            <div class="sig-header controleur">Contrôleur topographe</div>
+    <!-- SIGNATURES -->
+    <div class="sig-section">
+        <div class="sig-box">
+            <div class="sig-head ctrl">Contrôleur topographe</div>
             <div class="sig-body">
-                <div class="sig-info-grid">
-                    <span class="sig-info-label">Nom :</span>
-                    <span class="sig-info-value">{{ controleur_nom or '-' }}</span>
-                    <span class="sig-info-label">Fonction :</span>
-                    <span class="sig-info-value">{{ controleur_fonction or '-' }}</span>
-                    <span class="sig-info-label">Date :</span>
-                    <span class="sig-info-value">{{ controleur_date or '-' }}</span>
-                </div>
+                <div class="sig-row"><span class="sig-lbl">Nom :</span><span class="sig-val">{{ controleur_nom or '-' }}</span></div>
+                {% if controleur_grade %}<div class="sig-row"><span class="sig-lbl">Grade :</span><span class="sig-val">{{ controleur_grade }}</span></div>{% endif %}
                 {% if signature_controleur %}
-                <div class="sig-area has-signature">
-                    <img src="{{ signature_controleur }}" class="sig-image" alt="Signature contrôleur">
-                </div>
+                <div class="sig-area signed"><img src="{{ signature_controleur }}" class="sig-img" alt="Signature"></div>
                 {% else %}
                 <div class="sig-area">Signature</div>
                 {% endif %}
+                <div class="sig-row" style="margin-top:4px;"><span class="sig-lbl">Date :</span><span class="sig-val">{{ controleur_date or '-' }}</span></div>
             </div>
         </div>
-
-        <div class="signature-box">
-            <div class="sig-header entreprise">Représentant entreprise</div>
+        <div class="sig-box">
+            <div class="sig-head entr">Représentant Entreprise</div>
             <div class="sig-body">
-                <div class="sig-info-grid">
-                    <span class="sig-info-label">Nom :</span>
-                    <span class="sig-info-value">{{ entreprise_nom or '-' }}</span>
-                    <span class="sig-info-label">Société :</span>
-                    <span class="sig-info-value">{{ entreprise_societe or '-' }}</span>
-                    <span class="sig-info-label">Date :</span>
-                    <span class="sig-info-value">{{ entreprise_date or '-' }}</span>
-                </div>
+                <div class="sig-row"><span class="sig-lbl">Nom :</span><span class="sig-val">{{ entreprise_nom or '-' }}</span></div>
+                {% if entreprise_societe %}<div class="sig-row"><span class="sig-lbl">Société :</span><span class="sig-val">{{ entreprise_societe }}</span></div>{% endif %}
+                {% if entreprise_titre %}<div class="sig-row"><span class="sig-lbl">Titre :</span><span class="sig-val">{{ entreprise_titre }}</span></div>{% endif %}
                 {% if signature_entreprise %}
-                <div class="sig-area has-signature">
-                    <img src="{{ signature_entreprise }}" class="sig-image" alt="Signature entreprise">
-                </div>
+                <div class="sig-area signed"><img src="{{ signature_entreprise }}" class="sig-img" alt="Signature"></div>
                 {% else %}
                 <div class="sig-area">Signature</div>
                 {% endif %}
+                <div class="sig-row" style="margin-top:4px;"><span class="sig-lbl">Date :</span><span class="sig-val">{{ entreprise_date or '-' }}</span></div>
             </div>
         </div>
     </div>
 
-    <!-- ====== FOOTER ====== -->
+    <!-- FOOTER -->
     <div class="doc-footer">
-        <div class="footer-left">PTT BTP — Système de Réception Topographique &nbsp;·&nbsp; {{ date or '' }}</div>
-        <div class="footer-right">Document officiel — À conserver pendant la durée légale des travaux</div>
+        <span>OPTILAB — Outil de Réception Topographique BTP · {{ date or '' }}</span>
+        <span>Document officiel — Conserver pendant la durée légale des travaux</span>
     </div>
 
 </body>

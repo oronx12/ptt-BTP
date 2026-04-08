@@ -6,18 +6,14 @@ Permet de :
   - Créer des comptes utilisateurs et les associer à un client
   - Uploader le fichier Excel modèle d'un client (stockage local pour l'instant)
 """
-import os
-from pathlib import Path
 from functools import wraps
 
-from flask import (Blueprint, render_template, redirect, url_for,
-                   request, flash, current_app)
+from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
-from werkzeug.utils import secure_filename
 
 from .. import db
 from ..models import Client, User
-from ..services.r2_service import upload_excel
+from ..services.r2_service import upload_excel as r2_upload_excel
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -88,7 +84,7 @@ def upload_excel(client_id):
 
     r2_key = f"data/clients/{client_id}/modele.xlsx"
     try:
-        upload_excel(f.read(), r2_key)
+        r2_upload_excel(f.read(), r2_key)
     except Exception as e:
         flash(f"Erreur upload R2 : {e}", "danger")
         return redirect(url_for("admin.dashboard"))
@@ -97,6 +93,24 @@ def upload_excel(client_id):
     db.session.commit()
     flash(f"Fichier Excel uploadé pour « {client.nom} » (R2).", "success")
     return redirect(url_for("admin.dashboard"))
+
+
+@admin_bp.route("/clients/<int:client_id>/modifier", methods=["GET", "POST"])
+@admin_required
+def modifier_client(client_id):
+    client = db.get_or_404(Client, client_id)
+    if request.method == "POST":
+        nom   = request.form.get("nom", "").strip()
+        label = request.form.get("projet_label", "").strip()
+        if not nom:
+            flash("Le nom du client est obligatoire.", "danger")
+            return render_template("admin/client_form.html", client=client)
+        client.nom          = nom
+        client.projet_label = label
+        db.session.commit()
+        flash(f"Client « {nom} » mis à jour.", "success")
+        return redirect(url_for("admin.dashboard"))
+    return render_template("admin/client_form.html", client=client)
 
 
 @admin_bp.route("/clients/<int:client_id>/toggle", methods=["POST"])
@@ -110,12 +124,32 @@ def toggle_client(client_id):
     return redirect(url_for("admin.dashboard"))
 
 
+@admin_bp.route("/clients/<int:client_id>/supprimer", methods=["POST"])
+@admin_required
+def supprimer_client(client_id):
+    client = db.get_or_404(Client, client_id)
+    nb_users = client.users.count()
+    if nb_users > 0:
+        flash(
+            f"Impossible de supprimer « {client.nom} » : "
+            f"{nb_users} utilisateur(s) y sont rattachés. "
+            f"Supprimez-les ou réaffectez-les d'abord.",
+            "danger"
+        )
+        return redirect(url_for("admin.dashboard"))
+    nom = client.nom
+    db.session.delete(client)
+    db.session.commit()
+    flash(f"Client « {nom} » supprimé définitivement.", "info")
+    return redirect(url_for("admin.dashboard"))
+
+
 # ── Gestion utilisateurs ─────────────────────────────────────────────────────
 
 @admin_bp.route("/utilisateurs/nouveau", methods=["GET", "POST"])
 @admin_required
 def nouvel_utilisateur():
-    clients = Client.query.filter_by(actif=True).order_by(Client.nom).all()
+    clients = Client.query.order_by(Client.nom).all()
 
     if request.method == "POST":
         email     = request.form.get("email", "").strip().lower()
@@ -143,3 +177,67 @@ def nouvel_utilisateur():
         return redirect(url_for("admin.dashboard"))
 
     return render_template("admin/user_form.html", clients=clients)
+
+
+@admin_bp.route("/utilisateurs/<int:user_id>/modifier", methods=["GET", "POST"])
+@admin_required
+def modifier_utilisateur(user_id):
+    user    = db.get_or_404(User, user_id)
+    clients = Client.query.order_by(Client.nom).all()
+
+    if request.method == "POST":
+        nom         = request.form.get("nom", "").strip()
+        email       = request.form.get("email", "").strip().lower()
+        role        = request.form.get("role", "client")
+        client_id   = request.form.get("client_id") or None
+        new_password = request.form.get("password", "").strip()
+
+        if not nom or not email:
+            flash("Nom et email sont obligatoires.", "danger")
+            return render_template("admin/user_form.html", user=user, clients=clients)
+
+        existing = User.query.filter_by(email=email).first()
+        if existing and existing.id != user.id:
+            flash("Cet email est déjà utilisé par un autre utilisateur.", "danger")
+            return render_template("admin/user_form.html", user=user, clients=clients)
+
+        user.nom       = nom
+        user.email     = email
+        user.role      = role
+        user.client_id = int(client_id) if client_id else None
+        if new_password:
+            user.set_password(new_password)
+
+        db.session.commit()
+        flash(f"Utilisateur « {nom} » mis à jour.", "success")
+        return redirect(url_for("admin.dashboard"))
+
+    return render_template("admin/user_form.html", user=user, clients=clients)
+
+
+@admin_bp.route("/utilisateurs/<int:user_id>/toggle", methods=["POST"])
+@admin_required
+def toggle_utilisateur(user_id):
+    user = db.get_or_404(User, user_id)
+    if user.id == current_user.id:
+        flash("Vous ne pouvez pas vous désactiver vous-même.", "danger")
+        return redirect(url_for("admin.dashboard"))
+    user.actif = not user.actif
+    db.session.commit()
+    etat = "activé" if user.actif else "désactivé"
+    flash(f"Utilisateur « {user.nom} » {etat}.", "info")
+    return redirect(url_for("admin.dashboard"))
+
+
+@admin_bp.route("/utilisateurs/<int:user_id>/supprimer", methods=["POST"])
+@admin_required
+def supprimer_utilisateur(user_id):
+    user = db.get_or_404(User, user_id)
+    if user.id == current_user.id:
+        flash("Vous ne pouvez pas supprimer votre propre compte.", "danger")
+        return redirect(url_for("admin.dashboard"))
+    nom = user.nom
+    db.session.delete(user)
+    db.session.commit()
+    flash(f"Utilisateur « {nom} » supprimé définitivement.", "info")
+    return redirect(url_for("admin.dashboard"))

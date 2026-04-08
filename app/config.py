@@ -34,7 +34,7 @@ class Config:
 
     # Envoi d'emails via Resend (https://resend.com)
     RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
-    MAIL_FROM      = os.environ.get("MAIL_FROM", "PTT BTP <noreply@ptt-btp.fr>")
+    MAIL_FROM      = os.environ.get("MAIL_FROM", "OPTILAB <noreply@ptt-btp.fr>")
 
     # Fichiers locaux (fallback si R2 indisponible)
     MODEL_EXCEL      = BASE_DIR / "data" / "Projet_Routier_Topographie.xlsx"

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTT BTP - Réception topographique</title>
+    <title>OPTILAB - Réception topographique</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -822,26 +822,33 @@
             vertical-align: middle;
         }
         
-        /* Button for adding sub-point */
-        .btn-add-sub {
-            width: 28px;
-            height: 28px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--accent-green);
-            color: white;
-            font-weight: 700;
-            font-size: 1rem;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.15s ease;
+        /* Bouton Multi+ — ajouter des points à la largeur */
+        .btn-multi-sub {
+            width: 26px; height: 22px;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: rgba(22,163,74,0.08); color: #16a34a;
+            font-weight: 800; font-size: 0.82rem;
+            border-radius: 6px; border: 1.5px solid rgba(22,163,74,0.25);
+            cursor: pointer; transition: all 0.15s; white-space: nowrap; gap: 2px;
         }
-        
-        .btn-add-sub:hover {
-            background: #16a34a;
-            transform: scale(1.05);
+        .btn-multi-sub:hover { background: #16a34a; color: white; border-color: #16a34a; }
+
+        /* Lignes sous-points (décalages par rapport à l'axe) */
+        tr.sub-point-row {
+            background: rgba(22,163,74,0.04) !important;
+            border-left: 3px solid rgba(22,163,74,0.35);
+        }
+        tr.sub-point-row td { font-size: 0.82rem; }
+        tr.sub-point-row .sub-label-cell {
+            padding-left: 14px !important;
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 0.78rem;
+        }
+        tr.sub-point-row .sub-label-cell::before {
+            content: '↳ ';
+            opacity: 0.5;
+            font-style: normal;
         }
         
         /* Ecart cells coloring */
@@ -893,17 +900,246 @@
         
         /* Hide old elements */
         .user-avatar { display: none; }
+
+        /* ===== WIZARD ===== */
+        .wizard-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 32px;
+            padding: 0 8px;
+            overflow-x: auto;
+        }
+        .wi-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .wi-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            background: white;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+        }
+        .wi-step.active .wi-dot {
+            background: #0ea5e9;
+            border-color: #0ea5e9;
+            color: white;
+            box-shadow: 0 0 0 4px rgba(14,165,233,.15);
+        }
+        .wi-step.done .wi-dot {
+            background: #22c55e;
+            border-color: #22c55e;
+            color: white;
+        }
+        .wi-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+        }
+        .wi-step.active .wi-label { color: #0ea5e9; }
+        .wi-step.done  .wi-label { color: #16a34a; }
+        .wi-line {
+            flex: 1;
+            min-width: 24px;
+            max-width: 60px;
+            height: 2px;
+            background: var(--border-color);
+            margin-bottom: 22px;
+            transition: background 0.25s;
+        }
+        .wi-line.done { background: #22c55e; }
+
+        .wizard-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .btn-wz-prev {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; border-radius: 8px;
+            border: 1.5px solid var(--border-color);
+            background: white; color: var(--text-secondary);
+            font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-wz-prev:hover { border-color: var(--border-strong); background: var(--surface-3); }
+        .btn-wz-next {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 24px; border-radius: 8px;
+            border: none; background: #0ea5e9; color: white;
+            font-size: 0.9rem; font-weight: 700; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-wz-next:hover { background: #0284c7; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(14,165,233,.3); }
+        .btn-wz-next.green { background: linear-gradient(135deg, #059669, #047857); }
+        .btn-wz-next.green:hover { background: linear-gradient(135deg, #047857, #065f46); box-shadow: 0 4px 12px rgba(5,150,105,.3); }
+
+        /* Acteurs */
+        .actor-block {
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .actor-block-title {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .actor-block-title.blue  { color: var(--accent-blue); border-color: #bfdbfe; }
+        .actor-block-title.orange { color: #b45309; border-color: #fde68a; }
+        .actor-block.blue-bg   { background: var(--accent-blue-light); }
+        .actor-block.orange-bg { background: var(--accent-orange-light); }
+
+        .btn-toggle-actor {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 7px 14px; border-radius: 20px;
+            border: 1.5px solid #e2e8f0; background: #f8fafc;
+            color: var(--text-secondary); font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s; margin: 12px 0;
+        }
+        .btn-toggle-actor:hover,
+        .btn-toggle-actor.active {
+            border-color: #0ea5e9; background: #e0f2fe; color: #0369a1;
+        }
+
+        /* Step 5 — Signatures */
+        .sig-actor-recap {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 14px;
+            font-size: 0.88rem;
+            background: var(--surface-2);
+        }
+        .sig-actor-recap strong { color: var(--text-primary); font-size: 0.92rem; }
+        .sig-actor-recap .sig-role {
+            font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 3px;
+        }
+        .sig-actor-recap .sig-grade {
+            font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px; font-style: italic;
+        }
+
+        /* Canvas signature amélioré */
+        .signature-canvas-container {
+            position: relative;
+        }
+        .signature-canvas {
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            background: #fff;
+            cursor: crosshair;
+            display: block;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .signature-canvas:hover, .signature-canvas.signing {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        .signature-canvas.has-sig {
+            border-style: solid; border-color: #86efac;
+        }
+
+        /* ===== COLOR CODING CÔTÉ GAUCHE / DROIT ===== */
+        tr.data-row[data-side="gauche"] td:first-child { border-left: 4px solid #ef4444 !important; }
+        tr.data-row[data-side="droit"]  td:first-child { border-left: 4px solid #3b82f6 !important; }
+        tr.data-row[data-side="gauche"] { background: rgba(239,68,68,0.07); }
+        tr.data-row[data-side="droit"]  { background: rgba(59,130,246,0.07); }
+        /* Point coloré avant le nom de l'élément */
+        tr.data-row[data-side="gauche"] .element-label-cell { color: #be123c; }
+        tr.data-row[data-side="droit"]  .element-label-cell { color: #1d4ed8; }
+        tr.data-row[data-side="gauche"] .element-label-cell::before {
+            content: ''; display: inline-block; width: 7px; height: 7px;
+            background: #ef4444; border-radius: 50%; margin-right: 5px; vertical-align: middle;
+        }
+        tr.data-row[data-side="droit"] .element-label-cell::before {
+            content: ''; display: inline-block; width: 7px; height: 7px;
+            background: #3b82f6; border-radius: 50%; margin-right: 5px; vertical-align: middle;
+        }
+        tr.data-row.ecart-ok      { background: var(--accent-green-light) !important; }
+        tr.data-row.ecart-positif { background: var(--accent-red-light) !important; }
+        tr.data-row.ecart-negatif { background: #eff6ff !important; }
+        tr.data-row.row-interpolated { background: var(--surface-2) !important; }
+
+        /* ===== BOUTON VALIDATION PAR LIGNE ===== */
+        .btn-validation {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 22px; border-radius: 10px;
+            border: 1.5px solid; font-size: 0.72rem; font-weight: 800;
+            cursor: pointer; transition: all 0.15s; padding: 0;
+        }
+        .btn-validation.pending   { background: #f8fafc; color: #94a3b8; border-color: #e2e8f0; }
+        .btn-validation.validated { background: #dcfce7; color: #15803d; border-color: #86efac; }
+        .btn-validation.to-check  { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+        .btn-validation:hover { transform: scale(1.1); }
+
+        /* ===== BOUTON NOTES / OBSERVATIONS PAR LIGNE ===== */
+        .btn-obs-notes {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 9px; border-radius: 7px;
+            font-size: 0.72rem; font-weight: 700; cursor: pointer;
+            background: #f1f5f9; color: #475569;
+            border: 1.5px solid #cbd5e1; transition: all 0.15s;
+            margin-left: 4px; vertical-align: middle;
+            white-space: nowrap;
+        }
+        .btn-obs-notes svg { width: 13px; height: 13px; flex-shrink: 0; }
+        .btn-obs-notes:hover { background: #eff6ff; color: #2563eb; border-color: #93c5fd; box-shadow: 0 1px 4px rgba(59,130,246,0.15); }
+        .btn-obs-notes.has-notes {
+            background: #fef9c3; color: #92400e; border-color: #fde68a;
+            box-shadow: 0 1px 4px rgba(245,158,11,0.2);
+        }
+
+        /* ===== BOUTON + INTERPOLATION DISCRET ===== */
+        .interp-sep-row td {
+            padding: 0 !important; border-bottom: none !important;
+            background: transparent !important; height: 18px !important;
+        }
+        .btn-interp-plus {
+            position: relative; z-index: 2;
+            width: 20px; height: 20px; background: white;
+            border: 1.5px solid #cbd5e1; border-radius: 50%;
+            font-size: 0.78rem; font-weight: 800; color: #94a3b8;
+            cursor: pointer; display: inline-flex;
+            align-items: center; justify-content: center;
+            padding: 0; line-height: 1; transition: all 0.15s;
+        }
+        .btn-interp-plus:hover {
+            background: #f0fdf4; border-color: #86efac; color: #16a34a;
+            transform: scale(1.2);
+        }
     </style>
 </head>
 <body class="font-sans bg-slate-50 min-h-screen">
 <header class="bg-gradient-to-r from-primary-dark to-primary sticky top-0 z-50 shadow-lg">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <a href="/" class="flex items-center gap-2.5 text-white hover:opacity-80 transition">
-                <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
-                </div>
-                <span class="font-bold text-lg">PTT BTP</span>
+            <a href="/" class="flex items-center hover:opacity-80 transition">
+                <img src="{{ url_for('static', filename='img/optilab_logo.png') }}"
+                     alt="OPTILAB"
+                     style="height:34px; filter:brightness(0) invert(1);">
             </a>
             <span class="text-white/40 hidden sm:block">›</span>
             <span class="text-white/80 text-sm hidden sm:block">Réception topographique</span>
@@ -922,194 +1158,172 @@
 </header>
     
     <div class="page-wrapper">
-        <!-- En-tête de page -->
-        <div class="page-header">
-            <h1 class="page-title">Fiche de réception topographique</h1>
-            <p class="page-subtitle">Contrôle de conformité des cotes terrain par rapport au projet théorique</p>
+
+        <!-- ═══ WIZARD INDICATOR ═══ -->
+        <div class="wizard-indicator" id="wizard-indicator">
+            <div class="wi-step active" id="wi-1">
+                <div class="wi-dot">1</div>
+                <div class="wi-label">Projet</div>
+            </div>
+            <div class="wi-line" id="wl-1-2"></div>
+            <div class="wi-step" id="wi-2">
+                <div class="wi-dot">2</div>
+                <div class="wi-label">Acteurs</div>
+            </div>
+            <div class="wi-line" id="wl-2-3"></div>
+            <div class="wi-step" id="wi-3">
+                <div class="wi-dot">3</div>
+                <div class="wi-label">Paramétrage</div>
+            </div>
+            <div class="wi-line" id="wl-3-4"></div>
+            <div class="wi-step" id="wi-4">
+                <div class="wi-dot">4</div>
+                <div class="wi-label">Réception</div>
+            </div>
+            <div class="wi-line" id="wl-4-5"></div>
+            <div class="wi-step" id="wi-5">
+                <div class="wi-dot">5</div>
+                <div class="wi-label">Signatures</div>
+            </div>
         </div>
 
-        <!-- SECTION 1 : Informations générales -->
+        <!-- ═══ ÉTAPE 1 — INFORMATIONS DU PROJET ═══ -->
+        <div id="wz-step-1" class="wizard-panel">
         <div class="section-card">
             <div class="section-header blue">
-                <h2>1. Informations du contrôle</h2>
+                <h2>Informations du projet</h2>
             </div>
             <div class="section-body">
                 <div class="form-grid form-grid-3">
                     <div class="form-group">
-                        <label class="form-label">Projet</label>
-                        <input id="projet-nom" type="text" class="form-input" placeholder="Nom du projet">
+                        <label class="form-label">Nom du projet *</label>
+                        <input id="projet-nom" type="text" class="form-input" placeholder="Ex: Déviation RD456 — Lot 2">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Maître d'ouvrage</label>
+                        <input id="maitre-ouvrage" type="text" class="form-input" placeholder="Ex: Conseil Départemental 69">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phase</label>
+                        <input id="phase-projet" type="text" class="form-input" placeholder="Ex: Terrassement général">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Section / Lot</label>
+                        <input id="section-projet" type="text" class="form-input" placeholder="Ex: Section A — PK 0+000 à 1+500">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Date de contrôle</label>
                         <input id="date-controle" type="date" class="form-input">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Opérateur</label>
-                        <input id="operateur-nom" type="text" class="form-input" placeholder="Nom de l'opérateur">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Météo</label>
-                        <input id="meteo" type="text" class="form-input" placeholder="Conditions météo">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Matériel utilisé</label>
-                        <input id="materiel" type="text" class="form-input" placeholder="Type de matériel">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Tolérance (mm)</label>
-                        <input id="tolerance" type="number" step="0.1" value="2" class="form-input" style="max-width: 120px;">
+                        <label class="form-label">Conditions météo</label>
+                        <input id="meteo" type="text" class="form-input" placeholder="Ex: Ensoleillé, 18°C, vent faible">
                     </div>
                 </div>
             </div>
         </div>
+        <div class="wizard-nav">
+            <div></div>
+            <button class="btn-wz-next" onclick="wizardTo(2)">
+                Acteurs
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
+        </div><!-- /wz-step-1 -->
 
-        <!-- SECTION 2 : Signataires -->
+        <!-- ═══ ÉTAPE 2 — ACTEURS ═══ -->
+        <div id="wz-step-2" class="wizard-panel" style="display:none">
         <div class="section-card">
-            <div class="section-header">
-                <h2>2. Informations des signataires</h2>
+            <div class="section-header blue">
+                <h2>Acteurs du contrôle</h2>
             </div>
             <div class="section-body">
                 <div class="form-grid form-grid-2">
-                    <!-- Contrôleur -->
-                    <div style="background: var(--accent-blue-light); padding: 20px; border-radius: 10px; border: 1px solid #bfdbfe;">
-                        <div style="font-weight: 600; color: var(--accent-blue); margin-bottom: 16px; font-size: 0.95rem;">CONTRÔLEUR</div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">Nom complet</label>
-                            <input id="controleur-nom" type="text" class="form-input" placeholder="Nom du contrôleur">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">Fonction</label>
-                            <input id="controleur-fonction" type="text" class="form-input" placeholder="Ex: Géomètre">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">Date</label>
-                            <input id="controleur-date" type="date" class="form-input">
+
+                    <!-- MISSION DE CONTRÔLE -->
+                    <div class="actor-block blue-bg">
+                        <div class="actor-block-title blue">Mission de contrôle</div>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label class="form-label">Nom &amp; Prénom *</label>
+                            <input id="controleur-nom" type="text" class="form-input" placeholder="Nom et prénom du contrôleur">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Signature</label>
-                            <div class="signature-canvas-container">
-                                <canvas id="signature-controleur" class="signature-canvas" width="280" height="80"></canvas>
-                                <div class="signature-actions">
-                                    <button type="button" class="btn-clear-signature" onclick="clearSignature('controleur')">Effacer</button>
-                                </div>
-                                <div class="signature-hint">Dessinez votre signature avec la souris ou le doigt</div>
+                            <label class="form-label">Grade / Titre</label>
+                            <input id="controleur-grade" type="text" class="form-input" placeholder="Ex: Ingénieur topographe, Technicien BTP...">
+                        </div>
+                    </div>
+
+                    <!-- ENTREPRISE -->
+                    <div class="actor-block orange-bg">
+                        <div class="actor-block-title orange">Entreprise</div>
+
+                        <!-- Technicien -->
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label class="form-label">Nom &amp; Prénom du technicien</label>
+                            <input id="entreprise-nom" type="text" class="form-input" placeholder="Nom et prénom du technicien">
+                        </div>
+                        <div class="form-group" style="margin-bottom:12px;">
+                            <label class="form-label">Titre / Poste dans l'entreprise</label>
+                            <input id="entreprise-titre" type="text" class="form-input" placeholder="Ex: Chef de chantier, Conducteur de travaux...">
+                        </div>
+
+                        <!-- Toggle technicien = opérateur -->
+                        <button type="button" id="btn-tech-ope" class="btn-toggle-actor" onclick="toggleTechnicienOperateur()">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Le technicien est l'opérateur
+                        </button>
+
+                        <!-- Opérateur distinct -->
+                        <div id="operateur-block" style="margin-top:14px; display:none;">
+                            <div class="form-group">
+                                <label class="form-label">Nom &amp; Prénom de l'opérateur</label>
+                                <input id="operateur-nom" type="text" class="form-input" placeholder="Nom et prénom de l'opérateur terrain">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Entreprise -->
-                    <div style="background: var(--accent-orange-light); padding: 20px; border-radius: 10px; border: 1px solid #fde68a;">
-                        <div style="font-weight: 600; color: #b45309; margin-bottom: 16px; font-size: 0.95rem;">ENTREPRISE</div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">Nom du représentant</label>
-                            <input id="entreprise-nom" type="text" class="form-input" placeholder="Nom du représentant">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">Société</label>
-                            <input id="entreprise-societe" type="text" class="form-input" placeholder="Nom de l'entreprise">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label class="form-label">Date</label>
-                            <input id="entreprise-date" type="date" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Signature</label>
-                            <div class="signature-canvas-container">
-                                <canvas id="signature-entreprise" class="signature-canvas" width="280" height="80"></canvas>
-                                <div class="signature-actions">
-                                    <button type="button" class="btn-clear-signature" onclick="clearSignature('entreprise')">Effacer</button>
-                                </div>
-                                <div class="signature-hint">Dessinez votre signature avec la souris ou le doigt</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
+        <!-- Champ caché société — conservé pour compatibilité PDF -->
+        <input id="entreprise-societe" type="hidden" value="">
+        <div class="wizard-nav">
+            <button class="btn-wz-prev" onclick="wizardTo(1)">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Projet
+            </button>
+            <button class="btn-wz-next" onclick="wizardTo(3)">
+                Paramétrage
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
+        </div><!-- /wz-step-2 -->
 
-        <!-- SECTION 3 : Source des coordonnées -->
+        <!-- Champs cachés nécessaires pour le générateur PDF — remplis à l'étape 5 -->
+        <input id="controleur-fonction" type="hidden" value="">
+        <input id="controleur-date"    type="hidden" value="">
+        <input id="entreprise-date"    type="hidden" value="">
+
+        <!-- ═══ ÉTAPE 3 — SÉLECTION DES ÉLÉMENTS ═══ -->
+        <div id="wz-step-3" class="wizard-panel" style="display:none">
         <div class="section-card">
             <div class="section-header orange">
-                <h2>3. Source des coordonnées projet</h2>
-                <div class="toggle-container">
-                    <span class="toggle-label" id="label-manual">Manuel/Points km</span>
-                    <div class="toggle-switch" id="source-toggle" onclick="toggleSource()"></div>
-                    <span class="toggle-label" id="label-excel">Fichier Excel</span>
-                </div>
+                <h2>Sélection des éléments à réceptionner</h2>
             </div>
             <div class="section-body">
-                <!-- Source cards -->
-                <div class="source-grid">
-                    <div class="source-card selected" id="option-manual" onclick="selectSourceOption('manual')">
-                        <div class="source-card-title">Saisie manuelle / Points km</div>
-                        <div class="source-card-desc">Utilisez les points importés depuis l'éditeur et la page Points kilométriques.</div>
-                        <div class="source-card-badge" id="manual-badge">Sélectionné</div>
-                        <div id="manual-data-status" style="margin-top: 12px; padding: 10px; background: white; border-radius: 6px; font-size: 0.85rem; display: none;">
-                            Données chargées : <strong id="manual-pk-count">0</strong> PK et <strong id="manual-cote-count">0</strong> côtes
-                        </div>
-                    </div>
-                    
-                    <div class="source-card" id="option-excel" onclick="selectSourceOption('excel')">
-                        <div class="source-card-title">Depuis fichier Excel</div>
-                        <div class="source-card-desc">Utilisez un fichier Excel existant contenant les coordonnées projet.</div>
-                        <div class="source-card-badge">Non sélectionné</div>
-                    </div>
-                </div>
-                
-                <!-- Config manuelle -->
-                <div id="manual-config" style="display: none;">
-                    <div class="info-box blue">
-                        <div class="info-box-title">Configuration depuis les points manuels</div>
-                        <div class="info-box-content">Sélectionnez les PK et côtes à inclure dans la fiche de réception.</div>
-                    </div>
-                    
-                    <div class="selection-columns">
-                        <div class="selection-box">
-                            <div class="selection-box-header">
-                                <span class="selection-box-title">Points kilométriques (PK)</span>
-                                <div class="selection-box-actions">
-                                    <button class="btn-mini" id="select-all-manual-pk">Tout</button>
-                                    <button class="btn-mini" id="deselect-all-manual-pk">Aucun</button>
-                                </div>
-                            </div>
-                            <div class="selection-box-content" id="manual-pk-checkboxes">
-                                <!-- Checkboxes générées dynamiquement -->
-                            </div>
-                        </div>
-                        
-                        <div class="selection-box">
-                            <div class="selection-box-header">
-                                <span class="selection-box-title">Côtes à réceptionner</span>
-                                <div class="selection-box-actions">
-                                    <button class="btn-mini" id="select-all-manual-cotes">Tout</button>
-                                    <button class="btn-mini" id="deselect-all-manual-cotes">Aucun</button>
-                                </div>
-                            </div>
-                            <div class="selection-box-content" id="manual-cotes-checkboxes">
-                                <!-- Checkboxes générées dynamiquement -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="btn-group">
-                        <button id="generate-manual-reception" class="btn-primary btn-success">Générer la fiche de réception</button>
-                    </div>
-                </div>
-                
-                <!-- Config Excel -->
-                <div id="excel-config" style="display: none;">
-                    <div id="loading-message" class="loading-state">Chargement des données Excel...</div>
-                    <div id="error-message" class="error-state" style="display:none;"></div>
 
+                <!-- Statut chargement Excel -->
+                <div id="excel-config" style="display:block;">
+                    <div id="loading-message" class="loading-state">Chargement du fichier Excel du projet...</div>
+                    <div id="error-message" class="error-state" style="display:none;"></div>
                     <div id="sheets-loaded-indicator" style="display:none; margin-bottom: 16px; padding: 10px 14px; background: var(--accent-green-light); border: 1px solid #86efac; border-radius: 8px; font-size: 0.85rem; color: #166534;">
                         ✓ Données chargées — sélectionnez les éléments à réceptionner ci-dessous
                     </div>
                 </div>
 
-                <!-- Sélection des PK et côtes (Excel) -->
+                <!-- Sélection PK / côtes -->
                 <div id="data-selection" style="display:none;">
                     <div class="selection-columns">
-                        <!-- Sélection des PK -->
                         <div class="selection-box">
                             <div class="selection-box-header">
                                 <span class="selection-box-title">Points kilométriques à contrôler</span>
@@ -1118,31 +1332,16 @@
                                     <button class="btn-mini" id="deselect-all-pk">Aucun</button>
                                 </div>
                             </div>
-                            
-                            <!-- Sélection par plage -->
                             <div style="padding: 12px; background: var(--surface-3); border-bottom: 1px solid var(--border-color);">
                                 <div class="form-label" style="margin-bottom: 8px;">Sélection par plage</div>
                                 <div style="display: flex; gap: 8px; align-items: end;">
-                                    <div style="flex: 1;">
-                                        <select id="pk-start" class="form-input" style="padding: 6px 10px; font-size: 0.8rem;">
-                                            <option value="">PK début</option>
-                                        </select>
-                                    </div>
-                                    <div style="flex: 1;">
-                                        <select id="pk-end" class="form-input" style="padding: 6px 10px; font-size: 0.8rem;">
-                                            <option value="">PK fin</option>
-                                        </select>
-                                    </div>
+                                    <div style="flex: 1;"><select id="pk-start" class="form-input" style="padding: 6px 10px; font-size: 0.8rem;"><option value="">PK début</option></select></div>
+                                    <div style="flex: 1;"><select id="pk-end" class="form-input" style="padding: 6px 10px; font-size: 0.8rem;"><option value="">PK fin</option></select></div>
                                     <button id="select-range-pk" class="btn-mini" style="padding: 7px 12px;">Appliquer</button>
                                 </div>
                             </div>
-                            
-                            <div class="selection-box-content" id="pk-checkboxes">
-                                <!-- PK checkboxes -->
-                            </div>
+                            <div class="selection-box-content" id="pk-checkboxes"></div>
                         </div>
-
-                        <!-- Sélection des éléments à réceptionner (Gauche / Droit) -->
                         <div class="selection-box">
                             <div class="selection-box-header">
                                 <span class="selection-box-title">Éléments à réceptionner</span>
@@ -1151,31 +1350,66 @@
                                     <button class="btn-mini" id="deselect-all-cotes">Aucun</button>
                                 </div>
                             </div>
-                            <div id="cotes-checkboxes" style="overflow-y: auto; max-height: 350px;">
-                                <!-- Grille Gauche / Droit générée dynamiquement -->
-                            </div>
+                            <div id="cotes-checkboxes" style="overflow-y: auto; max-height: 350px;"></div>
+                        </div>
+                    </div>
+                    <!-- Options PDF : séparation par côté -->
+                    <div style="margin-top:18px; padding:14px 18px; background:var(--surface-2); border:1px solid var(--border-color); border-radius:10px;">
+                        <div style="font-size:0.82rem; font-weight:700; color:var(--text-secondary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.4px;">Options de génération PDF</div>
+                        <div class="checkbox-row" style="margin-bottom:6px;">
+                            <input type="checkbox" id="opt-separer-cotes" style="width:16px;height:16px;accent-color:var(--accent-blue);">
+                            <label for="opt-separer-cotes" style="font-size:0.85rem; cursor:pointer;">Générer les côtés <strong>Gauche</strong> et <strong>Droit</strong> sur des pages séparées</label>
+                        </div>
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="opt-ignorer-cotes" style="width:16px;height:16px;accent-color:var(--accent-blue);">
+                            <label for="opt-ignorer-cotes" style="font-size:0.85rem; cursor:pointer;">Ne pas tenir compte de la distinction Gauche/Droit (vue unifiée — comportement actuel)</label>
                         </div>
                     </div>
 
                     <div class="btn-group">
-                        <button id="generate-reception" class="btn-primary btn-success">Générer la fiche de réception</button>
+                        <button id="generate-reception" class="btn-primary btn-success" onclick="setTimeout(()=>wizardTo(4),200);">
+                            Générer la fiche de réception → Étape 4
+                        </button>
                     </div>
                 </div>
+
+            </div>
+        </div>
+        <div class="wizard-nav">
+            <button class="btn-wz-prev" onclick="wizardTo(2)">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Acteurs
+            </button>
+        </div>
+        </div><!-- /wz-step-3 -->
+
+        <!-- ═══ ÉTAPE 4 — FICHE DE RÉCEPTION ═══ -->
+        <div id="wz-step-4" class="wizard-panel" style="display:none">
+
+        <!-- Mode + Tolérance EN HAUT -->
+        <div style="display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:24px; margin-bottom:20px; padding:14px 24px; background:white; border:1px solid var(--border-color); border-radius:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:0.82rem; font-weight:700; color:var(--text-secondary);">Mode :</span>
+                <span class="toggle-label active" id="label-assainissement">Assainissement</span>
+                <div class="toggle-switch" id="mode-toggle" onclick="toggleReceptionMode()"></div>
+                <span class="toggle-label" id="label-terrassement">Terrassement</span>
+            </div>
+            <div style="width:1px; height:28px; background:var(--border-color); display:none;" class="sm:block"></div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <label style="font-size:0.82rem; font-weight:700; color:var(--text-secondary); white-space:nowrap;">Tolérance :</label>
+                <input id="tolerance" type="number" step="0.1" value="2" class="form-input"
+                       style="width:80px; text-align:center; font-weight:700; color:var(--accent-blue);"
+                       title="Écart maximal admissible entre côte mesurée et théorique">
+                <span style="font-size:0.82rem; color:var(--text-secondary);">mm</span>
             </div>
         </div>
 
-        <!-- SECTION 4 : Fiche de réception générée -->
-        <div id="reception-sheet" class="section-card" style="display:none;">
+        <div id="reception-sheet" class="section-card">
             <div class="section-header green">
                 <h2>Fiche de réception topographique</h2>
-                <div class="toggle-container">
-                    <span class="toggle-label active" id="label-assainissement">Assainissement</span>
-                    <div class="toggle-switch" id="mode-toggle" onclick="toggleReceptionMode()"></div>
-                    <span class="toggle-label" id="label-terrassement">Terrassement</span>
-                </div>
             </div>
             <div class="section-body">
-                <!-- Récapitulatif -->
+                <!-- Récapitulatif projet -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; padding: 16px; background: var(--surface-2); border-radius: 10px;">
                     <div><span style="color: var(--text-secondary); font-size: 0.8rem;">Projet</span><br><strong id="display-projet">-</strong></div>
                     <div><span style="color: var(--text-secondary); font-size: 0.8rem;">Date</span><br><strong id="display-date">-</strong></div>
@@ -1185,124 +1419,206 @@
                     <div><span style="color: var(--text-secondary); font-size: 0.8rem;">Tolérance</span><br><strong><span id="display-tolerance">2</span> mm</strong></div>
                 </div>
 
-                <!-- Conteneur des stations -->
+                <!-- Stations -->
                 <div id="stations-container"></div>
-
-                <!-- Bouton ajouter station -->
                 <div class="btn-group">
                     <button id="add-station-btn" class="btn-secondary">+ Ajouter une station de nivellement</button>
                 </div>
 
-                <!-- Signatures -->
-                <div class="signature-grid">
-                    <div class="signature-card blue">
-                        <div class="signature-card-header">CONTRÔLEUR</div>
-                        <div class="signature-card-body">
-                            <div class="signature-row"><strong>Nom:</strong> <span id="display-controleur-nom">-</span></div>
-                            <div class="signature-row"><strong>Fonction:</strong> <span id="display-controleur-fonction">-</span></div>
-                            <div class="signature-row"><strong>Date:</strong> <span id="display-controleur-date">-</span></div>
-                            <div class="signature-area" id="display-signature-controleur">
-                                <span class="signature-placeholder">Aucune signature</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="signature-card orange">
-                        <div class="signature-card-header">ENTREPRISE</div>
-                        <div class="signature-card-body">
-                            <div class="signature-row"><strong>Nom:</strong> <span id="display-entreprise-nom">-</span></div>
-                            <div class="signature-row"><strong>Société:</strong> <span id="display-entreprise-societe">-</span></div>
-                            <div class="signature-row"><strong>Date:</strong> <span id="display-entreprise-date">-</span></div>
-                            <div class="signature-area" id="display-signature-entreprise">
-                                <span class="signature-placeholder">Aucune signature</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Actions -->
+                <!-- Visualiser les résultats -->
                 <div class="btn-group" style="margin-top: 32px;">
                     <button id="visualiser-resultats-btn" class="btn-primary" style="background: linear-gradient(135deg, #0f766e 0%, #065f46 100%); font-size: 1rem; padding: 14px 28px;">
                         Visualiser les résultats
                     </button>
-                    <button id="export-reception-pdf" class="btn-secondary">Imprimer / PDF rapide</button>
                     <button id="export-reception-excel" class="btn-secondary">Exporter en Excel</button>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- SECTION RÉSULTATS DE RÉCEPTION -->
-    <!-- SECTION RÉSULTATS - Design moderne -->
-    <div id="resultats-section" style="display:none; margin-top: 32px;">
-
-        <!-- Header résultats -->
-        <div style="background:linear-gradient(135deg, #0f766e 0%, #059669 100%); border-radius:16px 16px 0 0; padding:20px 28px; display:flex; align-items:center; justify-content:space-between;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <div style="width:40px; height:40px; background:rgba(255,255,255,0.2); border-radius:10px; display:flex; align-items:center; justify-content:center;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-                <div>
-                    <div style="color:white; font-size:1.15rem; font-weight:700; letter-spacing:-0.3px;">Résultats de réception</div>
-                    <div style="color:rgba(255,255,255,0.7); font-size:0.82rem; margin-top:1px;">Analyse de conformité topographique</div>
+                <!-- Spans cachés pour collectReceptionDataForPDF -->
+                <div style="display:none">
+                    <span id="display-controleur-nom"></span>
+                    <span id="display-controleur-fonction"></span>
+                    <span id="display-controleur-date"></span>
+                    <span id="display-entreprise-nom"></span>
+                    <span id="display-entreprise-societe"></span>
+                    <span id="display-entreprise-date"></span>
+                    <div id="display-signature-controleur"></div>
+                    <div id="display-signature-entreprise"></div>
                 </div>
             </div>
-            <div id="resultats-badges" style="display:flex; gap:8px; align-items:center;"></div>
         </div>
 
-        <div style="background:white; border:1px solid #e2e8f0; border-top:none; border-radius:0 0 16px 16px; padding:28px;">
-
-            <!-- KPI Cards -->
-            <div id="resultats-stats" style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:32px;"></div>
-
-            <!-- Tableaux par station -->
-            <div id="resultats-tables"></div>
-
-            <!-- Observations générales -->
-            <div style="margin-top:28px; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0;">
-                <div style="background:linear-gradient(135deg,#475569 0%,#334155 100%); padding:14px 20px; display:flex; align-items:center; gap:10px;">
-                    <div style="width:32px; height:32px; background:rgba(255,255,255,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <!-- Section résultats (affichée après "Visualiser") -->
+        <div id="resultats-section" style="display:none; margin-top: 32px;">
+            <div style="background:linear-gradient(135deg, #0f766e 0%, #059669 100%); border-radius:16px 16px 0 0; padding:20px 28px; display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:40px; height:40px; background:rgba(255,255,255,0.2); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
                     <div>
-                        <div style="color:white; font-weight:700; font-size:0.9rem;">Observations générales</div>
-                        <div style="color:rgba(255,255,255,0.6); font-size:0.75rem;">Facultatif — apparaîtra dans le PDF avant les signatures</div>
+                        <div style="color:white; font-size:1.15rem; font-weight:700; letter-spacing:-0.3px;">Résultats de réception</div>
+                        <div style="color:rgba(255,255,255,0.7); font-size:0.82rem; margin-top:1px;">Analyse de conformité topographique</div>
                     </div>
                 </div>
-                <div style="padding:20px; background:#f8fafc;">
-                    <textarea id="observations-generales" rows="5"
-                        style="width:100%; border:1.5px solid #cbd5e1; border-radius:10px; padding:14px 16px; font-family:inherit; font-size:0.9rem; color:#0f172a; line-height:1.7; resize:vertical; background:white; transition:border-color 0.2s; outline:none;"
-                        onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.1)'"
-                        onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none'"
-                        placeholder="Saisissez vos observations générales (état de la chaussée, points de vigilance, réserves, recommandations...)"></textarea>
-                </div>
+                <div id="resultats-badges" style="display:flex; gap:8px; align-items:center;"></div>
             </div>
-
-            <!-- Boutons export -->
-            <div style="display:flex; gap:12px; justify-content:center; margin-top:28px; flex-wrap:wrap;">
-                <button id="export-resultats-pdf-btn"
-                    style="display:inline-flex; align-items:center; gap:8px; padding:13px 28px; background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%); color:white; border:none; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 8px rgba(30,58,95,0.25);"
-                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(30,58,95,0.35)'"
-                    onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(30,58,95,0.25)'">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Exporter en PDF
-                </button>
-                <button id="print-resultats-btn"
-                    style="display:inline-flex; align-items:center; gap:8px; padding:13px 28px; background:white; color:#1e3a5f; border:2px solid #e2e8f0; border-radius:10px; font-weight:600; font-size:0.95rem; cursor:pointer; transition:all 0.2s;"
-                    onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1'"
-                    onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Imprimer
-                </button>
-                <button id="send-email-btn" onclick="openEmailModal()"
-                    style="display:inline-flex; align-items:center; gap:8px; padding:13px 28px; background:linear-gradient(135deg,#059669 0%,#047857 100%); color:white; border:none; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 8px rgba(5,150,105,0.25);"
-                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(5,150,105,0.4)'"
-                    onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(5,150,105,0.25)'">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    Envoyer par mail
-                </button>
+            <div style="background:white; border:1px solid #e2e8f0; border-top:none; border-radius:0 0 16px 16px; padding:28px;">
+                <div id="resultats-stats" style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:32px;"></div>
+                <div id="resultats-tables"></div>
             </div>
         </div>
-    </div>
+
+        <div class="wizard-nav" style="margin-top:24px;">
+            <button class="btn-wz-prev" onclick="wizardTo(3)">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Paramétrage
+            </button>
+            <button class="btn-wz-next green" onclick="wizardTo(5)">
+                Signatures &amp; Export
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+        </div>
+        </div><!-- /wz-step-4 -->
+
+        <!-- ═══ ÉTAPE 5 — SIGNATURES & EXPORT ═══ -->
+        <div id="wz-step-5" class="wizard-panel" style="display:none">
+        <div class="section-card">
+            <div class="section-header green">
+                <h2>Signatures &amp; Export</h2>
+            </div>
+            <div class="section-body">
+                <div class="form-grid form-grid-2">
+
+                    <!-- CONTRÔLEUR -->
+                    <div class="actor-block blue-bg">
+                        <div class="actor-block-title blue">Mission de contrôle</div>
+
+                        <!-- 1. Identité -->
+                        <div class="sig-actor-recap">
+                            <div class="sig-role">Identité</div>
+                            <strong id="sig-recap-controleur">—</strong>
+                            <div id="sig-recap-controleur-grade" class="sig-grade"></div>
+                        </div>
+
+                        <!-- 2. Date -->
+                        <div class="form-group" style="margin-bottom:14px;">
+                            <label class="form-label">Date de signature</label>
+                            <input id="controleur-date-v" type="date" class="form-input"
+                                   oninput="document.getElementById('controleur-date').value=this.value">
+                        </div>
+
+                        <!-- 3. Signature -->
+                        <div class="form-group">
+                            <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+                                <span>Signature</span>
+                                <button type="button" class="btn-clear-signature" onclick="clearSignature('controleur')">Effacer</button>
+                            </label>
+                            <div class="signature-canvas-container">
+                                <canvas id="signature-controleur" class="signature-canvas" width="320" height="120"></canvas>
+                                <div class="signature-hint" style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:6px;">
+                                    Signez ici avec la souris ou le doigt
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ENTREPRISE -->
+                    <div class="actor-block orange-bg">
+                        <div class="actor-block-title orange">Entreprise</div>
+
+                        <!-- 1. Identité -->
+                        <div class="sig-actor-recap">
+                            <div class="sig-role">Technicien / Opérateur</div>
+                            <strong id="sig-recap-entreprise">—</strong>
+                            <div id="sig-recap-entreprise-titre" class="sig-grade"></div>
+                        </div>
+
+                        <!-- 2. Date -->
+                        <div class="form-group" style="margin-bottom:14px;">
+                            <label class="form-label">Date de signature</label>
+                            <input id="entreprise-date-v" type="date" class="form-input"
+                                   oninput="document.getElementById('entreprise-date').value=this.value">
+                        </div>
+
+                        <!-- 3. Signature -->
+                        <div class="form-group">
+                            <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+                                <span>Signature</span>
+                                <button type="button" class="btn-clear-signature" onclick="clearSignature('entreprise')">Effacer</button>
+                            </label>
+                            <div class="signature-canvas-container">
+                                <canvas id="signature-entreprise" class="signature-canvas" width="320" height="120"></canvas>
+                                <div class="signature-hint" style="text-align:center;font-size:0.72rem;color:#94a3b8;margin-top:6px;">
+                                    Signez ici avec la souris ou le doigt
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Observations générales -->
+                <div style="margin-top:28px; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0;">
+                    <div style="background:linear-gradient(135deg,#475569 0%,#334155 100%); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <div>
+                                <div style="color:white; font-weight:700; font-size:0.9rem;">Observations générales</div>
+                                <div style="color:rgba(255,255,255,0.6); font-size:0.75rem;">Apparaîtra dans le PDF avant les signatures · photos joignables</div>
+                            </div>
+                        </div>
+                        <button onclick="addGlobalObsEntry()"
+                            style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:8px;color:white;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;"
+                            onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                            + Ajouter une observation
+                        </button>
+                    </div>
+                    <div style="padding:16px 20px; background:#f8fafc;">
+                        <div id="obs-generales-entries" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;"></div>
+                        <p id="obs-generales-empty" style="font-size:0.8rem;color:#94a3b8;text-align:center;padding:12px 0;margin:0;">
+                            Aucune observation — cliquez « + Ajouter une observation » pour commencer
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Boutons export -->
+                <div style="display:flex; gap:12px; justify-content:center; margin-top:28px; flex-wrap:wrap;">
+                    <button id="export-resultats-pdf-btn"
+                        style="display:inline-flex; align-items:center; gap:8px; padding:13px 28px; background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%); color:white; border:none; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 8px rgba(30,58,95,0.25);"
+                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(30,58,95,0.35)'"
+                        onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(30,58,95,0.25)'">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Exporter en PDF
+                    </button>
+                    <button id="export-reception-pdf"
+                        style="display:inline-flex; align-items:center; gap:8px; padding:13px 28px; background:white; color:#1e3a5f; border:2px solid #e2e8f0; border-radius:10px; font-weight:600; font-size:0.95rem; cursor:pointer; transition:all 0.2s;"
+                        onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1'"
+                        onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Imprimer (aperçu)
+                    </button>
+                    <button id="send-email-btn" onclick="openEmailModal()"
+                        style="display:inline-flex; align-items:center; gap:8px; padding:13px 28px; background:linear-gradient(135deg,#059669 0%,#047857 100%); color:white; border:none; border-radius:10px; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 8px rgba(5,150,105,0.25);"
+                        onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 16px rgba(5,150,105,0.4)'"
+                        onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(5,150,105,0.25)'">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Envoyer par mail
+                    </button>
+                    <button id="print-resultats-btn"
+                        style="display:none"></button>
+                </div>
+
+            </div>
+        </div>
+        <div class="wizard-nav">
+            <button class="btn-wz-prev" onclick="wizardTo(4)">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Réception
+            </button>
+            <div></div>
+        </div>
+        </div><!-- /wz-step-5 -->
+
+    </div><!-- /page-wrapper -->
 
     <!-- ===== MODAL ENVOI PAR EMAIL ===== -->
     <div id="email-modal-overlay"
@@ -1385,6 +1701,83 @@
         </div>
     </div>
 
+    <!-- ===== MODAL OBSERVATIONS PAR LIGNE ===== -->
+    <div id="obs-row-modal"
+         style="display:none;position:fixed;inset:0;z-index:2100;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);"
+         onclick="if(event.target===this) closeObsModal()">
+        <div style="background:white;margin:4% auto;border-radius:16px;width:680px;max-width:94vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);max-height:88vh;overflow-y:auto;">
+            <div style="background:linear-gradient(135deg,#334155,#475569);padding:18px 24px;border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="color:white;font-weight:700;font-size:1rem;">Observations &amp; Photos</div>
+                    <div id="obs-modal-subtitle" style="color:rgba(255,255,255,0.65);font-size:0.78rem;margin-top:2px;"></div>
+                </div>
+                <button onclick="closeObsModal()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+            <div style="padding:20px 24px;">
+                <div id="obs-entries-container" style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;"></div>
+                <button onclick="addObsEntry()"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:8px;color:#64748b;font-size:0.82rem;cursor:pointer;transition:all 0.2s;width:100%;justify-content:center;"
+                    onmouseover="this.style.background='#eff6ff';this.style.borderColor='#93c5fd';this.style.color='#1d4ed8'"
+                    onmouseout="this.style.background='#f8fafc';this.style.borderColor='#cbd5e1';this.style.color='#64748b'">
+                    + Ajouter une ligne d'observation
+                </button>
+            </div>
+            <div style="padding:14px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;background:#f8fafc;border-radius:0 0 16px 16px;">
+                <button onclick="closeObsModal()" class="btn-secondary" style="padding:9px 18px;font-size:0.875rem;">Annuler</button>
+                <button onclick="saveObsModal()"
+                    style="padding:9px 22px;background:linear-gradient(135deg,#334155,#475569);color:white;border:none;border-radius:8px;font-weight:700;font-size:0.875rem;cursor:pointer;">
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Multi+ — ajouter plusieurs points à la largeur -->
+    <div id="multi-dist-modal"
+         style="display:none;position:fixed;inset:0;z-index:2050;background:rgba(15,23,42,0.6);backdrop-filter:blur(3px);"
+         onclick="if(event.target===this) closeMultiDistModal()">
+        <div style="background:white;margin:4% auto;border-radius:16px;width:560px;max-width:94vw;box-shadow:0 20px 60px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;">
+            <!-- Header -->
+            <div style="background:linear-gradient(135deg,#064e3b,#059669);padding:18px 24px;border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="color:white;font-weight:800;font-size:1rem;">Points à la largeur — Multi ⊕</div>
+                    <div id="multi-dist-subtitle" style="color:rgba(255,255,255,0.7);font-size:0.78rem;margin-top:3px;"></div>
+                </div>
+                <button onclick="closeMultiDistModal()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+            <!-- Corps -->
+            <div style="padding:20px 24px;">
+                <p style="font-size:0.82rem;color:#64748b;margin-bottom:16px;line-height:1.5;">
+                    Saisissez toutes les distances par rapport à l'axe. Une ligne sera créée pour chaque distance. La cote théorique est calculée automatiquement selon la pente de la station.
+                </p>
+                <!-- Pré-sets distances courantes -->
+                <div style="margin-bottom:16px;">
+                    <div style="font-size:0.72rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Distances courantes :</div>
+                    <div id="multi-dist-presets" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+                </div>
+                <!-- Liste des entrées -->
+                <div id="multi-dist-entries" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+                <!-- Bouton ajouter -->
+                <button onclick="addMultiDistEntry()"
+                    style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:#f0fdf4;border:1.5px dashed #86efac;border-radius:8px;color:#16a34a;font-size:0.82rem;font-weight:600;cursor:pointer;width:100%;justify-content:center;transition:all 0.2s;"
+                    onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='#f0fdf4'">
+                    + Ajouter une distance
+                </button>
+            </div>
+            <!-- Footer -->
+            <div style="padding:14px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;border-radius:0 0 16px 16px;">
+                <span id="multi-dist-preview-count" style="font-size:0.8rem;color:#64748b;"></span>
+                <div style="display:flex;gap:10px;">
+                    <button onclick="closeMultiDistModal()" class="btn-secondary" style="padding:9px 18px;font-size:0.875rem;">Annuler</button>
+                    <button onclick="validateMultiDist()"
+                        style="padding:9px 22px;background:linear-gradient(135deg,#059669,#047857);color:white;border:none;border-radius:8px;font-weight:700;font-size:0.875rem;cursor:pointer;">
+                        ✓ Insérer les points
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal pour ajouter un point intermédiaire par interpolation -->
     <div id="interpolation-modal" class="modal-overlay">
         <div class="modal-container">
@@ -1449,10 +1842,101 @@
     </div>
 
     <script>
+    // ===== NAVIGATION WIZARD =====
+    let currentStep = 1;
+
+    function wizardTo(n) {
+        if (n < 1 || n > 5) return;
+
+        // En entrant à l'étape 3, s'assurer que excel-config est visible
+        if (n === 3) {
+            const excelCfg = document.getElementById('excel-config');
+            if (excelCfg) excelCfg.style.display = 'block';
+            currentSource = 'excel';
+        }
+
+        // Synchronisation des recaps lors du passage à l'étape 5
+        if (n === 5) {
+            const ctrlNom  = document.getElementById('controleur-nom');
+            const entNom   = document.getElementById('entreprise-nom');
+            const entTitre  = document.getElementById('entreprise-titre');
+            const entSoc   = document.getElementById('entreprise-societe');
+            const opNom    = document.getElementById('operateur-nom');
+            const ctrlGrade  = document.getElementById('controleur-grade');
+            const sigCtrl    = document.getElementById('sig-recap-controleur');
+            const sigCtrlGrade = document.getElementById('sig-recap-controleur-grade');
+            const sigEnt   = document.getElementById('sig-recap-entreprise');
+            const sigEntTitre = document.getElementById('sig-recap-entreprise-titre');
+            if (sigCtrl && ctrlNom) sigCtrl.textContent = ctrlNom.value || '—';
+            if (sigCtrlGrade) sigCtrlGrade.textContent = (ctrlGrade && ctrlGrade.value) ? ctrlGrade.value : '';
+            if (sigEnt) {
+                const techBlock = document.getElementById('operateur-block');
+                const showTech  = techBlock && techBlock.style.display !== 'none';
+                const nomEnt    = entNom ? entNom.value : '';
+                const socEnt    = entSoc ? entSoc.value : '';
+                if (showTech && opNom && opNom.value) {
+                    sigEnt.textContent = opNom.value;
+                } else {
+                    sigEnt.textContent = [nomEnt, socEnt].filter(Boolean).join(' — ') || '—';
+                }
+            }
+            if (sigEntTitre) {
+                sigEntTitre.textContent = (entTitre && entTitre.value) ? entTitre.value : '';
+            }
+        }
+
+        // Cacher le panneau courant, afficher le suivant
+        const prev = document.getElementById('wz-step-' + currentStep);
+        const next = document.getElementById('wz-step-' + n);
+        if (prev) prev.style.display = 'none';
+        if (next) next.style.display = '';
+        currentStep = n;
+
+        // Mettre à jour l'indicateur
+        for (let i = 1; i <= 5; i++) {
+            const step = document.getElementById('wi-' + i);
+            if (!step) continue;
+            step.classList.remove('active', 'done');
+            if (i === n)      step.classList.add('active');
+            else if (i < n)   step.classList.add('done');
+            if (i < 5) {
+                const line = document.getElementById('wl-' + i + '-' + (i + 1));
+                if (line) line.classList.toggle('done', i < n);
+            }
+        }
+
+        // Scroll vers le haut de la page
+        const indicator = document.getElementById('wizard-indicator');
+        if (indicator) indicator.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function toggleTechnicienOperateur() {
+        const block  = document.getElementById('operateur-block');
+        const btn    = document.getElementById('btn-tech-ope');
+        const entNom = document.getElementById('entreprise-nom');
+        const opNom  = document.getElementById('operateur-nom');
+        if (!block) return;
+
+        const visible = block.style.display !== 'none';
+        if (visible) {
+            block.style.display = 'none';
+            if (btn) btn.classList.remove('active');
+        } else {
+            block.style.display = '';
+            if (btn) btn.classList.add('active');
+            // Pré-remplir depuis entreprise-nom si le champ est vide
+            if (opNom && !opNom.value && entNom) opNom.value = entNom.value;
+        }
+    }
+    </script>
+
+    <script>
     // Données manuelles chargées depuis sessionStorage
     let manualReceptionData = null;
     let currentSource = 'manual'; // 'manual' ou 'excel'
     let receptionMode = 'assainissement'; // 'assainissement' ou 'terrassement' - Variable globale
+    let separerParCote = false; // PDF séparé par côté Gauche/Droit
+    let ignorerCotes   = false; // Pas de distinction Gauche/Droit
     
     // ===== SYSTÈME DE SIGNATURE CANVAS =====
     const signatureData = {
@@ -1526,29 +2010,27 @@
         const canvas = document.getElementById(`signature-${type}`);
         const ctx = signatureContexts[type];
         const coords = getCanvasCoordinates(e, canvas);
-        
         signatureDrawing[type] = true;
+        canvas.classList.add('signing');
         ctx.beginPath();
         ctx.moveTo(coords.x, coords.y);
     }
-    
+
     function draw(e, type) {
         if (!signatureDrawing[type]) return;
-        
         const canvas = document.getElementById(`signature-${type}`);
         const ctx = signatureContexts[type];
         const coords = getCanvasCoordinates(e, canvas);
-        
         ctx.lineTo(coords.x, coords.y);
         ctx.stroke();
-        
-        // Marquer comme signé
         canvas.classList.add('signed');
     }
     
     function stopDrawing(type) {
         if (signatureDrawing[type]) {
             signatureDrawing[type] = false;
+            const canvas = document.getElementById(`signature-${type}`);
+            if (canvas) canvas.classList.remove('signing');
             saveSignature(type);
         }
     }
@@ -1573,9 +2055,11 @@
         
         if (hasDrawing) {
             signatureData[type] = canvas.toDataURL('image/png');
+            canvas.classList.add('has-sig');
             updateSignatureDisplay(type);
         } else {
             signatureData[type] = null;
+            canvas.classList.remove('has-sig');
         }
     }
     
@@ -1586,8 +2070,8 @@
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        canvas.classList.remove('signed');
-        
+        canvas.classList.remove('signed', 'has-sig', 'signing');
+
         signatureData[type] = null;
         updateSignatureDisplay(type);
     }
@@ -1615,22 +2099,8 @@
     
     // ===== FIN SYSTÈME DE SIGNATURE =====
     
-    // Toggle source function
-    function toggleSource() {
-        const toggle = document.getElementById('source-toggle');
-        if (currentSource === 'manual') {
-            currentSource = 'excel';
-            toggle.classList.add('active');
-            document.getElementById('label-manual').classList.remove('active');
-            document.getElementById('label-excel').classList.add('active');
-        } else {
-            currentSource = 'manual';
-            toggle.classList.remove('active');
-            document.getElementById('label-manual').classList.add('active');
-            document.getElementById('label-excel').classList.remove('active');
-        }
-        selectSourceOption(currentSource);
-    }
+    // Toggle source (conservé pour compatibilité, non utilisé dans le wizard)
+    function toggleSource() { selectSourceOption('excel'); }
     
     // Toggle mode réception (Assainissement/Terrassement)
     function toggleReceptionMode() {
@@ -1660,49 +2130,14 @@
     
     // Fonction globale pour sélectionner la source des coordonnées
     function selectSourceOption(option) {
-        const optionManual = document.getElementById('option-manual');
-        const optionExcel = document.getElementById('option-excel');
+        // Mode always-Excel depuis le wizard — certains éléments n'existent plus
         const excelConfig = document.getElementById('excel-config');
         const manualConfig = document.getElementById('manual-config');
-        const manualBadge = document.getElementById('manual-badge');
-        const excelBadge = optionExcel.querySelector('.source-card-badge');
-        
-        // Reset styles
-        optionManual.classList.remove('selected');
-        optionExcel.classList.remove('selected', 'orange');
-        
-        if (option === 'manual') {
-            currentSource = 'manual';
-            optionManual.classList.add('selected');
-            manualBadge.textContent = 'Sélectionné';
-            excelBadge.textContent = 'Non sélectionné';
-            excelConfig.style.display = 'none';
-            document.getElementById('data-selection').style.display = 'none';
-            
-            // Update toggle
-            document.getElementById('source-toggle').classList.remove('active');
-            document.getElementById('label-manual').classList.add('active');
-            document.getElementById('label-excel').classList.remove('active');
-            
-            // Afficher la configuration manuelle si des données sont disponibles
-            if (manualReceptionData && manualReceptionData.pks && manualReceptionData.pks.length > 0) {
-                manualConfig.style.display = 'block';
-            } else {
-                manualConfig.style.display = 'none';
-            }
-        } else if (option === 'excel') {
-            currentSource = 'excel';
-            optionExcel.classList.add('selected', 'orange');
-            manualBadge.textContent = 'Non sélectionné';
-            excelBadge.textContent = 'Sélectionné';
-            excelConfig.style.display = 'block';
-            manualConfig.style.display = 'none';
-            
-            // Update toggle
-            document.getElementById('source-toggle').classList.add('active');
-            document.getElementById('label-manual').classList.remove('active');
-            document.getElementById('label-excel').classList.add('active');
-        }
+
+        currentSource = (option === 'excel') ? 'excel' : 'manual';
+
+        if (excelConfig) excelConfig.style.display = (option === 'excel') ? 'block' : 'none';
+        if (manualConfig) manualConfig.style.display = (option === 'manual') ? 'block' : 'none';
     }
     
     // Fonction pour utiliser les données manuelles
@@ -1724,38 +2159,20 @@
                 manualReceptionData = JSON.parse(storedData);
                 console.log('Données parsées:', manualReceptionData);
                 if (manualReceptionData.source === 'manual' && manualReceptionData.pks && manualReceptionData.pks.length > 0) {
-                    // Afficher le statut
-                    document.getElementById('manual-data-status').style.display = 'block';
-                    document.getElementById('manual-pk-count').textContent = manualReceptionData.pks.length;
-                    document.getElementById('manual-cote-count').textContent = manualReceptionData.cotes ? manualReceptionData.cotes.length : 0;
-                    
-                    // Peupler les checkboxes
                     populateManualCheckboxes();
-                    
-                    // Auto-sélectionner l'option manuelle
-                    selectSourceOption('manual');
-                    
-                    console.log('Données manuelles chargées avec succès!', manualReceptionData);
-                } else {
-                    console.log('Données présentes mais source != manual ou pks vides');
+                    console.log('Données manuelles chargées.', manualReceptionData);
                 }
             } catch (e) {
                 console.error('Erreur parsing données manuelles:', e);
             }
-        } else {
-            console.log('Aucune donnée dans sessionStorage');
         }
-        
-        // Initialiser le toggle label actif
-        document.getElementById('label-manual').classList.add('active');
     }
     
-    // Peupler les checkboxes avec les données manuelles
+    // Peupler les checkboxes avec les données manuelles (non utilisé en mode wizard-Excel)
     function populateManualCheckboxes() {
         if (!manualReceptionData) return;
-        
-        // PK checkboxes - NON cochés par défaut
         const pkContainer = document.getElementById('manual-pk-checkboxes');
+        if (!pkContainer) return;
         pkContainer.innerHTML = '';
         manualReceptionData.pks.forEach((pk, index) => {
             const div = document.createElement('div');
@@ -1852,6 +2269,18 @@
 
         // Vérifier les données manuelles au démarrage
         checkManualData();
+
+        // Options PDF (séparation par côté)
+        const optSeparer = document.getElementById('opt-separer-cotes');
+        const optIgnorer = document.getElementById('opt-ignorer-cotes');
+        if (optSeparer) optSeparer.addEventListener('change', function() {
+            separerParCote = this.checked;
+            if (this.checked && optIgnorer) { optIgnorer.checked = false; ignorerCotes = false; }
+        });
+        if (optIgnorer) optIgnorer.addEventListener('change', function() {
+            ignorerCotes = this.checked;
+            if (this.checked && optSeparer) { optSeparer.checked = false; separerParCote = false; }
+        });
 
         // Charger tous les onglets Excel simultanément
         async function loadAllSheetsData() {
@@ -2275,521 +2704,523 @@
         // Compteur de stations
         let stationCounter = 1;
         
-        // Ajouter une station de nivellement
-        function addStation(stationNum) {
+        // Tolérance courante (relue depuis le champ de l'étape 4)
+        function getCurrentTolerance() {
+            return (parseFloat(document.getElementById('tolerance').value) || 2) / 1000;
+        }
+
+        // Ajouter une station de nivellement (customPoints : optionnel, points filtrés pour cette station)
+        function addStation(stationNum, customPoints) {
+            const pointsForStation = customPoints || globalSelectedPoints;
             const container = document.getElementById('stations-container');
-            // Tolérance en mm, convertir en mètres
-            const toleranceMM = parseFloat(document.getElementById('tolerance').value) || 2;
-            const tolerance = toleranceMM / 1000;
-            
+
             const stationDiv = document.createElement('div');
             stationDiv.className = 'station-card';
             stationDiv.id = `station-${stationNum}`;
-            
+
             stationDiv.innerHTML = `
                 <div class="station-header">
                     <h4 class="station-title">Station de nivellement n°${stationNum}</h4>
-                    ${stationNum > 1 ? `<button class="btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="removeStation(${stationNum})">Supprimer</button>` : ''}
+                    ${stationNum > 1 ? `<button class="btn-secondary" style="padding:6px 12px;font-size:0.8rem;background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.3);" onclick="removeStation(${stationNum})">Supprimer</button>` : ''}
                 </div>
-                
-                <div class="station-params">
+
+                <div class="station-params" style="grid-template-columns: repeat(3, 1fr);">
                     <div class="station-param">
                         <label class="station-param-label">Cote du repère (m)</label>
-                        <input type="number" step="0.001" class="station-param-input cote-repere-station" data-station="${stationNum}" 
+                        <input type="number" step="0.001" class="station-param-input cote-repere-station" data-station="${stationNum}"
                                placeholder="Ex: 102.340" title="Altitude connue du repère utilisé">
                     </div>
                     <div class="station-param">
                         <label class="station-param-label">Lecture arrière L.A.R (m)</label>
-                        <input type="number" step="0.001" class="station-param-input lar-station" data-station="${stationNum}" 
-                               placeholder="Ex: 1.245" title="Lecture sur le repère">
+                        <input type="number" step="0.001" class="station-param-input lar-station" data-station="${stationNum}"
+                               placeholder="Ex: 1.245" title="Lecture arrière sur le repère">
                     </div>
-                    <div class="station-param">
+                    <div class="station-param" style="display:flex;flex-direction:column;gap:6px;">
                         <label class="station-param-label">Cote bleue / H.I. (m)</label>
-                        <input type="text" class="station-param-input computed cote-bleue-station" data-station="${stationNum}" 
-                               readonly value="-" title="Hauteur d'instrument = Cote repère + L.A.R">
-                    </div>
-                    <div class="station-param" id="pente-container-${stationNum}" style="display:none;">
-                        <label class="station-param-label">Pente transversale (%)</label>
-                        <div style="display:flex; gap:8px;">
-                            <input type="number" step="0.01" class="station-param-input pente-station" data-station="${stationNum}" 
-                                   placeholder="Ex: 2.5" style="flex:1;">
-                            <button onclick="recalculateAllCotes(${stationNum})" class="btn-primary" style="padding: 8px 12px; font-size: 0.8rem;">
-                                Recalculer
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <input type="text" class="station-param-input computed cote-bleue-station" data-station="${stationNum}"
+                                   style="flex:1;" readonly value="-" title="H.I. = Cote repère + L.A.R">
+                            <button class="btn-primary btn-validate-cote-bleue" data-station="${stationNum}"
+                                    style="padding:7px 12px;font-size:0.78rem;white-space:nowrap;flex-shrink:0;"
+                                    title="Recalculer et valider la cote bleue">
+                                ✓ Valider
                             </button>
                         </div>
                     </div>
+                    <div class="station-param" id="pente-container-${stationNum}" style="display:none;">
+                        <label class="station-param-label">Pente transversale (%)</label>
+                        <div style="display:flex;gap:8px;">
+                            <input type="number" step="0.01" class="station-param-input pente-station" data-station="${stationNum}"
+                                   placeholder="Ex: 2.5" style="flex:1;">
+                            <button onclick="recalculateAllCotes(${stationNum})" class="btn-primary" style="padding:8px 12px;font-size:0.8rem;">Recalculer</button>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="station-content">
-                    <div class="btn-group" style="margin-bottom: 16px; justify-content: flex-start;">
-                        <button class="btn-secondary add-interpolation-global-btn" data-station="${stationNum}" style="font-size: 0.85rem; padding: 10px 16px;">
-                            + Ajouter un point intermédiaire
+
+                <!-- Bouton Multi+ global — applique des distances à TOUS les PK -->
+                <div id="multi-global-btn-container-${stationNum}" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(22,163,74,0.06);border:1px solid rgba(22,163,74,0.2);border-radius:10px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <div>
+                            <div style="font-size:0.82rem;font-weight:700;color:#15803d;">⊕ Multi-points à la largeur — Tous les PK</div>
+                            <div style="font-size:0.72rem;color:#64748b;margin-top:2px;">Applique un ensemble de distances à chaque point kilométrique de la station</div>
+                        </div>
+                        <button onclick="openGlobalMultiDistModal(${stationNum})"
+                            style="display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,#16a34a,#15803d);color:white;border:none;border-radius:9px;font-weight:700;font-size:0.85rem;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(22,163,74,0.25);transition:all 0.2s;"
+                            onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform=''">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 4v16M4 12h16" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>
+                            Appliquer à tous les PK
                         </button>
                     </div>
-                    
+                </div>
+
+                <div class="station-content">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+                        <button class="btn-secondary add-interpolation-global-btn" data-station="${stationNum}"
+                                style="font-size:0.8rem;padding:7px 14px;display:inline-flex;align-items:center;gap:6px;">
+                            <span style="font-size:1rem;font-weight:700;">+</span> Point libre (choisir PK)
+                        </button>
+                    </div>
+
                     <div class="data-table-wrapper">
                         <table class="data-table">
-                            <thead>
-                                ${window.generateTableHeader()}
-                            </thead>
-                            <tbody id="tbody-station-${stationNum}">
-                            </tbody>
+                            <thead>${window.generateTableHeader()}</thead>
+                            <tbody id="tbody-station-${stationNum}"></tbody>
                         </table>
                     </div>
                 </div>
             `;
-            
+
             container.appendChild(stationDiv);
-            
+
+            // Afficher bouton Multi+ global si mode terrassement
+            if (receptionMode === 'terrassement') {
+                const mgBtn = document.getElementById(`multi-global-btn-container-${stationNum}`);
+                if (mgBtn) mgBtn.style.display = 'block';
+            }
+            // Afficher le champ pente si mode terrassement
+            if (receptionMode === 'terrassement') {
+                const pc = document.getElementById(`pente-container-${stationNum}`);
+                if (pc) pc.style.display = 'block';
+            }
+
             // Remplir le tableau avec les points
             const tbody = document.getElementById(`tbody-station-${stationNum}`);
-            const toleranceMetres = tolerance;
-            
+
             // Grouper les points par PK
             const pointsByPK = {};
-            globalSelectedPoints.forEach(point => {
-                if (!pointsByPK[point.pkValue]) {
-                    pointsByPK[point.pkValue] = [];
-                }
+            pointsForStation.forEach(point => {
+                if (!pointsByPK[point.pkValue]) pointsByPK[point.pkValue] = [];
                 pointsByPK[point.pkValue].push(point);
             });
-            
-            const uniquePKs = Object.keys(pointsByPK).sort((a, b) => {
-                return parsePKToMeters(a) - parsePKToMeters(b);
-            });
-            
-            // Ajouter les lignes et les boutons d'interpolation
+
+            const uniquePKs = Object.keys(pointsByPK).sort((a, b) => parsePKToMeters(a) - parsePKToMeters(b));
+
+            // Calculer le colspan selon le mode
+            function getColSpan() { return receptionMode === 'terrassement' ? 13 : 11; }
+
             uniquePKs.forEach((pkValue, pkIndex) => {
                 const pointsForThisPK = pointsByPK[pkValue];
-                
-                // Ajouter toutes les lignes pour ce PK
+
                 pointsForThisPK.forEach(point => {
-                    // Assigner le stationNum si pas déjà fait
-                    if (!point.stationNum) {
-                        point.stationNum = stationNum;
-                    }
-                    
+                    if (!point.stationNum) point.stationNum = stationNum;
+                    const label = point.label || point.coteName;
+                    const side = label.toLowerCase().includes('gauche') ? 'gauche'
+                               : label.toLowerCase().includes('droit')  ? 'droit' : '';
                     const tr = document.createElement('tr');
                     tr.className = 'data-row';
                     tr.setAttribute('data-pk', point.pkValue);
                     tr.setAttribute('data-cote-name', point.coteName);
                     tr.setAttribute('data-cote-theorique', point.coteTheorique);
-                    tr.setAttribute('data-element-label', point.label || point.coteName);
-                    tr.innerHTML = window.generateRowHTML(stationNum, point.pkValue, point.pkInMeters.toFixed(3), point.coteTheorique, false, point.label || point.coteName);
+                    tr.setAttribute('data-element-label', label);
+                    tr.setAttribute('data-validation-status', 'pending');
+                    if (side) tr.setAttribute('data-side', side);
+                    tr.innerHTML = window.generateRowHTML(stationNum, point.pkValue, point.pkInMeters.toFixed(3), point.coteTheorique, false, label);
                     tbody.appendChild(tr);
                 });
-                
-                // Ajouter un bouton d'interpolation entre ce PK et le suivant
+
+                // Bouton d'interpolation discret entre ce PK et le suivant
                 if (pkIndex < uniquePKs.length - 1) {
                     const nextPK = uniquePKs[pkIndex + 1];
                     const currentPKMeters = parsePKToMeters(pkValue);
                     const nextPKMeters = parsePKToMeters(nextPK);
-                    
                     const tr = document.createElement('tr');
-                    tr.className = 'interpolation-row';
-                    tr.style.background = 'var(--surface-2)';
-                    
-                    const colSpan = receptionMode === 'terrassement' ? 12 : 10; // +1 pour la colonne ÉLÉMENT
-                    
+                    tr.className = 'interpolation-row interp-sep-row';
                     tr.innerHTML = `
-                        <td colspan="${colSpan}" style="text-align:center; padding:12px;">
-                            <button class="btn-add-interpolation btn-mini" 
-                                    data-station="${stationNum}"
-                                    data-pk1="${pkValue}"
-                                    data-pk2="${nextPK}"
-                                    data-pk1-meters="${currentPKMeters}"
-                                    data-pk2-meters="${nextPKMeters}"
-                                    style="background: var(--accent-green-light); color: #166534; border-color: #86efac;">
-                                + Point entre ${pkValue} et ${nextPK}
-                            </button>
-                        </td>
-                    `;
+                        <td colspan="${getColSpan()}" style="padding:0;border-bottom:none;background:transparent;height:18px;">
+                            <div style="position:relative;display:flex;align-items:center;justify-content:center;height:18px;">
+                                <div style="position:absolute;left:0;right:0;height:1px;background:#e2e8f0;top:50%;"></div>
+                                <button class="btn-interp-plus btn-add-interpolation"
+                                        data-station="${stationNum}"
+                                        data-pk1="${pkValue}" data-pk2="${nextPK}"
+                                        data-pk1-meters="${currentPKMeters}" data-pk2-meters="${nextPKMeters}"
+                                        title="+ Point entre ${pkValue} et ${nextPK}">+</button>
+                            </div>
+                        </td>`;
                     tbody.appendChild(tr);
                 }
             });
-            
-            // Attacher les événements
-            attachStationCalculators(stationNum, tolerance);
-            
-            // Attacher les boutons d'interpolation
-            attachInterpolationButtons(stationNum, tolerance);
-            
-            // Attacher le bouton global d'interpolation
+
+            attachStationCalculators(stationNum);
+            attachInterpolationButtons(stationNum);
+
+            // Bouton "Point libre" (2e option interpolation)
             const globalBtn = document.querySelector(`.add-interpolation-global-btn[data-station="${stationNum}"]`);
             if (globalBtn) {
                 globalBtn.addEventListener('click', function() {
-                    showInterpolationModal(stationNum, tolerance, null, null, null, null);
+                    showInterpolationModal(stationNum, null, null, null, null);
                 });
             }
         }
-        
-        // Attacher les gestionnaires pour les boutons d'interpolation
-        function attachInterpolationButtons(stationNum, tolerance) {
+
+        // Attacher les boutons "entre deux PK consécutifs"
+        function attachInterpolationButtons(stationNum) {
             const buttons = document.querySelectorAll(`.btn-add-interpolation[data-station="${stationNum}"]`);
-            
             buttons.forEach(button => {
                 button.addEventListener('click', function() {
-                    const pk1 = this.dataset.pk1;
-                    const pk2 = this.dataset.pk2;
-                    const pk1Meters = parseFloat(this.dataset.pk1Meters);
-                    const pk2Meters = parseFloat(this.dataset.pk2Meters);
-                    
-                    showInterpolationModal(stationNum, tolerance, pk1, pk2, pk1Meters, pk2Meters);
+                    const pk1      = this.dataset.pk1;
+                    const pk2      = this.dataset.pk2;
+                    const pk1M     = parseFloat(this.dataset.pk1Meters);
+                    const pk2M     = parseFloat(this.dataset.pk2Meters);
+                    showInterpolationModal(stationNum, pk1, pk2, pk1M, pk2M);
                 });
             });
         }
         
+        // Lire les PK uniques directement depuis le DOM d'une station
+        function getStationPKsFromDOM(stationNum) {
+            const tbody = document.getElementById(`tbody-station-${stationNum}`);
+            if (!tbody) return [];
+            const pkMap = {};
+            tbody.querySelectorAll('tr.data-row').forEach(row => {
+                const pk = row.getAttribute('data-pk');
+                if (pk && !pkMap[pk]) {
+                    const distCell = row.querySelector('.distance-metrique-cell');
+                    pkMap[pk] = distCell ? parseFloat(distCell.textContent) : parsePKToMeters(pk);
+                }
+            });
+            return Object.keys(pkMap)
+                .sort((a, b) => pkMap[a] - pkMap[b])
+                .map(pk => ({ pkValue: pk, pkInMeters: pkMap[pk] }));
+        }
+
         // Afficher la modale d'interpolation
-        function showInterpolationModal(stationNum, tolerance, pk1, pk2, pk1Meters, pk2Meters) {
+        // pk1/pk2 = null → mode "choix libre" ; sinon = mode "entre deux PK connus"
+        function showInterpolationModal(stationNum, pk1, pk2, pk1Meters, pk2Meters) {
             const modal = document.getElementById('interpolation-modal');
             const distanceInput = document.getElementById('modal-distance-input');
             const encadrantsInfo = document.getElementById('modal-encadrants-info');
             const pkSelectionContainer = document.getElementById('pk-selection-container');
             const pk1Select = document.getElementById('modal-pk1-select');
             const pk2Select = document.getElementById('modal-pk2-select');
-            
-            // Réinitialiser
+
+            // Réinitialiser l'état de la modale
             distanceInput.value = '';
-            
-            // Mode manuel (PK1 et PK2 fournis) ou mode avec sélection
-            const isManualMode = (pk1 && pk2);
-            
+            distanceInput.oninput = null;
+            pk1Select.onchange = null;
+            pk2Select.onchange = null;
+            encadrantsInfo.style.display = 'none';
+            // Stocker le stationNum et le mode sur la modale pour y accéder dans le confirm
+            modal.dataset.stationNum = stationNum;
+            modal.dataset.manualMode = (pk1 !== null && pk2 !== null) ? '1' : '0';
+
+            const isManualMode = (pk1 !== null && pk2 !== null);
+
             if (isManualMode) {
-                // Mode entre deux PK consécutifs
+                // Mode entre deux PK consécutifs (bouton "+" discret)
                 pkSelectionContainer.style.display = 'none';
-                
+
                 const deltaD = pk2Meters - pk1Meters;
-                
-                // Afficher les informations d'encadrement
                 document.getElementById('modal-pk-avant').textContent = `PK ${pk1} (${pk1Meters.toFixed(3)} m)`;
                 document.getElementById('modal-pk-apres').textContent = `PK ${pk2} (${pk2Meters.toFixed(3)} m)`;
                 document.getElementById('modal-delta-d').textContent = deltaD.toFixed(3);
+                document.getElementById('modal-new-pk-display').textContent = '-';
+                document.getElementById('modal-d').textContent = '-';
+                document.getElementById('modal-ratio').textContent = '-';
                 encadrantsInfo.style.display = 'block';
-                
-                // Prévisualiser en temps réel
+
                 distanceInput.oninput = function() {
-                    const distanceValue = parseFloat(this.value);
-                    
-                    if (isNaN(distanceValue) || distanceValue <= 0 || distanceValue >= deltaD) {
+                    const d = parseFloat(this.value);
+                    if (isNaN(d) || d <= 0 || d >= deltaD) {
                         document.getElementById('modal-d').textContent = '-';
                         document.getElementById('modal-ratio').textContent = '-';
                         document.getElementById('modal-new-pk-display').textContent = '-';
                         return;
                     }
-                    
-                    const pkNewMeters = pk1Meters + distanceValue;
-                    const pkNewFormatted = metersToPK(pkNewMeters);
-                    const ratio = distanceValue / deltaD;
-                    
-                    document.getElementById('modal-new-pk-display').textContent = pkNewFormatted;
-                    document.getElementById('modal-d').textContent = distanceValue.toFixed(3);
-                    document.getElementById('modal-ratio').textContent = (ratio * 100).toFixed(2);
+                    document.getElementById('modal-new-pk-display').textContent = metersToPK(pk1Meters + d);
+                    document.getElementById('modal-d').textContent = d.toFixed(3);
+                    document.getElementById('modal-ratio').textContent = ((d / deltaD) * 100).toFixed(2);
                 };
+
             } else {
-                // Mode avec sélection de PK1 et PK2
+                // Mode "choix libre" — lire les PK disponibles directement depuis le DOM
                 pkSelectionContainer.style.display = 'block';
                 encadrantsInfo.style.display = 'none';
-                
-                // Récupérer tous les PK uniques de la station
-                const uniquePKs = [];
-                const pkData = {};
-                
-                globalSelectedPoints.forEach(point => {
-                    if (point.stationNum === stationNum) {
-                        if (!pkData[point.pkValue]) {
-                            pkData[point.pkValue] = {
-                                pkValue: point.pkValue,
-                                pkInMeters: point.pkInMeters
-                            };
-                            uniquePKs.push(point.pkValue);
-                        }
-                    }
+
+                // Récupérer les PKs présents dans la station
+                const domPKs = getStationPKsFromDOM(stationNum);
+
+                if (domPKs.length < 2) {
+                    alert('Il faut au moins 2 PK dans la station pour utiliser cette option.');
+                    return;
+                }
+
+                // Peupler les listes déroulantes
+                pk1Select.innerHTML = '<option value="">— PK de référence AVANT —</option>';
+                pk2Select.innerHTML = '<option value="">— PK de référence APRÈS —</option>';
+                domPKs.forEach(p => {
+                    const txt = `PK ${p.pkValue}  (${p.pkInMeters.toFixed(2)} m)`;
+                    const o1 = document.createElement('option');
+                    o1.value = p.pkValue;
+                    o1.textContent = txt;
+                    pk1Select.appendChild(o1);
+                    const o2 = document.createElement('option');
+                    o2.value = p.pkValue;
+                    o2.textContent = txt;
+                    pk2Select.appendChild(o2);
                 });
-                
-                // Trier les PK
-                uniquePKs.sort((a, b) => parsePKToMeters(a) - parsePKToMeters(b));
-                
-                // Remplir les selects avec des options améliorées
-                pk1Select.innerHTML = '<option value="">-- Choisissez un PK disponible --</option>';
-                pk2Select.innerHTML = '<option value="">-- Choisissez un PK disponible --</option>';
-                
-                uniquePKs.forEach((pk, index) => {
-                    const pkMeters = pkData[pk].pkInMeters;
-                    
-                    const option1 = document.createElement('option');
-                    option1.value = pk;
-                    option1.textContent = `📍 PK ${pk} (${pkMeters.toFixed(2)} m)`;
-                    option1.style.fontWeight = '600';
-                    option1.style.padding = '8px';
-                    pk1Select.appendChild(option1);
-                    
-                    const option2 = document.createElement('option');
-                    option2.value = pk;
-                    option2.textContent = `📍 PK ${pk} (${pkMeters.toFixed(2)} m)`;
-                    option2.style.fontWeight = '600';
-                    option2.style.padding = '8px';
-                    pk2Select.appendChild(option2);
-                });
-                
-                // Gérer les changements de sélection
+
+                // Pré-sélectionner PK1 = premier PK, PK2 = deuxième PK
+                if (domPKs.length >= 2) {
+                    pk1Select.value = domPKs[0].pkValue;
+                    pk2Select.value = domPKs[1].pkValue;
+                }
+
+                // Message d'erreur inline pour l'ordre PK1/PK2
+                let pkOrderMsg = pkSelectionContainer.querySelector('.pk-order-msg');
+                if (!pkOrderMsg) {
+                    pkOrderMsg = document.createElement('p');
+                    pkOrderMsg.className = 'pk-order-msg';
+                    pkOrderMsg.style.cssText = 'color:#dc2626;font-size:0.78rem;margin:6px 0 0;display:none;';
+                    pkSelectionContainer.appendChild(pkOrderMsg);
+                }
+
                 const updatePreview = () => {
-                    const selectedPK1 = pk1Select.value;
-                    const selectedPK2 = pk2Select.value;
-                    const distance = parseFloat(distanceInput.value);
-                    
-                    if (!selectedPK1 || !selectedPK2) {
-                        encadrantsInfo.style.display = 'none';
-                        return;
+                    const sel1 = pk1Select.value;
+                    const sel2 = pk2Select.value;
+                    if (!sel1 || !sel2) { encadrantsInfo.style.display = 'none'; pkOrderMsg.style.display = 'none'; return; }
+                    const p1 = domPKs.find(p => p.pkValue === sel1);
+                    const p2 = domPKs.find(p => p.pkValue === sel2);
+                    if (!p1 || !p2) { encadrantsInfo.style.display = 'none'; return; }
+                    if (sel1 === sel2) {
+                        pkOrderMsg.textContent = 'PK1 et PK2 doivent être différents.';
+                        pkOrderMsg.style.display = 'block';
+                        encadrantsInfo.style.display = 'none'; return;
                     }
-                    
-                    const pk1Data = pkData[selectedPK1];
-                    const pk2Data = pkData[selectedPK2];
-                    const pk1M = pk1Data.pkInMeters;
-                    const pk2M = pk2Data.pkInMeters;
-                    
-                    if (pk1M >= pk2M) {
-                        alert('Le PK2 doit être supérieur au PK1');
-                        encadrantsInfo.style.display = 'none';
-                        return;
+                    if (p1.pkInMeters >= p2.pkInMeters) {
+                        pkOrderMsg.textContent = `PK2 doit être après PK1. Inversez la sélection (PK1 = ${sel2}, PK2 = ${sel1}).`;
+                        pkOrderMsg.style.display = 'block';
+                        encadrantsInfo.style.display = 'none'; return;
                     }
-                    
-                    const deltaD = pk2M - pk1M;
-                    
-                    document.getElementById('modal-pk-avant').textContent = `PK ${selectedPK1} (${pk1M.toFixed(3)} m)`;
-                    document.getElementById('modal-pk-apres').textContent = `PK ${selectedPK2} (${pk2M.toFixed(3)} m)`;
-                    document.getElementById('modal-delta-d').textContent = deltaD.toFixed(3);
+                    pkOrderMsg.style.display = 'none';
+                    const dD = p2.pkInMeters - p1.pkInMeters;
+                    document.getElementById('modal-pk-avant').textContent = `PK ${sel1} (${p1.pkInMeters.toFixed(3)} m)`;
+                    document.getElementById('modal-pk-apres').textContent = `PK ${sel2} (${p2.pkInMeters.toFixed(3)} m)`;
+                    document.getElementById('modal-delta-d').textContent = dD.toFixed(3);
                     encadrantsInfo.style.display = 'block';
-                    
-                    if (!isNaN(distance) && distance > 0 && distance < deltaD) {
-                        const pkNewMeters = pk1M + distance;
-                        const pkNewFormatted = metersToPK(pkNewMeters);
-                        const ratio = distance / deltaD;
-                        
-                        document.getElementById('modal-new-pk-display').textContent = pkNewFormatted;
-                        document.getElementById('modal-d').textContent = distance.toFixed(3);
-                        document.getElementById('modal-ratio').textContent = (ratio * 100).toFixed(2);
+                    const dist = parseFloat(distanceInput.value);
+                    if (!isNaN(dist) && dist > 0 && dist < dD) {
+                        document.getElementById('modal-new-pk-display').textContent = metersToPK(p1.pkInMeters + dist);
+                        document.getElementById('modal-d').textContent = dist.toFixed(3);
+                        document.getElementById('modal-ratio').textContent = ((dist / dD) * 100).toFixed(2);
                     } else {
                         document.getElementById('modal-new-pk-display').textContent = '-';
                         document.getElementById('modal-d').textContent = '-';
                         document.getElementById('modal-ratio').textContent = '-';
                     }
                 };
-                
                 pk1Select.onchange = updatePreview;
                 pk2Select.onchange = updatePreview;
                 distanceInput.oninput = updatePreview;
+                // Déclencher immédiatement la prévisualisation si pré-sélection
+                updatePreview();
             }
-            
+
             modal.style.display = 'block';
-            
+
             document.getElementById('modal-confirm').onclick = () => {
+                // Lire le mode depuis l'attribut data (pas de risque de fermeture obsolète)
+                const modalStationNum = parseInt(modal.dataset.stationNum);
+                const manualMode = modal.dataset.manualMode === '1';
+
                 let finalPK1, finalPK2, finalPK1Meters, finalPK2Meters;
-                
-                if (isManualMode) {
-                    finalPK1 = pk1;
-                    finalPK2 = pk2;
-                    finalPK1Meters = pk1Meters;
-                    finalPK2Meters = pk2Meters;
+
+                if (manualMode) {
+                    // Les valeurs pk1/pk2/pk1Meters/pk2Meters sont dans la portée de la fermeture
+                    finalPK1 = pk1; finalPK2 = pk2;
+                    finalPK1Meters = pk1Meters; finalPK2Meters = pk2Meters;
                 } else {
-                    const selectedPK1 = pk1Select.value;
-                    const selectedPK2 = pk2Select.value;
-                    
-                    if (!selectedPK1 || !selectedPK2) {
-                        alert('Veuillez sélectionner les deux PK de référence');
+                    // Lire les sélections actuelles dans les listes
+                    const sel1 = pk1Select.value;
+                    const sel2 = pk2Select.value;
+                    if (!sel1 || !sel2) {
+                        alert('Veuillez sélectionner les deux PK de référence.');
                         return;
                     }
-                    
-                    const pkData1 = globalSelectedPoints.find(p => p.pkValue === selectedPK1 && p.stationNum === stationNum);
-                    const pkData2 = globalSelectedPoints.find(p => p.pkValue === selectedPK2 && p.stationNum === stationNum);
-                    
-                    finalPK1 = selectedPK1;
-                    finalPK2 = selectedPK2;
-                    finalPK1Meters = pkData1.pkInMeters;
-                    finalPK2Meters = pkData2.pkInMeters;
-                    
-                    if (finalPK1Meters >= finalPK2Meters) {
-                        alert('Le PK2 doit être supérieur au PK1');
+                    if (sel1 === sel2) {
+                        alert('PK1 et PK2 doivent être différents.');
                         return;
                     }
+                    // Relire les données depuis le DOM (robuste même si des lignes ont été ajoutées)
+                    const freshPKs = getStationPKsFromDOM(modalStationNum);
+                    const p1 = freshPKs.find(p => p.pkValue === sel1);
+                    const p2 = freshPKs.find(p => p.pkValue === sel2);
+                    if (!p1 || !p2) {
+                        alert(`PK introuvables dans le tableau.\nPK1="${sel1}", PK2="${sel2}"\nVérifiez que les lignes existent bien.`);
+                        return;
+                    }
+                    if (p1.pkInMeters >= p2.pkInMeters) {
+                        alert(`Le PK de référence AVANT (${sel1}) doit être situé avant le PK APRÈS (${sel2}).\nInversez la sélection.`);
+                        return;
+                    }
+                    finalPK1 = sel1; finalPK2 = sel2;
+                    finalPK1Meters = p1.pkInMeters; finalPK2Meters = p2.pkInMeters;
                 }
-                
+
                 const distance = parseFloat(distanceInput.value);
                 const deltaD = finalPK2Meters - finalPK1Meters;
-                
                 if (isNaN(distance) || distance <= 0) {
-                    alert('Veuillez entrer une distance valide (nombre positif)');
+                    alert('Veuillez entrer une distance positive (en mètres).');
                     return;
                 }
-                
                 if (distance >= deltaD) {
-                    alert(`La distance doit être inférieure à ${deltaD.toFixed(3)} mètres`);
+                    alert(`La distance doit être strictement inférieure à ${deltaD.toFixed(3)} m (intervalle entre PK1 et PK2).`);
                     return;
                 }
-                
+
                 const pkNewMeters = finalPK1Meters + distance;
                 const pkNewVal = metersToPK(pkNewMeters);
-                
-                // Insérer les lignes interpolées
-                insertInterpolatedRows(stationNum, pkNewVal, pkNewMeters, finalPK1, finalPK2, finalPK1Meters, finalPK2Meters, tolerance);
-                
+                insertInterpolatedRows(modalStationNum, pkNewVal, pkNewMeters, finalPK1, finalPK2, finalPK1Meters, finalPK2Meters);
                 modal.style.display = 'none';
             };
-            
+
             document.getElementById('modal-cancel').onclick = () => {
                 modal.style.display = 'none';
             };
         }
-        
-        // Insérer les lignes interpolées pour toutes les côtes
-        function insertInterpolatedRows(stationNum, pkNewVal, pkNewMeters, pk1, pk2, pk1Meters, pk2Meters, tolerance) {
+
+        // Insérer les lignes interpolées — lit les données directement depuis le DOM du tableau
+        function insertInterpolatedRows(stationNum, pkNewVal, pkNewMeters, pk1, pk2, pk1Meters, pk2Meters) {
             const tbody = document.getElementById(`tbody-station-${stationNum}`);
-            
-            // Récupérer tous les points de la station
-            const allPointsData = [];
-            globalSelectedPoints.forEach(point => {
-                if (point.stationNum === stationNum) {
-                    allPointsData.push({
-                        pkValue: point.pkValue,
-                        pkInMeters: point.pkInMeters,
-                        coteName: point.coteName,
-                        coteTheorique: point.coteTheorique
-                    });
-                }
+            if (!tbody) return;
+
+            const ratio = (pkNewMeters - pk1Meters) / (pk2Meters - pk1Meters);
+
+            // Lire les côtes de PK1 et PK2 depuis le DOM
+            const cotesByPK = {};
+            tbody.querySelectorAll('tr.data-row').forEach(row => {
+                const pk = row.getAttribute('data-pk');
+                if (pk !== pk1 && pk !== pk2) return;
+                const coteName  = row.getAttribute('data-cote-name');
+                const coteVal   = parseFloat(row.getAttribute('data-cote-theorique'));
+                const elemLabel = row.getAttribute('data-element-label') || coteName;
+                if (!cotesByPK[pk]) cotesByPK[pk] = {};
+                cotesByPK[pk][coteName] = { coteTheorique: coteVal, label: elemLabel };
             });
-            
-            // Calculer le ratio d'interpolation
-            const deltaD = pk2Meters - pk1Meters;
-            const d = pkNewMeters - pk1Meters;
-            const ratio = d / deltaD;
-            
-            console.log(`🔍 Interpolation: PK ${pkNewVal}, ratio = ${(ratio * 100).toFixed(2)}%`);
-            
-            // Grouper les points par côte pour PK1 et PK2
-            const pointsPK1ByCote = {};
-            const pointsPK2ByCote = {};
-            
-            allPointsData.forEach(point => {
-                if (point.pkValue === pk1) {
-                    pointsPK1ByCote[point.coteName] = point;
-                }
-                if (point.pkValue === pk2) {
-                    pointsPK2ByCote[point.coteName] = point;
-                }
-            });
-            
-            let insertedCount = 0;
+
+            const cotesPK1 = cotesByPK[pk1] || {};
+            const cotesPK2 = cotesByPK[pk2] || {};
+
+            if (!Object.keys(cotesPK1).length) {
+                alert(`Aucune donnée trouvée pour le PK ${pk1}. Vérifiez la sélection.`);
+                return;
+            }
+
             const newRows = [];
-            
-            console.log(`📊 Interpolation des côtes:`);
-            console.log(`   Points PK1 (${pk1}):`, Object.keys(pointsPK1ByCote));
-            console.log(`   Points PK2 (${pk2}):`, Object.keys(pointsPK2ByCote));
-            
-            // Interpoler pour chaque côte
-            Object.keys(pointsPK1ByCote).forEach(coteName => {
-                const cotePK1 = pointsPK1ByCote[coteName];
-                const cotePK2 = pointsPK2ByCote[coteName];
-                
-                if (!cotePK2) {
-                    console.warn(`   ⚠️ Côte ${coteName} manquante au PK2`);
-                    return;
-                }
-                
-                const C1 = cotePK1.coteTheorique;
-                const C2 = cotePK2.coteTheorique;
-                
-                // Interpolation linéaire : C_nouveau = C1 + ratio × (C2 - C1)
-                const coteInterpolated = C1 + ratio * (C2 - C1);
-                
-                console.log(`   ✅ ${coteName}: ${C1.toFixed(3)} → ${coteInterpolated.toFixed(3)} → ${C2.toFixed(3)}`);
-                
-                // Créer la nouvelle ligne
-                const elementLabel = cotePK1.label || coteName;
+            Object.keys(cotesPK1).forEach(coteName => {
+                const c1 = cotesPK1[coteName];
+                const c2 = cotesPK2[coteName];
+                if (!c2) return; // côte absente au PK2
+
+                const coteInterp = c1.coteTheorique + ratio * (c2.coteTheorique - c1.coteTheorique);
                 const tr = document.createElement('tr');
                 tr.className = 'data-row row-interpolated';
                 tr.setAttribute('data-pk', pkNewVal);
                 tr.setAttribute('data-cote-name', coteName);
-                tr.setAttribute('data-cote-theorique', coteInterpolated);
-                tr.setAttribute('data-element-label', elementLabel);
-                tr.innerHTML = window.generateRowHTML(stationNum, pkNewVal, pkNewMeters.toFixed(3), coteInterpolated, true, elementLabel);
-                
-                console.log(`      HTML généré: ${tr.innerHTML.substring(0, 100)}...`);
-                
+                tr.setAttribute('data-cote-theorique', coteInterp);
+                tr.setAttribute('data-element-label', c1.label);
+                tr.setAttribute('data-validation-status', 'pending');
+                const sideInterp = c1.label.toLowerCase().includes('gauche') ? 'gauche'
+                                 : c1.label.toLowerCase().includes('droit')  ? 'droit' : '';
+                if (sideInterp) tr.setAttribute('data-side', sideInterp);
+                tr.innerHTML = window.generateRowHTML(stationNum, pkNewVal, pkNewMeters.toFixed(3), coteInterp, true, c1.label);
                 newRows.push(tr);
-                insertedCount++;
             });
-            
-            // Trouver où insérer les nouvelles lignes
-            const allRows = Array.from(tbody.querySelectorAll('tr'));
-            let insertBeforeRow = null;
-            
-            console.log(`📍 Recherche position d'insertion pour PK ${pkNewVal} entre ${pk1} et ${pk2}`);
-            console.log(`   Nombre total de lignes: ${allRows.length}`);
-            
-            // Trouver la première ligne du PK2 ou le bouton d'interpolation
-            for (let i = 0; i < allRows.length; i++) {
-                const row = allRows[i];
+
+            if (!newRows.length) {
+                alert('Aucune côte interpolable entre ces deux PK.');
+                return;
+            }
+
+            // Position d'insertion : avant le bouton [pk1→pk2] ou avant la 1re ligne du PK2
+            let anchor = null;
+            for (const row of tbody.querySelectorAll('tr')) {
                 if (row.classList.contains('interpolation-row')) {
                     const btn = row.querySelector('.btn-add-interpolation');
-                    if (btn && btn.dataset.pk1 === pk1) {
-                        insertBeforeRow = row;
-                        console.log(`   ✅ Insertion avant le bouton d'interpolation (ligne ${i})`);
-                        break;
-                    }
-                } else if (row.getAttribute('data-pk') === pk2) {
-                    insertBeforeRow = row;
-                    console.log(`   ✅ Insertion avant la première ligne du PK2 (ligne ${i})`);
-                    break;
-                }
+                    if (btn && btn.dataset.pk1 === pk1 && btn.dataset.pk2 === pk2) { anchor = row; break; }
+                } else if (row.getAttribute('data-pk') === pk2) { anchor = row; break; }
             }
-            
-            // Insérer les nouvelles lignes
-            if (insertBeforeRow) {
-                console.log(`   ✅ Insertion de ${newRows.length} lignes`);
-                newRows.forEach((tr, idx) => {
-                    insertBeforeRow.parentNode.insertBefore(tr, insertBeforeRow);
-                    console.log(`      - Ligne ${idx + 1} insérée`);
-                });
-            } else {
-                console.warn(`   ⚠️ Position d'insertion non trouvée, ajout à la fin du tbody`);
-                newRows.forEach(tr => {
-                    tbody.appendChild(tr);
-                });
-            }
-            
-            // Réattacher les calculateurs
-            attachStationCalculators(stationNum, tolerance);
-            
-            alert(`Point interpolé ajouté : PK ${pkNewVal}\n${insertedCount} côte(s) interpolée(s)`);
+            newRows.forEach(tr => anchor ? tbody.insertBefore(tr, anchor) : tbody.appendChild(tr));
+
+            // Rattacher les écouteurs LAV sur les nouvelles lignes
+            attachStationCalculators(stationNum);
+
+            alert(`Point interpolé ajouté : PK ${pkNewVal}\n${newRows.length} côte(s) interpolée(s)`);
         }
         
         // Gestionnaires de calcul pour une station
-        function attachStationCalculators(stationNum, tolerance) {
+        function attachStationCalculators(stationNum) {
             const coteRepereInput = document.querySelector(`.cote-repere-station[data-station="${stationNum}"]`);
             const larInput = document.querySelector(`.lar-station[data-station="${stationNum}"]`);
             const coteBleueInput = document.querySelector(`.cote-bleue-station[data-station="${stationNum}"]`);
-            const lavInputs = document.querySelectorAll(`.lav-input[data-station="${stationNum}"]`);
-            
-            // Calculer la cote bleue
+            const validateBtn = document.querySelector(`.btn-validate-cote-bleue[data-station="${stationNum}"]`);
+
+            // Recalcule la cote bleue (Cote repère + LAR)
             function updateCoteBleue() {
                 const coteRepere = parseFloat(coteRepereInput.value);
                 const lar = parseFloat(larInput.value);
-                
                 if (!isNaN(coteRepere) && !isNaN(lar)) {
-                    const coteBleue = coteRepere + lar;
-                    coteBleueInput.value = coteBleue.toFixed(3);
-                    updateAllPoints();
+                    coteBleueInput.value = (coteRepere + lar).toFixed(3);
                 } else {
                     coteBleueInput.value = '-';
                 }
             }
-            
+
+            // Bouton "Valider" : recalcule cote bleue puis met à jour tous les LAV
+            if (validateBtn) {
+                validateBtn.addEventListener('click', () => {
+                    updateCoteBleue();
+                    updateAllPoints();
+                });
+            }
+
+            // Recalcule automatique dès qu'on saisit le repère ou LAR
+            coteRepereInput.addEventListener('input', updateCoteBleue);
+            larInput.addEventListener('input', updateCoteBleue);
+
+            // Recalcule les cotes mesurées dès qu'un LAV change
+            function getLavInputs() {
+                return document.querySelectorAll(`.lav-input[data-station="${stationNum}"]`);
+            }
+
+            function attachLavListeners() {
+                getLavInputs().forEach(inp => {
+                    if (!inp.dataset.listenerAttached) {
+                        inp.dataset.listenerAttached = '1';
+                        inp.addEventListener('input', updateAllPoints);
+                    }
+                });
+            }
+
+            attachLavListeners();
+
             // Mettre à jour tous les points
             function updateAllPoints() {
                 const coteBleue = parseFloat(coteBleueInput.value);
                 const lar = parseFloat(larInput.value);
                 if (isNaN(coteBleue)) return;
-                
-                const toleranceMetres = tolerance; // Convertir cm en mètres
+
+                const toleranceMetres = getCurrentTolerance();
+                const lavInputs = getLavInputs();
                 
                 lavInputs.forEach(lavInput => {
                     const lav = parseFloat(lavInput.value);
@@ -2798,25 +3229,18 @@
                     const coteMesureeCell = row.querySelector('.cote-mesuree-cell');
                     const ecartPositifCell = row.querySelector('.ecart-positif-cell');
                     const ecartNegatifCell = row.querySelector('.ecart-negatif-cell');
-                    const observationCell = row.querySelector('.observation-cell');
+                    // Utiliser obs-auto-text pour préserver le bouton notes
+                    const obsAutoText = row.querySelector('.obs-auto-text');
                     const coteTheorique = parseFloat(lavInput.dataset.theorique);
-                    
-                    // Afficher la LAR dans toutes les lignes
-                    if (!isNaN(lar)) {
-                        larCell.textContent = lar.toFixed(3);
-                    } else {
-                        larCell.textContent = '-';
-                    }
-                    
+
+                    if (!isNaN(lar)) { larCell.textContent = lar.toFixed(3); }
+                    else { larCell.textContent = '-'; }
+
                     if (!isNaN(lav)) {
-                        // Cote mesurée = Cote bleue - L.A.V
                         const coteMesuree = coteBleue - lav;
                         coteMesureeCell.textContent = coteMesuree.toFixed(3);
-                        
-                        // Écart en mètres
                         const ecartMetres = coteMesuree - coteTheorique;
-                        
-                        // Séparer les écarts positifs et négatifs
+
                         if (ecartMetres > 0) {
                             ecartPositifCell.textContent = ecartMetres.toFixed(3);
                             ecartNegatifCell.textContent = '-';
@@ -2833,47 +3257,52 @@
                             ecartPositifCell.style.background = '#dcfce7';
                             ecartNegatifCell.style.background = '#dcfce7';
                         }
-                        
-                        // Observation automatique
+
                         if (Math.abs(ecartMetres) <= toleranceMetres) {
-                            observationCell.textContent = 'Côte conforme';
-                            observationCell.style.color = '#16a34a';
+                            if (obsAutoText) { obsAutoText.textContent = 'Conforme'; obsAutoText.style.color = '#16a34a'; }
                             row.classList.remove('ecart-positif', 'ecart-negatif');
                             row.classList.add('ecart-ok');
                         } else {
-                            observationCell.textContent = 'Côte non conforme';
-                            observationCell.style.color = '#dc2626';
+                            if (obsAutoText) { obsAutoText.textContent = 'Non conforme'; obsAutoText.style.color = '#dc2626'; }
                             row.classList.remove('ecart-ok');
-                            if (ecartMetres > 0) {
-                                row.classList.add('ecart-positif');
-                                row.classList.remove('ecart-negatif');
-                            } else {
-                                row.classList.add('ecart-negatif');
-                                row.classList.remove('ecart-positif');
-                            }
+                            if (ecartMetres > 0) { row.classList.add('ecart-positif'); row.classList.remove('ecart-negatif'); }
+                            else { row.classList.add('ecart-negatif'); row.classList.remove('ecart-positif'); }
                         }
                     } else {
                         coteMesureeCell.textContent = '-';
                         ecartPositifCell.textContent = '-';
                         ecartNegatifCell.textContent = '-';
-                        observationCell.textContent = '-';
-                        observationCell.style.color = '#000';
+                        if (obsAutoText) { obsAutoText.textContent = '-'; obsAutoText.style.color = ''; }
                         ecartPositifCell.style.background = '';
                         ecartNegatifCell.style.background = '';
                         row.classList.remove('ecart-positif', 'ecart-negatif', 'ecart-ok');
                     }
                 });
             }
-            
-            coteRepereInput.addEventListener('input', updateCoteBleue);
-            larInput.addEventListener('input', updateCoteBleue);
-            lavInputs.forEach(input => input.addEventListener('input', updateAllPoints));
+
         }
-        
-        // Bouton pour ajouter une nouvelle station
+
+        // Bouton pour ajouter une nouvelle station — ne reprend que les points non validés
         document.getElementById('add-station-btn').addEventListener('click', () => {
             stationCounter++;
-            addStation(stationCounter);
+            // Collecter les combinaisons PK+côte déjà validées
+            const validatedKeys = new Set();
+            document.querySelectorAll('tr.data-row[data-validation-status="validated"]').forEach(row => {
+                const pk   = row.getAttribute('data-pk');
+                const cote = row.getAttribute('data-cote-name');
+                if (pk && cote) validatedKeys.add(`${pk}|${cote}`);
+            });
+            if (validatedKeys.size > 0) {
+                const filtered = globalSelectedPoints.filter(p => !validatedKeys.has(`${p.pkValue}|${p.coteName}`));
+                if (filtered.length === 0) {
+                    alert('Tous les points sont validés — aucun point disponible pour une nouvelle station.');
+                    stationCounter--;
+                    return;
+                }
+                addStation(stationCounter, filtered);
+            } else {
+                addStation(stationCounter);
+            }
         });
         
         // Bouton de bascule entre Assainissement et Terrassement - Vérifier si le bouton existe
@@ -2901,52 +3330,96 @@
         window.regenerateAllStations = function() {
             // Récupérer toutes les stations existantes
             const stations = document.querySelectorAll('[id^="station-"]');
-            
+
             stations.forEach(stationDiv => {
                 const stationNum = parseInt(stationDiv.id.replace('station-', ''));
                 const tbody = stationDiv.querySelector('tbody');
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-                
-                // Afficher/masquer le champ pente selon le mode
+                // Ne traiter QUE les lignes de données (pas les séparateurs d'interpolation)
+                const rows = Array.from(tbody.querySelectorAll('tr.data-row'));
+
+                // Afficher/masquer le champ pente + bouton multi-global selon le mode
                 const penteContainer = document.getElementById(`pente-container-${stationNum}`);
                 if (penteContainer) {
                     penteContainer.style.display = receptionMode === 'terrassement' ? 'block' : 'none';
                 }
-                
+                const multiGlobalBtn = document.getElementById(`multi-global-btn-container-${stationNum}`);
+                if (multiGlobalBtn) {
+                    multiGlobalBtn.style.display = receptionMode === 'terrassement' ? 'block' : 'none';
+                }
+
                 // Recréer l'en-tête du tableau
                 const table = stationDiv.querySelector('table');
                 const thead = table.querySelector('thead');
                 thead.innerHTML = generateTableHeader();
-                
-                // Recréer chaque ligne avec le nouveau format
+
+                // Recréer chaque ligne de données avec le nouveau format
                 rows.forEach(row => {
                     const pkValue = row.getAttribute('data-pk');
                     const coteName = row.getAttribute('data-cote-name');
                     const coteTheorique = parseFloat(row.getAttribute('data-cote-theorique'));
                     const isInterpolated = row.classList.contains('row-interpolated');
-                    
+
                     // Récupérer les valeurs existantes si présentes
                     const lavInput = row.querySelector('.lav-input');
                     const lavValue = lavInput ? lavInput.value : '';
-                    
+                    // Conserver le statut de validation
+                    const validStatus = row.getAttribute('data-validation-status') || 'pending';
+                    // Conserver le côté (gauche/droit)
+                    const side = row.getAttribute('data-side') || '';
+                    // Conserver les observations
+                    const rowObs = row.getAttribute('data-row-obs') || '[]';
+
                     // Récupérer la distance métrique
                     const distanceMetrique = row.querySelector('.distance-metrique-cell')?.textContent || '0.000';
                     // Récupérer le label de l'élément
                     const elementLabel = row.getAttribute('data-element-label') || coteName || '';
 
-                    // Régénérer la ligne
+                    // Régénérer le contenu de la ligne (innerHTML uniquement)
                     row.innerHTML = generateRowHTML(stationNum, pkValue, distanceMetrique, coteTheorique, isInterpolated, elementLabel);
-                    
+
+                    // Restaurer les attributs de données
+                    row.setAttribute('data-validation-status', validStatus);
+                    if (side) row.setAttribute('data-side', side);
+                    row.setAttribute('data-row-obs', rowObs);
+
+                    // Restaurer l'état du bouton de validation
+                    const validBtn = row.querySelector('.btn-validation');
+                    if (validBtn && validStatus !== 'pending') {
+                        const states = { validated: { cls: 'validated', label: '✓', title: 'Validé' }, 'to-check': { cls: 'to-check', label: '⚠', title: 'À vérifier' } };
+                        const s = states[validStatus];
+                        if (s) {
+                            validBtn.classList.remove('pending');
+                            validBtn.classList.add(s.cls);
+                            validBtn.textContent = s.label;
+                            validBtn.title = s.title;
+                        }
+                    }
+
                     // Restaurer la valeur LAV si elle existait
                     if (lavValue) {
-                        row.querySelector('.lav-input').value = lavValue;
+                        const newLav = row.querySelector('.lav-input');
+                        if (newLav) newLav.value = lavValue;
                     }
+
+                    // Restaurer indicateur notes si observations présentes
+                    try {
+                        const obs = JSON.parse(rowObs);
+                        if (obs.length > 0) {
+                            const notesBtn = row.querySelector('.btn-obs-notes');
+                            if (notesBtn) notesBtn.classList.add('has-notes');
+                        }
+                    } catch(e) {}
                 });
-                
-                // Réattacher les calculateurs (tolérance en mm -> mètres)
-                const toleranceMM = parseFloat(document.getElementById('tolerance').value) || 2;
-                const tolerance = toleranceMM / 1000;
-                attachStationCalculators(stationNum, tolerance);
+
+                // Mettre à jour le colspan des séparateurs d'interpolation selon le mode actuel
+                const colSpan = receptionMode === 'terrassement' ? 13 : 11;
+                tbody.querySelectorAll('tr.interp-sep-row td').forEach(td => {
+                    td.setAttribute('colspan', colSpan);
+                });
+
+                // Réattacher les calculateurs et les boutons d'interpolation
+                attachStationCalculators(stationNum);
+                attachInterpolationButtons(stationNum);
             });
         }
         
@@ -3108,78 +3581,216 @@
         }
         
         // Fonction globale pour ajouter un sous-point
-        window.addSubPoint = function(button, pkValue, coteAxe, distanceMetrique, stationNum) {
-            const row = button.closest('tr');
-            const tbody = row.parentNode;
-            
-            // Récupérer la pente de la station
+        // ─── Créer une ligne sous-point (terrassement) ───────────────────────────
+        // Fonction interne réutilisée par addSubPoint et validateMultiDist
+        function _createSubPointRow(stationNum, pkValue, coteAxe, distanceMetrique, distance, elementLabel) {
             const penteInput = document.querySelector(`.pente-station[data-station="${stationNum}"]`);
-            if (!penteInput) {
-                alert('Erreur: impossible de trouver la pente de la station');
-                return;
-            }
-            
-            const pente = parseFloat(penteInput.value);
-            if (isNaN(pente)) {
-                alert('Veuillez d\'abord définir la pente transversale en haut de la station');
-                return;
-            }
-            
-            // Demander la distance à l'axe
-            const distanceAxe = prompt('Entrez la distance à l\'axe (en mètres) :\n\nExemple: 3.5 pour 3,50 m', '0.000');
-            
-            if (distanceAxe === null) return; // Annulé
-            
-            const distance = parseFloat(distanceAxe);
-            if (isNaN(distance)) {
-                alert('Distance invalide. Veuillez entrer un nombre.');
-                return;
-            }
-            
-            // Calculer la nouvelle cote théorique : Z_point = Z_axe + (distance × pente/100)
+            const pente = penteInput ? parseFloat(penteInput.value) : NaN;
+            if (isNaN(pente)) return null;
+
             const nouvelleCote = coteAxe + (distance * pente / 100);
-            
-            // Créer une nouvelle ligne pour le sous-point
-            const newRow = document.createElement('tr');
-            newRow.className = 'data-row sub-point-row';
-            newRow.style.background = 'var(--accent-orange-light)';
-            newRow.setAttribute('data-pk', pkValue);
-            newRow.setAttribute('data-cote-theorique', coteAxe);
-            
-            newRow.innerHTML = `
-                <td style="padding-left:20px; font-style: italic;">└ ${pkValue}</td>
+            const side = elementLabel && elementLabel.toLowerCase().includes('gauche') ? 'gauche'
+                       : elementLabel && elementLabel.toLowerCase().includes('droit')  ? 'droit' : '';
+
+            const tr = document.createElement('tr');
+            tr.className = 'data-row sub-point-row';
+            tr.setAttribute('data-pk', pkValue);
+            tr.setAttribute('data-cote-theorique', nouvelleCote);
+            tr.setAttribute('data-cote-name', elementLabel || '');
+            tr.setAttribute('data-element-label', elementLabel || '');
+            tr.setAttribute('data-validation-status', 'pending');
+            if (side) tr.setAttribute('data-side', side);
+
+            const subLabel = `${distance.toFixed(3)} m / axe`;
+
+            tr.innerHTML = `
+                <td style="text-align:center;padding:4px 6px;color:#94a3b8;font-size:0.75rem;">·</td>
+                <td class="sub-label-cell element-label-cell">${subLabel}</td>
                 <td class="distance-metrique-cell">${distanceMetrique}</td>
                 <td>
-                    <input type="number" step="0.001" class="dist-axe-input table-input" placeholder="0.000" 
+                    <input type="number" step="0.001" class="dist-axe-input table-input"
                            data-cote-axe="${coteAxe}" data-pk="${pkValue}" data-station="${stationNum}"
                            value="${distance.toFixed(3)}"
-                           style="background: var(--accent-orange-light);"
                            oninput="calculateCoteFromDistance(this)">
                 </td>
                 <td class="lar-cell computed">-</td>
-                <td>
-                    <input type="number" step="0.001" class="lav-input table-input" data-station="${stationNum}" 
-                           data-theorique="${nouvelleCote}" placeholder="1.234">
-                </td>
+                <td><input type="number" step="0.001" class="lav-input table-input"
+                           data-station="${stationNum}" data-theorique="${nouvelleCote}" placeholder="1.234"></td>
                 <td class="cote-mesuree-cell computed">-</td>
                 <td class="cote-theorique-cell cote-theorique-value">${nouvelleCote.toFixed(3)}</td>
                 <td class="ecart-positif-cell">-</td>
                 <td class="ecart-negatif-cell">-</td>
-                <td class="observation-cell">-</td>
-                <td>
-                    <button class="btn-mini" style="background: var(--accent-red-light); color: #dc2626; border-color: #fca5a5;"
-                            onclick="this.closest('tr').remove()" 
-                            title="Supprimer ce sous-point">×</button>
+                <td style="text-align:center;padding:4px 3px;">
+                    <button class="btn-validation pending" onclick="cycleValidation(this)" title="En attente">—</button>
                 </td>
-            `;
-            
-            // Insérer après la ligne courante
-            row.parentNode.insertBefore(newRow, row.nextSibling);
-            
-            // Réattacher les événements (tolérance en mm -> mètres)
-            const toleranceMM = parseFloat(document.getElementById('tolerance').value) || 2;
-            const tolerance = toleranceMM / 1000;
-            attachStationCalculators(stationNum, tolerance);
+                <td class="observation-cell" style="text-align:left;padding:4px 8px;font-size:0.78rem;">
+                    <span class="obs-auto-text" style="color:var(--text-muted);">-</span>
+                    <button class="btn-obs-notes" onclick="openObsModal(this.closest('tr'))" title="Notes / photos">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Notes
+                    </button>
+                </td>
+                <td style="text-align:center;padding:3px;">
+                    <button class="btn-mini" style="background:rgba(220,38,38,0.08);color:#dc2626;border:1px solid #fca5a5;width:20px;height:20px;font-size:0.85rem;"
+                            onclick="this.closest('tr').remove()" title="Supprimer">×</button>
+                </td>`;
+            return { tr, stationNum, nouvelleCote };
+        }
+
+        // Compatibilité ascendante (ancienne API — non utilisée dans le nouveau code mais conservée)
+        window.addSubPoint = function(button, pkValue, coteAxe, distanceMetrique, stationNum) {
+            const row = button.closest('tr');
+            const penteInput = document.querySelector(`.pente-station[data-station="${stationNum}"]`);
+            if (!penteInput || isNaN(parseFloat(penteInput.value))) {
+                alert('Veuillez d\'abord définir la pente transversale.');
+                return;
+            }
+            const distStr = prompt('Distance à l\'axe (m) :', '1.000');
+            if (distStr === null) return;
+            const dist = parseFloat(distStr);
+            if (isNaN(dist)) { alert('Distance invalide.'); return; }
+            const elemLabel = row.getAttribute('data-element-label') || '';
+            const result = _createSubPointRow(stationNum, pkValue, coteAxe, distanceMetrique, dist, elemLabel);
+            if (!result) { alert('Veuillez définir la pente transversale.'); return; }
+            row.parentNode.insertBefore(result.tr, row.nextSibling);
+            attachStationCalculators(stationNum);
+        };
+
+        // ─── MODAL MULTI+ ─────────────────────────────────────────────────────────
+        let _multiDistCtx = null; // contexte courant du modal
+
+        window.openMultiDistModal = function(btn, pkValue, coteAxe, distanceMetrique, stationNum) {
+            const row = btn.closest('tr');
+            const elemLabel = row ? (row.getAttribute('data-element-label') || '') : '';
+            const penteInput = document.querySelector(`.pente-station[data-station="${stationNum}"]`);
+
+            if (!penteInput || isNaN(parseFloat(penteInput.value))) {
+                alert('Veuillez d\'abord définir la pente transversale de la station avant d\'ajouter des points à la largeur.');
+                return;
+            }
+
+            _multiDistCtx = { row, pkValue, coteAxe, distanceMetrique, stationNum, elemLabel,
+                               pente: parseFloat(penteInput.value) };
+
+            // Sous-titre
+            document.getElementById('multi-dist-subtitle').textContent =
+                `PK ${pkValue} · Axe Z = ${coteAxe} · Pente = ${_multiDistCtx.pente}%`;
+
+            // Vider les entrées
+            document.getElementById('multi-dist-entries').innerHTML = '';
+
+            // Prés-sets
+            const presetsDiv = document.getElementById('multi-dist-presets');
+            presetsDiv.innerHTML = '';
+            [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0].forEach(d => {
+                const btn2 = document.createElement('button');
+                btn2.textContent = d + ' m';
+                btn2.style.cssText = 'padding:4px 10px;border-radius:6px;border:1px solid #d1fae5;background:#f0fdf4;color:#16a34a;font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.15s;';
+                btn2.onmouseover = () => { btn2.style.background = '#16a34a'; btn2.style.color = 'white'; };
+                btn2.onmouseout  = () => { btn2.style.background = '#f0fdf4'; btn2.style.color = '#16a34a'; };
+                btn2.onclick = () => addMultiDistEntry(d);
+                presetsDiv.appendChild(btn2);
+            });
+
+            // Ajouter une ligne vide par défaut
+            addMultiDistEntry();
+            updateMultiDistPreview();
+
+            document.getElementById('multi-dist-modal').style.display = 'block';
+        };
+
+        window.closeMultiDistModal = function() {
+            document.getElementById('multi-dist-modal').style.display = 'none';
+            _multiDistCtx = null;
+            // Toujours remettre le bouton confirm sur validateMultiDist en cas d'annulation
+            const confirmBtn = document.querySelector('#multi-dist-modal button[onclick="validateGlobalMultiDist()"]');
+            if (confirmBtn) confirmBtn.setAttribute('onclick', 'validateMultiDist()');
+        };
+
+        window.addMultiDistEntry = function(presetDist) {
+            const container = document.getElementById('multi-dist-entries');
+            const idx = container.children.length + 1;
+            const pente = _multiDistCtx ? _multiDistCtx.pente : 0;
+            const coteAxe = _multiDistCtx ? _multiDistCtx.coteAxe : 0;
+
+            const entry = document.createElement('div');
+            entry.className = 'multi-dist-entry';
+            entry.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;';
+
+            entry.innerHTML = `
+                <span style="font-size:0.72rem;font-weight:700;color:#94a3b8;min-width:20px;">N°${idx}</span>
+                <div style="flex:1;">
+                    <label style="font-size:0.7rem;color:#94a3b8;display:block;margin-bottom:2px;">Distance / axe (m)</label>
+                    <input type="number" step="0.001" min="0" class="multi-dist-input form-input"
+                           style="padding:6px 10px;font-size:0.88rem;height:34px;"
+                           placeholder="Ex: 2.500" value="${presetDist !== undefined ? presetDist.toFixed(3) : ''}"
+                           oninput="updateMultiDistPreview()">
+                </div>
+                <div style="text-align:center;min-width:90px;">
+                    <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:2px;">Cote théo.</div>
+                    <div class="multi-dist-cote-preview" style="font-size:0.82rem;font-weight:700;color:#1e3a5f;">—</div>
+                </div>
+                <button onclick="this.closest('.multi-dist-entry').remove(); updateMultiDistPreview();"
+                        style="width:26px;height:26px;border-radius:6px;border:1px solid #fca5a5;background:rgba(220,38,38,0.06);color:#dc2626;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>`;
+
+            // Mise à jour de la prévisualisation cote en temps réel
+            const distInput = entry.querySelector('.multi-dist-input');
+            const coteEl    = entry.querySelector('.multi-dist-cote-preview');
+            const refreshCote = () => {
+                const d = parseFloat(distInput.value);
+                if (!isNaN(d)) {
+                    const c = coteAxe + (d * pente / 100);
+                    coteEl.textContent = c.toFixed(3) + ' m';
+                    coteEl.style.color = '#16a34a';
+                } else {
+                    coteEl.textContent = '—';
+                    coteEl.style.color = '#94a3b8';
+                }
+            };
+            distInput.addEventListener('input', refreshCote);
+            if (presetDist !== undefined) { setTimeout(refreshCote, 0); }
+
+            container.appendChild(entry);
+            updateMultiDistPreview();
+            distInput.focus();
+        };
+
+        window.updateMultiDistPreview = function() {
+            const inputs = document.querySelectorAll('#multi-dist-entries .multi-dist-input');
+            let count = 0;
+            inputs.forEach(inp => { if (!isNaN(parseFloat(inp.value))) count++; });
+            const el = document.getElementById('multi-dist-preview-count');
+            if (el) el.textContent = count > 0 ? `${count} point${count > 1 ? 's' : ''} à insérer` : '';
+        };
+
+        window.validateMultiDist = function() {
+            if (!_multiDistCtx) return;
+            const { row, pkValue, coteAxe, distanceMetrique, stationNum, elemLabel } = _multiDistCtx;
+
+            const inputs = document.querySelectorAll('#multi-dist-entries .multi-dist-input');
+            const distances = [];
+            inputs.forEach(inp => {
+                const d = parseFloat(inp.value);
+                if (!isNaN(d) && d > 0) distances.push(d);
+            });
+
+            if (distances.length === 0) {
+                alert('Veuillez saisir au moins une distance valide (positive).');
+                return;
+            }
+
+            // Insérer chaque ligne après la ligne axe (dans l'ordre des distances)
+            let insertAfter = row;
+            distances.forEach(dist => {
+                const result = _createSubPointRow(stationNum, pkValue, coteAxe, distanceMetrique, dist, elemLabel);
+                if (result) {
+                    insertAfter.parentNode.insertBefore(result.tr, insertAfter.nextSibling);
+                    insertAfter = result.tr;
+                }
+            });
+
+            attachStationCalculators(stationNum);
+            closeMultiDistModal();
         };
         
         // Générer l'en-tête du tableau selon le mode (exposée globalement)
@@ -3193,90 +3804,102 @@
                         <th colspan="2">LECTURES</th>
                         <th colspan="2">COTES</th>
                         <th colspan="2">ECARTS</th>
+                        <th rowspan="2" style="width:38px;">VALID.</th>
                         <th rowspan="2">OBSERVATIONS</th>
                     </tr>
                     <tr>
-                        <th>LAR</th>
-                        <th>LAV</th>
-                        <th>Pratique</th>
-                        <th>Théorique</th>
-                        <th>+</th>
-                        <th>-</th>
-                    </tr>
-                `;
+                        <th>LAR</th><th>LAV</th>
+                        <th>Pratique</th><th>Théorique</th>
+                        <th>+</th><th>-</th>
+                    </tr>`;
             } else { // terrassement
                 return `
                     <tr>
                         <th rowspan="2">REPERE/PK</th>
                         <th rowspan="2">ÉLÉMENT</th>
                         <th rowspan="2">DISTANCES<br>(m)</th>
-                        <th rowspan="2">DIST. à l'axe<br>(m)</th>
+                        <th rowspan="2">DIST. axe<br>(m)</th>
                         <th colspan="2">LECTURES</th>
                         <th colspan="2">COTES</th>
                         <th colspan="2">ECARTS</th>
+                        <th rowspan="2" style="width:38px;">VALID.</th>
                         <th rowspan="2">OBSERVATIONS</th>
-                        <th rowspan="2">ACTION</th>
+                        <th rowspan="2">+</th>
                     </tr>
                     <tr>
-                        <th>LAR</th>
-                        <th>LAV</th>
-                        <th>Pratique</th>
-                        <th>Théorique</th>
-                        <th>+</th>
-                        <th>-</th>
-                    </tr>
-                `;
+                        <th>LAR</th><th>LAV</th>
+                        <th>Pratique</th><th>Théorique</th>
+                        <th>+</th><th>-</th>
+                    </tr>`;
             }
-        }
-        
+        };
+
+        // Cycler les états de validation d'une ligne
+        window.cycleValidation = function(btn) {
+            const states = [
+                { cls: 'pending',   label: '—', title: 'En attente' },
+                { cls: 'validated', label: '✓', title: 'Validé' },
+                { cls: 'to-check',  label: '⚠', title: 'À vérifier' }
+            ];
+            const cur = states.findIndex(s => btn.classList.contains(s.cls));
+            const next = states[(cur + 1) % states.length];
+            states.forEach(s => btn.classList.remove(s.cls));
+            btn.classList.add(next.cls);
+            btn.textContent = next.label;
+            btn.title = next.title;
+            const row = btn.closest('tr');
+            if (row) row.setAttribute('data-validation-status', next.cls);
+        };
+
         // Générer le HTML d'une ligne selon le mode (exposée globalement)
         window.generateRowHTML = function(stationNum, pkValue, distanceMetrique, coteTheorique, isInterpolated, elementLabel) {
             const interpolatedMarker = isInterpolated ? ' <span class="interpolated-badge">INT</span>' : '';
             const elemLabel = elementLabel || '';
+            const validCell = `<td style="text-align:center;padding:4px 3px;">
+                <button class="btn-validation pending" onclick="cycleValidation(this)" title="En attente">—</button>
+            </td>`;
+            const obsCell = `<td class="observation-cell" style="text-align:left;padding:4px 8px;font-size:0.78rem;">
+                <span class="obs-auto-text" style="color:var(--text-muted);">-</span>
+                <button class="btn-obs-notes" onclick="openObsModal(this.closest('tr'))" title="Ajouter notes / photos">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Notes
+                </button>
+            </td>`;
 
             if (receptionMode === 'assainissement') {
                 return `
                     <td>${pkValue}${interpolatedMarker}</td>
-                    <td class="element-label-cell" style="font-size:0.78rem; color:var(--text-secondary); white-space:nowrap;">${elemLabel}</td>
+                    <td class="element-label-cell" style="font-size:0.78rem;color:var(--text-secondary);white-space:nowrap;">${elemLabel}</td>
                     <td class="distance-metrique-cell">${distanceMetrique}</td>
                     <td class="lar-cell computed">-</td>
-                    <td>
-                        <input type="number" step="0.001" class="lav-input table-input" data-station="${stationNum}"
-                               data-theorique="${coteTheorique}" placeholder="1.234">
-                    </td>
+                    <td><input type="number" step="0.001" class="lav-input table-input" data-station="${stationNum}"
+                               data-theorique="${coteTheorique}" placeholder="1.234"></td>
                     <td class="cote-mesuree-cell computed">-</td>
-                    <td class="cote-theorique-value">${coteTheorique.toFixed(3)}</td>
+                    <td class="cote-theorique-value">${typeof coteTheorique === 'number' ? coteTheorique.toFixed(3) : coteTheorique}</td>
                     <td class="ecart-positif-cell">-</td>
                     <td class="ecart-negatif-cell">-</td>
-                    <td class="observation-cell">-</td>
-                `;
+                    ${validCell}
+                    ${obsCell}`;
             } else { // terrassement
                 return `
                     <td>${pkValue}${interpolatedMarker}</td>
-                    <td class="element-label-cell" style="font-size:0.78rem; color:var(--text-secondary); white-space:nowrap;">${elemLabel}</td>
+                    <td class="element-label-cell" style="font-size:0.78rem;color:var(--text-secondary);white-space:nowrap;">${elemLabel}</td>
                     <td class="distance-metrique-cell">${distanceMetrique}</td>
-                    <td>
-                        <input type="number" step="0.001" class="dist-axe-input table-input" placeholder="0.000"
+                    <td><input type="number" step="0.001" class="dist-axe-input table-input" placeholder="0.000"
                                data-cote-axe="${coteTheorique}" data-pk="${pkValue}" data-station="${stationNum}"
-                               oninput="calculateCoteFromDistance(this)">
-                    </td>
+                               oninput="calculateCoteFromDistance(this)"></td>
                     <td class="lar-cell computed">-</td>
-                    <td>
-                        <input type="number" step="0.001" class="lav-input table-input" data-station="${stationNum}"
-                               data-theorique="${coteTheorique}" placeholder="1.234">
-                    </td>
+                    <td><input type="number" step="0.001" class="lav-input table-input" data-station="${stationNum}"
+                               data-theorique="${coteTheorique}" placeholder="1.234"></td>
                     <td class="cote-mesuree-cell computed">-</td>
-                    <td class="cote-theorique-cell cote-theorique-value">${coteTheorique.toFixed(3)}</td>
+                    <td class="cote-theorique-cell cote-theorique-value">${typeof coteTheorique === 'number' ? coteTheorique.toFixed(3) : coteTheorique}</td>
                     <td class="ecart-positif-cell">-</td>
                     <td class="ecart-negatif-cell">-</td>
-                    <td class="observation-cell">-</td>
-                    <td>
-                        <button class="btn-mini btn-add-sub" onclick="addSubPoint(this, '${pkValue}', ${coteTheorique}, '${distanceMetrique}', ${stationNum})"
-                                title="Ajouter un sous-point">+</button>
-                    </td>
-                `;
+                    ${validCell}
+                    ${obsCell}
+                    <td style="text-align:center;padding:3px;"><button class="btn-multi-sub" onclick="openMultiDistModal(this,'${pkValue}',${coteTheorique},'${distanceMetrique}',${stationNum})" title="Ajouter des distances à la largeur">⊕</button></td>`;
             }
-        }
+        };
         
         // Mettre à jour la tolérance quand elle change
         document.getElementById('tolerance').addEventListener('input', function() {
@@ -3381,13 +4004,17 @@
                 meteo: document.getElementById('display-meteo')?.textContent || '',
                 tolerance: document.getElementById('display-tolerance')?.textContent || '2',
                 mode: receptionMode || 'assainissement',
+                separer_par_cote: separerParCote,
+                ignorer_cotes: ignorerCotes,
 
                 // Signatures - informations textuelles
                 // Lire directement depuis les inputs (toujours à jour, même si la fiche n'a pas été regénérée)
                 controleur_nom: document.getElementById('controleur-nom')?.value || '',
+                controleur_grade: document.getElementById('controleur-grade')?.value || '',
                 controleur_fonction: document.getElementById('controleur-fonction')?.value || '',
                 controleur_date: document.getElementById('controleur-date')?.value || '',
                 entreprise_nom: document.getElementById('entreprise-nom')?.value || '',
+                entreprise_titre: document.getElementById('entreprise-titre')?.value || '',
                 entreprise_societe: document.getElementById('entreprise-societe')?.value || '',
                 entreprise_date: document.getElementById('entreprise-date')?.value || '',
                 
@@ -3428,69 +4055,50 @@
                     console.log(`Station ${stationNum}: ${rows.length} lignes de données`);
 
                     rows.forEach(row => {
-                        const cells = row.querySelectorAll('td');
                         const lavInput = row.querySelector('.lav-input');
                         const lavVal = lavInput?.value || '';
                         const isInterpolatedRow = row.classList.contains('row-interpolated');
 
                         // Exporter uniquement les lignes avec une valeur LAV
                         if (lavVal.trim() !== '') {
-                            // Structure assainissement: PK, ÉLÉMENT, Distance, LAR, LAV, CoteMes, CoteTheo, Ecart+, Ecart-, Obs
-                            // Structure terrassement:  PK, ÉLÉMENT, Distance, DistAxe, LAR, LAV, CoteMes, CoteTheo, Ecart+, Ecart-, Obs, Action
+                            // Lire par classe/attribut pour être indépendant des indices
+                            const isTerrass = receptionMode === 'terrassement';
+                            const pk = row.getAttribute('data-pk') || row.querySelector('td:first-child')?.textContent?.trim() || '';
+                            const elementLabel = row.getAttribute('data-element-label') || row.querySelector('.element-label-cell')?.textContent?.trim() || '';
+                            const distance = row.querySelector('.distance-metrique-cell')?.textContent?.trim() || '';
+                            const lar = row.querySelector('.lar-cell')?.textContent?.trim() || '';
+                            const coteMes = row.querySelector('.cote-mesuree-cell')?.textContent?.trim() || '';
+                            const coteTheo = row.getAttribute('data-cote-theorique') || '';
+                            const ecartPos = row.querySelector('.ecart-positif-cell')?.textContent?.trim() || '-';
+                            const ecartNeg = row.querySelector('.ecart-negatif-cell')?.textContent?.trim() || '-';
+                            const obsText = row.querySelector('.obs-auto-text')?.textContent?.trim() || '';
 
-                            const isTerrass = cells.length >= 11;
-                            let pk, elementLabel, distance, lar, coteMes, coteTheo, ecartPos, ecartNeg, obs;
-
-                            if (isTerrass) {
-                                pk = cells[0]?.textContent?.trim() || '';
-                                elementLabel = cells[1]?.textContent?.trim() || '';
-                                distance = cells[2]?.textContent?.trim() || '';
-                                lar = cells[4]?.textContent?.trim() || '';
-                                coteMes = cells[6]?.textContent?.trim() || '';
-                                coteTheo = cells[7]?.textContent?.trim() || '';
-                                ecartPos = cells[8]?.textContent?.trim() || '';
-                                ecartNeg = cells[9]?.textContent?.trim() || '';
-                                obs = cells[10]?.textContent?.trim() || '';
-                            } else {
-                                pk = cells[0]?.textContent?.trim() || '';
-                                elementLabel = cells[1]?.textContent?.trim() || '';
-                                distance = cells[2]?.textContent?.trim() || '';
-                                lar = cells[3]?.textContent?.trim() || '';
-                                coteMes = cells[5]?.textContent?.trim() || '';
-                                coteTheo = cells[6]?.textContent?.trim() || '';
-                                ecartPos = cells[7]?.textContent?.trim() || '';
-                                ecartNeg = cells[8]?.textContent?.trim() || '';
-                                obs = cells[9]?.textContent?.trim() || '';
-                            }
-
-                            // Déterminer le statut via la classe CSS de la ligne
-                            // (ecart-ok, ecart-positif, ecart-negatif sont appliqués sur le <tr>)
                             let ecartStatus = 'ok';
-                            if (row.classList.contains('ecart-positif') || row.classList.contains('ecart-negatif')) {
-                                ecartStatus = 'error';
-                            }
+                            if (row.classList.contains('ecart-positif') || row.classList.contains('ecart-negatif')) ecartStatus = 'error';
 
-                            // Combiner les écarts
                             let ecart = '-';
-                            if (ecartPos && ecartPos !== '-') {
-                                ecart = '+' + ecartPos;
-                            } else if (ecartNeg && ecartNeg !== '-') {
-                                ecart = ecartNeg; // ecartNeg contient déjà le signe '-'
-                            }
+                            if (ecartPos && ecartPos !== '-') ecart = '+' + ecartPos;
+                            else if (ecartNeg && ecartNeg !== '-') ecart = ecartNeg;
+
+                            // Validation status
+                            const validationStatus = row.getAttribute('data-validation-status') || 'pending';
+
+                            // Côté (gauche / droit)
+                            const side = row.getAttribute('data-side') || '';
+
+                            // Observations avec images (stockées en JSON dans data-row-obs)
+                            let rowObs = [];
+                            try { rowObs = JSON.parse(row.getAttribute('data-row-obs') || '[]'); } catch(e) {}
 
                             station.rows.push({
-                                pk: pk,
-                                element_label: elementLabel || '',
-                                cote_label: distance,
-                                cote_theorique: coteTheo,
-                                cote_repere: lar,
-                                lav: lavVal,
-                                lai: '-',
-                                cote_mesuree: coteMes,
-                                cote_pratique: coteMes,
-                                ecart: ecart,
-                                ecart_status: ecartStatus,
-                                observation: obs !== '-' ? obs : '',
+                                pk, element_label: elementLabel, cote_label: distance,
+                                cote_theorique: coteTheo, cote_repere: lar, lav: lavVal,
+                                lai: '-', cote_mesuree: coteMes, cote_pratique: coteMes,
+                                ecart, ecart_status: ecartStatus,
+                                observation: obsText !== '-' ? obsText : '',
+                                validation_status: validationStatus,
+                                side,
+                                row_observations: rowObs,
                                 is_interpolated: isInterpolatedRow
                             });
                         }
@@ -3940,7 +4548,7 @@
         document.getElementById('export-resultats-pdf-btn').addEventListener('click', async () => {
             const data = collectReceptionDataForPDF();
             if (!data) { alert('Aucune donnée à exporter.'); return; }
-            data.observations_generales = document.getElementById('observations-generales').value;
+            data.observations_generales = JSON.stringify(window.collectGlobalObservations());
 
             const btn = document.getElementById('export-resultats-pdf-btn');
             const origText = btn.textContent;
@@ -3981,7 +4589,7 @@
         document.getElementById('print-resultats-btn').addEventListener('click', async () => {
             const data = collectReceptionDataForPDF();
             if (!data) { alert('Aucune donnée à imprimer.'); return; }
-            data.observations_generales = document.getElementById('observations-generales').value;
+            data.observations_generales = JSON.stringify(window.collectGlobalObservations());
 
             try {
                 const response = await fetch('/api/preview-pdf', {
@@ -4002,17 +4610,276 @@
         // Exposition globale pour le modal email (hors IIFE)
         window.collectReceptionDataForPDF = collectReceptionDataForPDF;
 
+        // ─── MULTI+ GLOBAL (tous les PK d'une station) ────────────────────────────
+        // Déclaré DANS l'IIFE pour avoir accès à _createSubPointRow
+        let _multiGlobalCtx = null;
+
+        window.openGlobalMultiDistModal = function(stationNum) {
+            const penteInput = document.querySelector(`.pente-station[data-station="${stationNum}"]`);
+            if (!penteInput || isNaN(parseFloat(penteInput.value))) {
+                alert('Veuillez d\'abord définir la pente transversale de la station.');
+                return;
+            }
+            const pente = parseFloat(penteInput.value);
+
+            const tbody = document.getElementById(`tbody-station-${stationNum}`);
+            const axeRows = tbody ? Array.from(tbody.querySelectorAll('tr.data-row:not(.sub-point-row)')) : [];
+            if (axeRows.length === 0) { alert('Aucune ligne dans la station.'); return; }
+
+            const sampleCote = parseFloat(axeRows[0].getAttribute('data-cote-theorique')) || 0;
+            _multiGlobalCtx = { stationNum, pente, axeRows, sampleCote };
+
+            document.getElementById('multi-dist-subtitle').textContent =
+                `Station ${stationNum} · ${axeRows.length} points · Pente = ${pente}%`;
+            document.getElementById('multi-dist-entries').innerHTML = '';
+
+            const presetsDiv = document.getElementById('multi-dist-presets');
+            presetsDiv.innerHTML = '';
+            [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0].forEach(d => {
+                const b = document.createElement('button');
+                b.textContent = d + ' m';
+                b.style.cssText = 'padding:4px 10px;border-radius:6px;border:1px solid #d1fae5;background:#f0fdf4;color:#16a34a;font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.15s;';
+                b.onmouseover = () => { b.style.background = '#16a34a'; b.style.color = 'white'; };
+                b.onmouseout  = () => { b.style.background = '#f0fdf4'; b.style.color = '#16a34a'; };
+                b.onclick = () => addMultiDistEntry(d);
+                presetsDiv.appendChild(b);
+            });
+
+            addMultiDistEntry();
+            updateMultiDistPreview();
+
+            const headerTitle = document.querySelector('#multi-dist-modal [style*="font-weight:800"]');
+            if (headerTitle) headerTitle.textContent = `Multi ⊕ — Tous les PK (${axeRows.length} points)`;
+
+            const confirmBtn = document.querySelector('#multi-dist-modal button[onclick="validateMultiDist()"]');
+            if (confirmBtn) confirmBtn.setAttribute('onclick', 'validateGlobalMultiDist()');
+
+            document.getElementById('multi-dist-modal').style.display = 'block';
+        };
+
+        window.validateGlobalMultiDist = function() {
+            if (!_multiGlobalCtx) { validateMultiDist(); return; }
+            const { stationNum, axeRows } = _multiGlobalCtx;
+
+            const inputs = document.querySelectorAll('#multi-dist-entries .multi-dist-input');
+            const distances = [];
+            inputs.forEach(inp => {
+                const d = parseFloat(inp.value);
+                if (!isNaN(d) && d > 0) distances.push(d);
+            });
+            if (distances.length === 0) { alert('Veuillez saisir au moins une distance valide.'); return; }
+
+            Array.from(axeRows).forEach(axeRow => {
+                const pkValue          = axeRow.getAttribute('data-pk') || '';
+                const coteAxe          = parseFloat(axeRow.getAttribute('data-cote-theorique')) || 0;
+                const distanceMetrique = axeRow.querySelector('.distance-metrique-cell')?.textContent?.trim() || '0.000';
+                const elemLabel        = axeRow.getAttribute('data-element-label') || '';
+
+                let insertAfter = axeRow;
+                distances.forEach(dist => {
+                    const result = _createSubPointRow(stationNum, pkValue, coteAxe, distanceMetrique, dist, elemLabel);
+                    if (result) {
+                        insertAfter.parentNode.insertBefore(result.tr, insertAfter.nextSibling);
+                        insertAfter = result.tr;
+                    }
+                });
+            });
+
+            attachStationCalculators(stationNum);
+            _multiGlobalCtx = null;
+            // Remettre le bouton confirm sur validateMultiDist
+            const confirmBtn = document.querySelector('#multi-dist-modal button[onclick="validateGlobalMultiDist()"]');
+            if (confirmBtn) confirmBtn.setAttribute('onclick', 'validateMultiDist()');
+            closeMultiDistModal();
+        };
+
     })();
 
     // =========================================================
     // MODAL ENVOI PAR EMAIL
     // =========================================================
+    // ===== MODAL OBSERVATIONS PAR LIGNE =====
+    let _currentObsRow = null;
+
+    function openObsModal(row) {
+        _currentObsRow = row;
+        const pk = row.getAttribute('data-pk') || '?';
+        const elem = row.getAttribute('data-element-label') || '';
+        document.getElementById('obs-modal-subtitle').textContent = `PK ${pk} — ${elem}`;
+        // Charger les observations existantes
+        let existing = [];
+        try { existing = JSON.parse(row.getAttribute('data-row-obs') || '[]'); } catch(e) {}
+        const container = document.getElementById('obs-entries-container');
+        container.innerHTML = '';
+        existing.forEach(entry => addObsEntry(entry));
+        if (existing.length === 0) addObsEntry(); // ligne vide par défaut
+        document.getElementById('obs-row-modal').style.display = 'block';
+    }
+    window.openObsModal = openObsModal;
+
+    function closeObsModal() {
+        document.getElementById('obs-row-modal').style.display = 'none';
+        _currentObsRow = null;
+    }
+    window.closeObsModal = closeObsModal;
+
+    function addObsEntry(data) {
+        const container = document.getElementById('obs-entries-container');
+        const idx = container.children.length;
+        const d = data || {};
+        const div = document.createElement('div');
+        div.className = 'obs-entry';
+        div.style.cssText = 'background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;';
+        div.innerHTML = `
+            <div style="display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:start;margin-bottom:10px;">
+                <div>
+                    <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:4px;">Titre</label>
+                    <input type="text" class="obs-titre-input form-input" placeholder="Ex: Fissure, affaissement..." value="${(d.titre||'').replace(/"/g,'&quot;')}" style="width:100%;padding:7px 10px;font-size:0.82rem;">
+                </div>
+                <div>
+                    <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:4px;">Commentaire</label>
+                    <textarea class="obs-comment-input" placeholder="Détails..." style="width:100%;border:1.5px solid #cbd5e1;border-radius:8px;padding:7px 10px;font-family:inherit;font-size:0.82rem;resize:vertical;min-height:54px;">${d.commentaire||''}</textarea>
+                </div>
+                <button onclick="this.closest('.obs-entry').remove()"
+                    style="margin-top:20px;width:30px;height:30px;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Photo :</label>
+                <button onclick="triggerImgCapture(this,'camera')"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;color:#1d4ed8;font-size:0.78rem;font-weight:600;cursor:pointer;">
+                    📷 Caméra
+                </button>
+                <button onclick="triggerImgCapture(this,'file')"
+                    style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;color:#15803d;font-size:0.78rem;font-weight:600;cursor:pointer;">
+                    🖼 Choisir fichier
+                </button>
+                <input type="file" accept="image/*" class="obs-img-file-input" style="display:none;" onchange="previewObsImg(this)">
+                <input type="file" accept="image/*" capture="environment" class="obs-img-camera-input" style="display:none;" onchange="previewObsImg(this)">
+                ${d.image ? `<img src="${d.image}" class="obs-img-preview-thumb" style="max-height:48px;max-width:80px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;">` : '<span class="obs-img-preview-thumb" style="font-size:0.72rem;color:#94a3b8;">Aucune photo</span>'}
+                <input type="hidden" class="obs-img-data" value="${d.image||''}">
+            </div>`;
+        container.appendChild(div);
+    }
+    window.addObsEntry = addObsEntry;
+
+    function triggerImgCapture(btn, mode) {
+        const entry = btn.closest('.obs-entry');
+        const input = mode === 'camera' ? entry.querySelector('.obs-img-camera-input') : entry.querySelector('.obs-img-file-input');
+        if (input) input.click();
+    }
+    window.triggerImgCapture = triggerImgCapture;
+
+    function previewObsImg(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const entry = input.closest('.obs-entry');
+            const hiddenInput = entry.querySelector('.obs-img-data');
+            hiddenInput.value = e.target.result;
+            // Afficher l'aperçu
+            let preview = entry.querySelector('.obs-img-preview-thumb');
+            if (preview.tagName === 'IMG') {
+                preview.src = e.target.result;
+            } else {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'obs-img-preview-thumb';
+                img.style.cssText = 'max-height:48px;max-width:80px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;';
+                preview.replaceWith(img);
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+    window.previewObsImg = previewObsImg;
+
+    function saveObsModal() {
+        if (!_currentObsRow) return;
+        const entries = document.querySelectorAll('#obs-entries-container .obs-entry');
+        const obsData = [];
+        entries.forEach(entry => {
+            const titre = entry.querySelector('.obs-titre-input')?.value?.trim() || '';
+            const commentaire = entry.querySelector('.obs-comment-input')?.value?.trim() || '';
+            const image = entry.querySelector('.obs-img-data')?.value || '';
+            if (titre || commentaire || image) obsData.push({ titre, commentaire, image });
+        });
+        _currentObsRow.setAttribute('data-row-obs', JSON.stringify(obsData));
+        // Mettre à jour le bouton notes
+        const btn = _currentObsRow.querySelector('.btn-obs-notes');
+        if (btn) btn.classList.toggle('has-notes', obsData.length > 0);
+        closeObsModal();
+    }
+    window.saveObsModal = saveObsModal;
+
+    // ─── OBSERVATIONS GÉNÉRALES (Step 5) ──────────────────────────────────────
+    // Réutilise le même pattern HTML que addObsEntry mais dans le panneau inline
+
+    window.addGlobalObsEntry = function(data) {
+        const container = document.getElementById('obs-generales-entries');
+        const emptyMsg  = document.getElementById('obs-generales-empty');
+        if (emptyMsg) emptyMsg.style.display = 'none';
+        const d = data || {};
+        const div = document.createElement('div');
+        div.className = 'obs-entry';
+        div.style.cssText = 'background:white;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px 16px;';
+        div.innerHTML = `
+            <div style="display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:start;margin-bottom:10px;">
+                <div>
+                    <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:4px;">Titre</label>
+                    <input type="text" class="obs-titre-input form-input" placeholder="Ex: Fissure, affaissement..." value="${(d.titre||'').replace(/"/g,'&quot;')}" style="width:100%;padding:7px 10px;font-size:0.82rem;">
+                </div>
+                <div>
+                    <label style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;display:block;margin-bottom:4px;">Commentaire</label>
+                    <textarea class="obs-comment-input" placeholder="Détails, réserves, recommandations..." style="width:100%;border:1.5px solid #cbd5e1;border-radius:8px;padding:7px 10px;font-family:inherit;font-size:0.82rem;resize:vertical;min-height:54px;">${d.commentaire||''}</textarea>
+                </div>
+                <button onclick="this.closest('.obs-entry').remove(); _refreshGlobalObsEmpty();"
+                    style="margin-top:20px;width:30px;height:30px;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.4px;">Photo :</span>
+                <button onclick="triggerImgCapture(this,'camera')"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;color:#1d4ed8;font-size:0.8rem;font-weight:600;cursor:pointer;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/></svg>
+                    Caméra
+                </button>
+                <button onclick="triggerImgCapture(this,'file')"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;color:#15803d;font-size:0.8rem;font-weight:600;cursor:pointer;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Joindre fichier
+                </button>
+                <input type="file" accept="image/*" class="obs-img-file-input" style="display:none;" onchange="previewObsImg(this)">
+                <input type="file" accept="image/*" capture="environment" class="obs-img-camera-input" style="display:none;" onchange="previewObsImg(this)">
+                ${d.image ? `<img src="${d.image}" class="obs-img-preview-thumb" style="max-height:52px;max-width:90px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;">` : '<span class="obs-img-preview-thumb" style="font-size:0.72rem;color:#94a3b8;">Aucune photo</span>'}
+                <input type="hidden" class="obs-img-data" value="${d.image||''}">
+            </div>`;
+        container.appendChild(div);
+    };
+
+    window._refreshGlobalObsEmpty = function() {
+        const container = document.getElementById('obs-generales-entries');
+        const emptyMsg  = document.getElementById('obs-generales-empty');
+        if (emptyMsg) emptyMsg.style.display = container && container.children.length === 0 ? 'block' : 'none';
+    };
+
+    // Récupère les observations générales sous forme de tableau JSON
+    window.collectGlobalObservations = function() {
+        const entries = document.querySelectorAll('#obs-generales-entries .obs-entry');
+        const result = [];
+        entries.forEach(entry => {
+            const titre      = entry.querySelector('.obs-titre-input')?.value?.trim() || '';
+            const commentaire = entry.querySelector('.obs-comment-input')?.value?.trim() || '';
+            const image      = entry.querySelector('.obs-img-data')?.value || '';
+            if (titre || commentaire || image) result.push({ titre, commentaire, image });
+        });
+        return result;
+    };
+
     let _lastFicheData = null; // mémorise les données pour l'envoi
 
     function openEmailModal() {
         const data = collectReceptionDataForPDF();
         if (!data) { alert('Aucune donnée à envoyer. Générez d\'abord la fiche de réception.'); return; }
-        data.observations_generales = document.getElementById('observations-generales').value;
+        data.observations_generales = JSON.stringify(window.collectGlobalObservations());
         _lastFicheData = data;
 
         // Résumé fiche
@@ -4076,7 +4943,7 @@ Détails du contrôle :
 La fiche complète est jointe en pièce attachée (format HTML et PDF).
 
 Cordialement,
-PTT BTP — Service Topographique`;
+OPTILAB — Service Topographique`;
         }
 
         // Réinitialiser status

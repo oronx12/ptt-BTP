@@ -258,7 +258,7 @@ def send_fiche_email():
         pct = round(conformes / total * 100, 1) if total > 0 else 0
         statut_label = "✅ Conforme" if pct >= 95 else ("⚠️ Partiellement conforme" if pct >= 80 else "❌ Non conforme")
 
-        mail_from = current_app.config.get("MAIL_FROM", "PTT BTP <noreply@ptt-btp.fr>")
+        mail_from = current_app.config.get("MAIL_FROM", "OPTILAB <noreply@ptt-btp.fr>")
         sujet     = f"Fiche de réception — {projet} | {section} — {date}"
 
         # Corps email HTML
@@ -266,7 +266,7 @@ def send_fiche_email():
         corps_html = f"""
         <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#1e293b;">
             <div style="background:linear-gradient(135deg,#0f2744,#1d4ed8);padding:24px 28px;border-radius:8px 8px 0 0;">
-                <div style="color:white;font-size:20px;font-weight:800;letter-spacing:0.5px;">PTT BTP</div>
+                <div style="color:white;font-size:20px;font-weight:800;letter-spacing:0.5px;">OPTILAB</div>
                 <div style="color:rgba(255,255,255,0.75);font-size:13px;margin-top:4px;">Fiche de Réception Topographique</div>
             </div>
             <div style="background:#f8fafc;border:1px solid #e2e8f0;border-top:none;padding:24px 28px;">
@@ -298,7 +298,7 @@ def send_fiche_email():
                 </p>
             </div>
             <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:12px 28px;font-size:11px;color:#94a3b8;text-align:center;">
-                PTT BTP — Système de Réception Topographique &nbsp;·&nbsp; Envoyé automatiquement
+                OPTILAB — Système de Réception Topographique &nbsp;·&nbsp; Envoyé automatiquement
             </div>
         </div>
         """

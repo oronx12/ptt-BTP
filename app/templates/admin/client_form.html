@@ -2,18 +2,20 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Nouveau client — PTT BTP</title>
+    <title>{% if client %}Modifier le client{% else %}Nouveau client{% endif %} — OPTILAB</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
     <style>
         body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f0f4f8; }
         .card { background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,.1); padding:2rem; width:100%; max-width:440px; }
-        h2 { color:#1e3a5f; margin:0 0 1.5rem; }
+        h2 { color:#1e3a5f; margin:0 0 .4rem; }
+        .subtitle { color:#64748b; font-size:.85rem; margin:0 0 1.5rem; }
         .form-group { margin-bottom:1rem; }
         label { display:block; font-size:.85rem; font-weight:600; color:#374151; margin-bottom:.35rem; }
         input[type=text] { width:100%; padding:.65rem .9rem; border:1.5px solid #d1d5db; border-radius:8px; font-size:.95rem; box-sizing:border-box; }
         input[type=text]:focus { outline:none; border-color:#3b82f6; }
-        .flash.danger { background:#fef2f2; color:#dc2626; padding:.7rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:.9rem; }
+        .flash { padding:.7rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:.9rem; }
+        .flash.danger { background:#fef2f2; color:#dc2626; }
         .actions { display:flex; gap:.75rem; margin-top:1.5rem; }
         .btn { padding:.65rem 1.2rem; border-radius:8px; border:none; font-size:.95rem; font-weight:600; cursor:pointer; }
         .btn-primary { background:#1e3a5f; color:#fff; }
@@ -22,7 +24,8 @@
 </head>
 <body>
 <div class="card">
-    <h2>Nouveau client</h2>
+    <h2>{% if client %}Modifier le client{% else %}Nouveau client{% endif %}</h2>
+    {% if client %}<p class="subtitle">ID #{{ client.id }}</p>{% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% for category, message in messages %}
@@ -33,14 +36,20 @@
     <form method="POST">
         <div class="form-group">
             <label for="nom">Nom de l'entreprise *</label>
-            <input type="text" id="nom" name="nom" required placeholder="Ex: BTP Rhône-Alpes">
+            <input type="text" id="nom" name="nom" required
+                   placeholder="Ex: BTP Rhône-Alpes"
+                   value="{{ client.nom if client else '' }}">
         </div>
         <div class="form-group">
             <label for="projet_label">Libellé du projet</label>
-            <input type="text" id="projet_label" name="projet_label" placeholder="Ex: Déviation RD456 — Lot 2">
+            <input type="text" id="projet_label" name="projet_label"
+                   placeholder="Ex: Déviation RD456 — Lot 2"
+                   value="{{ client.projet_label if client and client.projet_label else '' }}">
         </div>
         <div class="actions">
-            <button type="submit" class="btn btn-primary">Créer le client</button>
+            <button type="submit" class="btn btn-primary">
+                {% if client %}Enregistrer{% else %}Créer le client{% endif %}
+            </button>
             <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">Annuler</a>
         </div>
     </form>

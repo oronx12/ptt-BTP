@@ -3,6 +3,7 @@
 Service de génération des fiches de réception PDF.
 Gère WeasyPrint (natif) et le fallback HTML (impression navigateur).
 """
+import json
 from flask import render_template, current_app
 
 try:
@@ -38,6 +39,20 @@ def _compute_stats(stations: list) -> dict:
     }
 
 
+def _parse_obs_generales(raw) -> list:
+    """Parse observations_generales : accepte JSON string ou list, retourne toujours une liste."""
+    if isinstance(raw, list):
+        return raw
+    if isinstance(raw, str) and raw.strip():
+        try:
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, list) else []
+        except (json.JSONDecodeError, ValueError):
+            # Texte brut legacy → wrap en un seul item
+            return [{"titre": "", "commentaire": raw, "image": ""}]
+    return []
+
+
 def build_template_context(data: dict) -> dict:
     """
     Extrait tous les paramètres du dict JSON entrant et calcule les stats.
@@ -55,14 +70,15 @@ def build_template_context(data: dict) -> dict:
         tolerance=data.get("tolerance", 2),
         mode=data.get("mode", "assainissement"),
         controleur_nom=data.get("controleur_nom", ""),
-        controleur_fonction=data.get("controleur_fonction", ""),
+        controleur_grade=data.get("controleur_grade", ""),
         controleur_date=data.get("controleur_date", ""),
         entreprise_nom=data.get("entreprise_nom", ""),
         entreprise_societe=data.get("entreprise_societe", ""),
+        entreprise_titre=data.get("entreprise_titre", ""),
         entreprise_date=data.get("entreprise_date", ""),
         signature_controleur=data.get("signature_controleur"),
         signature_entreprise=data.get("signature_entreprise"),
-        observations_generales=data.get("observations_generales", ""),
+        observations_generales=_parse_obs_generales(data.get("observations_generales", "")),
         stations=stations,
         **stats,
     )

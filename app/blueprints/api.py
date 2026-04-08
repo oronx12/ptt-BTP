@@ -293,7 +293,7 @@ def send_fiche_email():
                     </table>
                 </div>
                 <p style="font-size:12px;color:#94a3b8;margin:0;">
-                    La fiche complète est jointe à cet email au format HTML.<br>
+                    La fiche complète est jointe à cet email au format PDF.<br>
                     Ce document est officiel — à conserver pendant la durée légale des travaux.
                 </p>
             </div>
@@ -304,25 +304,17 @@ def send_fiche_email():
         """
 
         base_name = f"Fiche_Reception_{projet.replace(' ','_')}_{date.replace('/','').replace('-','')}"
-        nom_html  = base_name + ".html"
         nom_pdf   = base_name + ".pdf"
+
+        # Générer le PDF — obligatoire, on retourne une erreur si ça échoue
+        pdf_bytes = make_pdf_bytes_any(html_content, request.host_url)
 
         attachments = [
             {
-                "filename": nom_html,
-                "content":  list(html_content.encode("utf-8")),
-            }
-        ]
-
-        # Joindre le PDF (WeasyPrint ou xhtml2pdf selon disponibilité)
-        try:
-            pdf_bytes = make_pdf_bytes_any(html_content, request.host_url)
-            attachments.append({
                 "filename": nom_pdf,
                 "content":  list(pdf_bytes),
-            })
-        except Exception:
-            pass  # PDF non critique : on envoie quand même le HTML
+            }
+        ]
 
         params = {
             "from":        mail_from,

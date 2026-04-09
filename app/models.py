@@ -30,6 +30,8 @@ class Client(db.Model):
     # Nom affiché du projet dans l'app
     projet_label  = db.Column(db.String(200), nullable=True)
     actif         = db.Column(db.Boolean, default=True, nullable=False)
+    # Plan d'abonnement : "solo" (V1) ou "pro" (V2 collaboratif)
+    plan          = db.Column(db.String(20), nullable=False, default="solo")
     created_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     users = db.relationship("User", back_populates="client", lazy="dynamic")
@@ -102,3 +104,88 @@ class FicheReception(db.Model):
 
     def __repr__(self):
         return f"<FicheReception {self.id} — {self.projet}>"
+
+
+# ── Modèles V2 PRO ────────────────────────────────────────────────────────────
+
+class Projet(db.Model):
+    """
+    Projet collaboratif V2 — appartient à un Client PRO.
+    Regroupe des Portions et des MembreProjet (MDC + Entreprise).
+    """
+    __tablename__ = "projets"
+
+    id               = db.Column(db.Integer, primary_key=True)
+    client_id        = db.Column(db.Integer, db.ForeignKey("clients.id"), nullable=False)
+    nom              = db.Column(db.String(200), nullable=False)
+    description      = db.Column(db.Text, nullable=True)
+    # Clé R2 des cotes théoriques au niveau projet (peut être overridé par portion)
+    excel_key        = db.Column(db.String(255), nullable=True)
+    pk_debut         = db.Column(db.String(50), nullable=True)
+    pk_fin           = db.Column(db.String(50), nullable=True)
+    tolerance_defaut = db.Column(db.Float, nullable=True)   # en cm
+    actif            = db.Column(db.Boolean, default=True, nullable=False)
+    created_at       = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    client   = db.relationship("Client", backref=db.backref("projets", lazy="dynamic"))
+    portions = db.relationship("Portion", back_populates="projet", lazy="dynamic",
+                               cascade="all, delete-orphan")
+    membres  = db.relationship("MembreProjet", back_populates="projet", lazy="dynamic",
+                               cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<Projet {self.id} — {self.nom}>"
+
+
+class Portion(db.Model):
+    """
+    Tronçon d'un Projet (ex: "Tronçon Nord", "Échangeur Est").
+    Chaque DemandeReception sera liée à une Portion, pas directement au Projet.
+    """
+    __tablename__ = "portions"
+
+    id                  = db.Column(db.Integer, primary_key=True)
+    projet_id           = db.Column(db.Integer, db.ForeignKey("projets.id"), nullable=False)
+    nom                 = db.Column(db.String(200), nullable=False)
+    pk_debut            = db.Column(db.String(50), nullable=True)
+    pk_fin              = db.Column(db.String(50), nullable=True)
+    # Clé R2 propre à cette portion (override excel_key du Projet parent si renseigné)
+    excel_key           = db.Column(db.String(255), nullable=True)
+    # Si True, cette portion a ses propres membres (override les membres du Projet)
+    membres_specifiques = db.Column(db.Boolean, default=False, nullable=False)
+    # Tracé GPS optionnel — format { "type": "linestring", "points": [{pk, lat, lng}] }
+    coordonnees_gps     = db.Column(db.JSON, nullable=True)
+    created_at          = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    projet = db.relationship("Projet", back_populates="portions")
+
+    def __repr__(self):
+        return f"<Portion {self.id} — {self.nom} ({self.pk_debut} → {self.pk_fin})>"
+
+
+class MembreProjet(db.Model):
+    """
+    Association User ↔ Projet avec rôle métier (mdc | entreprise).
+    L'email_notif peut différer de user.email (ex: boîte partagée d'équipe).
+    """
+    __tablename__ = "membres_projet"
+
+    id            = db.Column(db.Integer, primary_key=True)
+    projet_id     = db.Column(db.Integer, db.ForeignKey("projets.id"), nullable=False)
+    user_id       = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    role          = db.Column(db.String(20), nullable=False)   # "mdc" | "entreprise"
+    email_notif   = db.Column(db.String(150), nullable=True)   # email de notification dédié
+    nom_affichage = db.Column(db.String(200), nullable=True)   # ex: "Bureau de contrôle CEREMA"
+    actif         = db.Column(db.Boolean, default=True, nullable=False)
+    created_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    projet = db.relationship("Projet", back_populates="membres")
+    user   = db.relationship("User", backref=db.backref("memberships", lazy="dynamic"))
+
+    # Un utilisateur ne peut appartenir qu'une seule fois à un projet donné
+    __table_args__ = (
+        db.UniqueConstraint("projet_id", "user_id", name="uq_membre_projet_user"),
+    )
+
+    def __repr__(self):
+        return f"<MembreProjet projet={self.projet_id} user={self.user_id} role={self.role}>"

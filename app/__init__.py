@@ -39,7 +39,7 @@ def create_app(env: str = None) -> Flask:
                 "db.create_all() échoué au démarrage (BDD inaccessible ?) : %s", e
             )
 
-    # Blueprints
+    # Blueprints V1
     from .blueprints.pages import pages_bp
     from .blueprints.api   import api_bp
     from .blueprints.auth  import auth_bp
@@ -49,5 +49,10 @@ def create_app(env: str = None) -> Flask:
     app.register_blueprint(api_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
+
+    # Blueprints V2 PRO
+    from .blueprints.pro.projets import pro_projets_bp
+
+    app.register_blueprint(pro_projets_bp)
 
     return app

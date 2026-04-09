@@ -46,6 +46,20 @@ def admin_required(f):
     return decorated
 
 
+def pro_required(f):
+    """Décorateur : réservé aux clients avec plan='pro' (et aux admins)."""
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        if current_user.is_admin:
+            return f(*args, **kwargs)
+        if not current_user.client or current_user.client.plan != "pro":
+            flash("Cette fonctionnalité nécessite un abonnement PRO.", "warning")
+            return redirect(url_for("pages.home"))
+        return f(*args, **kwargs)
+    return decorated
+
+
 def _allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 

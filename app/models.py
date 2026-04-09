@@ -30,7 +30,7 @@ class Client(db.Model):
     # Nom affiché du projet dans l'app
     projet_label  = db.Column(db.String(200), nullable=True)
     actif         = db.Column(db.Boolean, default=True, nullable=False)
-    # Plan d'abonnement : "solo" (V1) ou "pro" (V2 collaboratif)
+    # Déprécié — le plan est désormais porté par chaque Projet, pas par le Client
     plan          = db.Column(db.String(20), nullable=False, default="solo")
     created_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -53,6 +53,8 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     nom           = db.Column(db.String(120), nullable=False)
     role          = db.Column(db.String(20), nullable=False, default="client")
+    # Profil fonctionnel : "solo" (V1 uniquement) | "pro" (accès projets collaboratifs V2)
+    profil        = db.Column(db.String(20), nullable=False, default="solo")
     # NULL si role == 'admin' (admin n'appartient à aucun client)
     client_id     = db.Column(db.Integer, db.ForeignKey("clients.id"), nullable=True)
     actif         = db.Column(db.Boolean, default=True, nullable=False)
@@ -124,6 +126,8 @@ class Projet(db.Model):
     pk_debut         = db.Column(db.String(50), nullable=True)
     pk_fin           = db.Column(db.String(50), nullable=True)
     tolerance_defaut = db.Column(db.Float, nullable=True)   # en cm
+    # Plan du projet : "solo" (flux V1 classique) | "pro" (workflow collaboratif MDC/Entreprise)
+    plan             = db.Column(db.String(20), nullable=False, default="solo")
     actif            = db.Column(db.Boolean, default=True, nullable=False)
     created_at       = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 

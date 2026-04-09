@@ -47,14 +47,14 @@ def admin_required(f):
 
 
 def pro_required(f):
-    """Décorateur : réservé aux clients avec plan='pro' (et aux admins)."""
+    """Décorateur : réservé aux utilisateurs avec profil='pro' (et aux admins)."""
     @wraps(f)
     @login_required
     def decorated(*args, **kwargs):
         if current_user.is_admin:
             return f(*args, **kwargs)
-        if not current_user.client or current_user.client.plan != "pro":
-            flash("Cette fonctionnalité nécessite un abonnement PRO.", "warning")
+        if current_user.profil != "pro":
+            flash("Cette fonctionnalité nécessite un profil PRO.", "warning")
             return redirect(url_for("pages.home"))
         return f(*args, **kwargs)
     return decorated
@@ -71,6 +71,7 @@ def _allowed_file(filename: str) -> bool:
 def dashboard():
     clients = Client.query.order_by(Client.created_at.desc()).all()
     users   = User.query.order_by(User.created_at.desc()).all()
+    projets = Projet.query.order_by(Projet.created_at.desc()).all()
     base_dir = Path(current_app.root_path).parent
     available_excels = _get_available_excels(base_dir)
     current_test = session.get("admin_test_excel", "")
@@ -78,7 +79,7 @@ def dashboard():
     model_fallback_name = current_app.config["MODEL_EXCEL"].name
     return render_template(
         "admin/dashboard.html",
-        clients=clients, users=users,
+        clients=clients, users=users, projets=projets,
         available_excels=available_excels,
         current_test_excel=current_test,
         current_test_excel_name=current_test_name,
@@ -232,6 +233,7 @@ def nouvel_utilisateur():
         nom       = request.form.get("nom", "").strip()
         password  = request.form.get("password", "")
         role      = request.form.get("role", "client")
+        profil    = request.form.get("profil", "solo")
         client_id = request.form.get("client_id") or None
 
         if not email or not nom or not password:
@@ -243,7 +245,7 @@ def nouvel_utilisateur():
             return render_template("admin/user_form.html", clients=clients)
 
         user = User(
-            email=email, nom=nom, role=role,
+            email=email, nom=nom, role=role, profil=profil,
             client_id=int(client_id) if client_id else None
         )
         user.set_password(password)
@@ -265,6 +267,7 @@ def modifier_utilisateur(user_id):
         nom         = request.form.get("nom", "").strip()
         email       = request.form.get("email", "").strip().lower()
         role        = request.form.get("role", "client")
+        profil      = request.form.get("profil", "solo")
         client_id   = request.form.get("client_id") or None
         new_password = request.form.get("password", "").strip()
 
@@ -280,6 +283,7 @@ def modifier_utilisateur(user_id):
         user.nom       = nom
         user.email     = email
         user.role      = role
+        user.profil    = profil
         user.client_id = int(client_id) if client_id else None
         if new_password:
             user.set_password(new_password)
@@ -302,6 +306,16 @@ def toggle_utilisateur(user_id):
     db.session.commit()
     etat = "activé" if user.actif else "désactivé"
     flash(f"Utilisateur « {user.nom} » {etat}.", "info")
+    return redirect(url_for("admin.dashboard"))
+
+
+@admin_bp.route("/utilisateurs/<int:user_id>/toggle-profil", methods=["POST"])
+@admin_required
+def toggle_profil(user_id):
+    user = db.get_or_404(User, user_id)
+    user.profil = "pro" if user.profil == "solo" else "solo"
+    db.session.commit()
+    flash(f"Profil de « {user.nom} » basculé en {user.profil.upper()}.", "success")
     return redirect(url_for("admin.dashboard"))
 
 
@@ -371,15 +385,21 @@ def nouveau_projet():
 @admin_required
 def detail_projet(projet_id):
     projet = db.get_or_404(Projet, projet_id)
-    # Utilisateurs du même client (candidats membres)
+    # Candidats : users PRO du même client (seuls les PRO peuvent rejoindre un projet PRO)
     users_client = (User.query
-                    .filter_by(client_id=projet.client_id, actif=True, role="client")
-                    .order_by(User.nom).all())
-    membres_ids = {m.user_id for m in projet.membres}
+                    .filter_by(client_id=projet.client_id, actif=True, role="client", profil="pro")
+                    .order_by(User.nom).all()) if projet.plan == "pro" else []
+    membres      = list(projet.membres)
+    membres_ids  = {m.user_id for m in membres}
+    nb_mdc       = sum(1 for m in membres if m.role == "mdc")
+    nb_entreprise = sum(1 for m in membres if m.role == "entreprise")
     return render_template("admin/projet_detail.html",
                            projet=projet,
                            users_client=users_client,
-                           membres_ids=membres_ids)
+                           membres_ids=membres_ids,
+                           nb_mdc=nb_mdc,
+                           nb_entreprise=nb_entreprise,
+                           MAX_MEMBRES=5)
 
 
 @admin_bp.route("/projets/<int:projet_id>/toggle", methods=["POST"])
@@ -390,6 +410,19 @@ def toggle_projet(projet_id):
     db.session.commit()
     etat = "activé" if projet.actif else "désactivé"
     flash(f"Projet « {projet.nom} » {etat}.", "info")
+    return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
+
+@admin_bp.route("/projets/<int:projet_id>/toggle-plan", methods=["POST"])
+@admin_required
+def toggle_plan_projet(projet_id):
+    projet = db.get_or_404(Projet, projet_id)
+    if projet.plan == "pro" and projet.membres.count() > 0:
+        flash("Impossible de repasser en SOLO : retirez d'abord les membres du projet.", "danger")
+        return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+    projet.plan = "pro" if projet.plan == "solo" else "solo"
+    db.session.commit()
+    flash(f"Projet « {projet.nom} » basculé en {projet.plan.upper()}.", "success")
     return redirect(url_for("admin.detail_projet", projet_id=projet_id))
 
 
@@ -406,11 +439,20 @@ def ajouter_membre(projet_id):
         flash("Utilisateur et rôle (mdc / entreprise) obligatoires.", "danger")
         return redirect(url_for("admin.detail_projet", projet_id=projet_id))
 
+    user = db.get_or_404(User, user_id)
+
+    if user.profil != "pro":
+        flash("Seuls les utilisateurs au profil PRO peuvent rejoindre un projet PRO.", "danger")
+        return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
+    nb_role = MembreProjet.query.filter_by(projet_id=projet_id, role=role).count()
+    if nb_role >= 5:
+        flash(f"Limite atteinte : maximum 5 membres {role.upper()} par projet.", "danger")
+        return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
     if MembreProjet.query.filter_by(projet_id=projet_id, user_id=user_id).first():
         flash("Cet utilisateur est déjà membre du projet.", "warning")
         return redirect(url_for("admin.detail_projet", projet_id=projet_id))
-
-    user   = db.get_or_404(User, user_id)
     membre = MembreProjet(
         projet_id=projet_id,
         user_id=user_id,

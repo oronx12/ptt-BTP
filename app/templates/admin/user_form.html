@@ -64,6 +64,13 @@
             </select>
         </div>
         <div class="form-group">
+            <label for="profil">Profil fonctionnel *</label>
+            <select id="profil" name="profil">
+                <option value="solo" {% if not user or user.profil == 'solo' %}selected{% endif %}>SOLO — accès V1 classique</option>
+                <option value="pro"  {% if user and user.profil == 'pro'  %}selected{% endif %}>PRO — accès projets collaboratifs V2</option>
+            </select>
+        </div>
+        <div class="form-group">
             <label for="client_id">Associer à un client</label>
             <select id="client_id" name="client_id">
                 <option value="">— Aucun (admin uniquement) —</option>

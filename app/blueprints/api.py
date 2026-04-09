@@ -4,6 +4,7 @@ Blueprint des routes API (JSON / binaire).
 Délègue la logique métier aux services.
 """
 import re
+import base64
 from datetime import datetime
 from pathlib import Path
 
@@ -116,10 +117,11 @@ def _archive_fiche(data: dict, html_content: str) -> None:
 
 
 @api_bp.route("/generate-pdf", methods=["POST"])
+@login_required
 def generate_pdf():
     """
     Génère la fiche de réception et l'archive dans R2.
-    Retourne un PDF (WeasyPrint) ou du HTML (fallback impression navigateur).
+    Essaie xhtml2pdf (Render) puis WeasyPrint, fallback HTML si les deux échouent.
     """
     try:
         data = request.get_json(force=True)
@@ -129,27 +131,27 @@ def generate_pdf():
         # Archivage automatique dans R2
         _archive_fiche(data, html_content)
 
-        if WEASYPRINT_AVAILABLE:
-            pdf_bytes = make_pdf_bytes(html_content, request.host_url)
+        try:
+            pdf_bytes = make_pdf_bytes_any(html_content, request.host_url)
             filename = f"Fiche_Reception_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
             return Response(
                 pdf_bytes,
                 mimetype="application/pdf",
                 headers={"Content-Disposition": f'attachment; filename="{filename}"'},
             )
-
-        # Fallback : HTML pour impression navigateur
-        return Response(html_content, mimetype="text/html; charset=utf-8")
+        except Exception:
+            # Fallback : HTML pour impression navigateur si aucun moteur PDF dispo
+            return Response(html_content, mimetype="text/html; charset=utf-8")
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
 @api_bp.route("/preview-pdf", methods=["POST"])
+@login_required
 def preview_pdf():
     """
     Retourne toujours du HTML (pour window.print() côté navigateur).
-    Même logique que generate_pdf, sans la branche WeasyPrint.
     """
     try:
         data = request.get_json(force=True)
@@ -321,10 +323,12 @@ def send_fiche_email():
         # Générer le PDF — obligatoire, on retourne une erreur si ça échoue
         pdf_bytes = make_pdf_bytes_any(html_content, request.host_url)
 
+        # Resend attend le contenu en base64
+        pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
         attachments = [
             {
                 "filename": nom_pdf,
-                "content":  list(pdf_bytes),
+                "content":  pdf_b64,
             }
         ]
 

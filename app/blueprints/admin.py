@@ -7,8 +7,9 @@ Permet de :
   - Uploader le fichier Excel modèle d'un client (stockage local pour l'instant)
 """
 from functools import wraps
+from pathlib import Path
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, current_app
 from flask_login import login_required, current_user
 
 from .. import db
@@ -16,6 +17,19 @@ from ..models import Client, User
 from ..services.r2_service import upload_excel as r2_upload_excel
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+
+def _get_available_excels(base_dir: Path) -> list:
+    """Liste tous les .xlsx disponibles pour test admin (data/, data/clients/, data/modeles_recepta/)."""
+    result = []
+    for subdir in ["data", "data/clients", "data/modeles_recepta"]:
+        d = base_dir / subdir
+        if d.exists():
+            for f in sorted(d.glob("*.xlsx")):
+                if not f.name.startswith("~$"):
+                    rel = str(f.relative_to(base_dir)).replace("\\", "/")
+                    result.append({"rel": rel, "name": f.name, "dir": subdir})
+    return result
 
 ALLOWED_EXTENSIONS = {"xlsx", "xls"}
 
@@ -43,7 +57,44 @@ def _allowed_file(filename: str) -> bool:
 def dashboard():
     clients = Client.query.order_by(Client.created_at.desc()).all()
     users   = User.query.order_by(User.created_at.desc()).all()
-    return render_template("admin/dashboard.html", clients=clients, users=users)
+    base_dir = Path(current_app.root_path).parent
+    available_excels = _get_available_excels(base_dir)
+    current_test = session.get("admin_test_excel", "")
+    current_test_name = Path(current_test).name if current_test else ""
+    model_fallback_name = current_app.config["MODEL_EXCEL"].name
+    return render_template(
+        "admin/dashboard.html",
+        clients=clients, users=users,
+        available_excels=available_excels,
+        current_test_excel=current_test,
+        current_test_excel_name=current_test_name,
+        model_fallback_name=model_fallback_name,
+    )
+
+
+@admin_bp.route("/set-test-excel", methods=["POST"])
+@admin_required
+def set_test_excel():
+    """Sélectionne un fichier Excel local pour tester la réception en tant qu'admin."""
+    base_dir = Path(current_app.root_path).parent
+    rel_path = request.form.get("excel_path", "").strip()
+
+    if rel_path:
+        candidate = (base_dir / rel_path).resolve()
+        # Sécurité : s'assurer que le fichier est bien dans base_dir
+        if not str(candidate).startswith(str(base_dir.resolve())):
+            flash("Chemin non autorisé.", "danger")
+            return redirect(url_for("admin.dashboard"))
+        if candidate.suffix not in (".xlsx", ".xls") or not candidate.exists():
+            flash("Fichier introuvable.", "danger")
+            return redirect(url_for("admin.dashboard"))
+        session["admin_test_excel"] = str(candidate)
+        flash(f"Fichier de test actif : {candidate.name}", "success")
+    else:
+        session.pop("admin_test_excel", None)
+        flash("Fichier de test réinitialisé (fallback par défaut).", "info")
+
+    return redirect(url_for("admin.dashboard"))
 
 
 # ── Gestion clients ──────────────────────────────────────────────────────────

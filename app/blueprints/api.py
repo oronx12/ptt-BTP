@@ -26,9 +26,21 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 def _get_excel_source():
     """
     Retourne la source Excel du client connecté :
+    - Si admin avec fichier de test sélectionné → retourne ce fichier local.
     - Si le client a une clé R2 → télécharge les bytes depuis R2.
     - Sinon → retourne le Path du fichier modèle par défaut.
     """
+    from flask import session
+    from pathlib import Path as _Path
+
+    # Admin : fichier de test choisi depuis le panel admin
+    if current_user.is_authenticated and current_user.is_admin:
+        test_path = session.get("admin_test_excel")
+        if test_path:
+            p = _Path(test_path)
+            if p.exists():
+                return p
+
     if current_user.is_authenticated and current_user.client and current_user.excel_key:
         try:
             return download_excel(current_user.excel_key)

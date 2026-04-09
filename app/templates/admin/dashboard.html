@@ -70,6 +70,41 @@
         </div>
     </div>
 
+    <!-- FICHIER EXCEL DE TEST ADMIN -->
+    <div class="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-amber-100 flex items-center gap-2">
+            <div class="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <div>
+                <h2 class="font-semibold text-slate-800 text-sm">Fichier Excel de test <span class="text-amber-600 font-normal">(admin uniquement)</span></h2>
+                <p class="text-xs text-slate-400 mt-0.5">Sélectionnez un fichier local pour tester la page Réception sans passer par R2.</p>
+            </div>
+        </div>
+        <div class="px-6 py-4 flex flex-wrap items-center gap-3">
+            <form method="POST" action="{{ url_for('admin.set_test_excel') }}" class="flex items-center gap-2 flex-1 min-w-0">
+                <select name="excel_path" class="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-300">
+                    <option value="">— Fallback par défaut ({{ model_fallback_name }}) —</option>
+                    {% set groups = {} %}
+                    {% for f in available_excels %}
+                        <option value="{{ f.rel }}" {% if f.rel in current_test_excel %}selected{% endif %}>
+                            [{{ f.dir }}] {{ f.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
+                    Activer
+                </button>
+            </form>
+            {% if current_test_excel_name %}
+            <div class="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
+                <span class="text-xs font-medium text-amber-700">Actif : {{ current_test_excel_name }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
         <!-- CLIENTS -->

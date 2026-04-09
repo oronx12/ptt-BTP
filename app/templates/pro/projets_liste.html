@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes projets — RECEPTA PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="font-sans bg-slate-900 min-h-screen">
+
+<header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-3 hover:opacity-80 transition" style="text-decoration:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:20px;height:20px;">
+                <span style="background:#00ffff;border-radius:2px;"></span>
+                <span style="background:#fbbf24;border-radius:2px;"></span>
+                <span style="background:#00ffff;border-radius:2px;"></span>
+                <span style="background:#00ffff;border-radius:2px;"></span>
+            </div>
+            <div>
+                <div style="color:#00ffff;font-size:16px;font-weight:800;letter-spacing:2px;line-height:1.1;">RECEPTA</div>
+                <div style="color:rgba(255,255,255,0.4);font-size:9px;font-weight:500;letter-spacing:1px;">by OPTILAB — PRO</div>
+            </div>
+        </a>
+        <div class="flex items-center gap-3">
+            <span class="text-slate-400 text-sm">{{ current_user.nom }}</span>
+            <a href="/" class="text-slate-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-slate-700 transition">Accueil</a>
+            <a href="{{ url_for('auth.logout') }}" class="text-red-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition">Déconnexion</a>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-4 py-10 space-y-6">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-medium
+                {% if category == 'success' %}bg-emerald-900/50 text-emerald-300 border border-emerald-700
+                {% elif category == 'danger' %}bg-red-900/50 text-red-300 border border-red-700
+                {% else %}bg-blue-900/50 text-blue-300 border border-blue-700{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <div>
+        <h1 class="text-2xl font-bold text-white">Mes projets</h1>
+        <p class="text-slate-400 text-sm mt-1">{{ projets|length }} projet(s) accessible(s)</p>
+    </div>
+
+    {% if projets %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {% for p, role in projets %}
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 hover:border-violet-500 transition group">
+            <div class="flex items-start justify-between mb-4">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white font-bold text-lg">
+                    {{ p.nom[0]|upper }}
+                </div>
+                <span class="px-2.5 py-1 text-xs font-bold rounded-full
+                    {% if role == 'mdc' %}bg-blue-900/60 text-blue-300 border border-blue-700
+                    {% else %}bg-orange-900/60 text-orange-300 border border-orange-700{% endif %}">
+                    {{ role|upper }}
+                </span>
+            </div>
+            <h2 class="text-white font-bold text-base mb-1 group-hover:text-violet-300 transition">{{ p.nom }}</h2>
+            <p class="text-slate-400 text-xs mb-3">
+                {% if p.pk_debut and p.pk_fin %}PK {{ p.pk_debut }} → {{ p.pk_fin }}{% else %}PK à définir{% endif %}
+                {% if p.tolerance_defaut %} — Tol. {{ p.tolerance_defaut }} cm{% endif %}
+            </p>
+            {% if p.description %}
+            <p class="text-slate-500 text-xs mb-4 line-clamp-2">{{ p.description }}</p>
+            {% endif %}
+            <div class="flex items-center gap-2 pt-3 border-t border-slate-700">
+                <span class="text-slate-500 text-xs">{{ p.membres.count() }} membre(s)</span>
+                <span class="text-slate-700">·</span>
+                {% if p.actif %}
+                    <span class="text-emerald-400 text-xs">Actif</span>
+                {% else %}
+                    <span class="text-slate-500 text-xs">Inactif</span>
+                {% endif %}
+                <div class="ml-auto">
+                    <!-- Lien vers la réception (V1 encore, sera remplacé V2) -->
+                    <a href="/reception" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition">
+                        Ouvrir
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl px-6 py-20 text-center">
+        <div class="text-5xl mb-4">📂</div>
+        <p class="text-slate-400">Vous n'êtes encore membre d'aucun projet.</p>
+        <p class="text-slate-500 text-sm mt-2">Contactez votre administrateur pour être ajouté à un projet.</p>
+    </div>
+    {% endif %}
+
+</main>
+</body>
+</html>

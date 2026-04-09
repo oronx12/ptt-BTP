@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ projet.nom }} — Administration RECEPTA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:{DEFAULT:'#1e3a5f',dark:'#0f2744'}}}}}</script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="font-sans bg-slate-50 min-h-screen">
+
+<header class="bg-gradient-to-r from-primary-dark to-primary sticky top-0 z-50 shadow-lg">
+    <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-sm">
+            <a href="/admin/" class="flex items-center gap-2 hover:opacity-80 transition" style="text-decoration:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:16px;height:16px;">
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#fbbf24;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                </div>
+                <span style="color:white;font-weight:800;letter-spacing:1px;">RECEPTA</span>
+            </a>
+            <span class="text-white/40">›</span>
+            <a href="{{ url_for('admin.liste_projets', client_id=projet.client_id) }}" class="text-white/70 hover:text-white transition">Projets</a>
+            <span class="text-white/40">›</span>
+            <span class="text-white/90 font-semibold">{{ projet.nom }}</span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="text-red-300 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition">Déconnexion</a>
+    </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-medium
+                {% if category == 'success' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                {% elif category == 'danger' %}bg-red-50 text-red-700 border border-red-200
+                {% elif category == 'info' %}bg-blue-50 text-blue-700 border border-blue-200
+                {% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <!-- Fiche projet -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white font-bold text-lg">
+                    {{ projet.nom[0]|upper }}
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl font-bold text-slate-800">{{ projet.nom }}</h1>
+                        {% if projet.actif %}
+                            <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">Actif</span>
+                        {% else %}
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded-full">Inactif</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-slate-400 mt-0.5">
+                        {{ projet.client.nom }}
+                        {% if projet.pk_debut and projet.pk_fin %}
+                        — PK {{ projet.pk_debut }} → {{ projet.pk_fin }}
+                        {% endif %}
+                        {% if projet.tolerance_defaut %}
+                        — Tolérance : {{ projet.tolerance_defaut }} cm
+                        {% endif %}
+                    </div>
+                    {% if projet.description %}
+                    <p class="text-sm text-slate-500 mt-2">{{ projet.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <form method="POST" action="{{ url_for('admin.toggle_projet', projet_id=projet.id) }}">
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium rounded-xl border transition
+                        {% if projet.actif %}border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100
+                        {% else %}border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100{% endif %}">
+                    {{ 'Désactiver' if projet.actif else 'Activer' }}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Membres actuels -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100">
+                <h2 class="font-semibold text-slate-800">
+                    Membres du projet
+                    <span class="text-slate-400 font-normal text-sm ml-1">({{ projet.membres.count() }})</span>
+                </h2>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for m in projet.membres %}
+                <div class="px-6 py-3.5 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0
+                            {% if m.role == 'mdc' %}bg-gradient-to-br from-blue-400 to-blue-600
+                            {% else %}bg-gradient-to-br from-orange-400 to-orange-600{% endif %}">
+                            {{ m.user.nom[0]|upper }}
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-sm font-semibold text-slate-700 truncate">
+                                {{ m.nom_affichage or m.user.nom }}
+                            </div>
+                            <div class="text-xs text-slate-400 truncate">{{ m.email_notif or m.user.email }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full
+                            {% if m.role == 'mdc' %}bg-blue-100 text-blue-700{% else %}bg-orange-100 text-orange-700{% endif %}">
+                            {{ m.role|upper }}
+                        </span>
+                        <form method="POST" action="{{ url_for('admin.supprimer_membre', projet_id=projet.id, membre_id=m.id) }}"
+                              onsubmit="return confirm('Retirer « {{ m.user.nom }} » du projet ?')">
+                            <button type="submit" class="text-red-400 hover:text-red-600 transition" title="Retirer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="px-6 py-8 text-center text-slate-400 text-sm">Aucun membre pour l'instant.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Ajouter un membre -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h2 class="font-semibold text-slate-800 mb-4">Ajouter un membre</h2>
+
+            {% if users_client %}
+            <form method="POST" action="{{ url_for('admin.ajouter_membre', projet_id=projet.id) }}" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Utilisateur *</label>
+                    <select name="user_id" required
+                            class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-violet-300">
+                        <option value="">— Choisir un utilisateur —</option>
+                        {% for u in users_client %}
+                        <option value="{{ u.id }}" {% if u.id in membres_ids %}disabled class="text-slate-300"{% endif %}>
+                            {{ u.nom }} ({{ u.email }}){% if u.id in membres_ids %} — déjà membre{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Rôle *</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center gap-2 px-3 py-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400">
+                            <input type="radio" name="role" value="mdc" class="accent-blue-600">
+                            <span class="text-sm font-medium text-slate-700">MDC</span>
+                        </label>
+                        <label class="flex items-center gap-2 px-3 py-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-orange-50 hover:border-orange-300 transition has-[:checked]:bg-orange-50 has-[:checked]:border-orange-400">
+                            <input type="radio" name="role" value="entreprise" class="accent-orange-500">
+                            <span class="text-sm font-medium text-slate-700">Entreprise</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nom affiché (optionnel)</label>
+                    <input type="text" name="nom_affichage" placeholder="Ex: Bureau de contrôle CEREMA"
+                           class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Email de notification (optionnel)</label>
+                    <input type="email" name="email_notif" placeholder="Laissez vide = email du compte"
+                           class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300">
+                </div>
+
+                <button type="submit"
+                        class="w-full py-2.5 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 transition mt-2">
+                    Ajouter au projet
+                </button>
+            </form>
+            {% else %}
+            <div class="px-4 py-6 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-500 text-center">
+                Aucun utilisateur actif rattaché au client <strong>{{ projet.client.nom }}</strong>.<br>
+                <a href="{{ url_for('admin.nouvel_utilisateur') }}" class="text-violet-600 hover:underline mt-2 inline-block">
+                    Créer un utilisateur →
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</main>
+</body>
+</html>

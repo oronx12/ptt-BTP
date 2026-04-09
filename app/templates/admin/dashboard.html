@@ -144,6 +144,12 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <!-- Badge plan -->
+                            {% if c.plan == 'pro' %}
+                                <span class="px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-bold rounded-full tracking-wide">PRO</span>
+                            {% else %}
+                                <span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded-full">SOLO</span>
+                            {% endif %}
                             {% if c.excel_key %}
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">
                                     <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
@@ -192,6 +198,25 @@
                                 {{ 'Désactiver' if c.actif else 'Activer' }}
                             </button>
                         </form>
+
+                        <!-- Toggle plan solo/pro -->
+                        <form method="POST" action="{{ url_for('admin.toggle_plan', client_id=c.id) }}">
+                            <button type="submit"
+                                    class="px-3 py-1.5 text-xs font-medium rounded-lg border transition
+                                    {% if c.plan == 'pro' %}border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100
+                                    {% else %}border-violet-200 bg-white text-violet-600 hover:bg-violet-50{% endif %}">
+                                {{ 'Repasser SOLO' if c.plan == 'pro' else 'Passer PRO' }}
+                            </button>
+                        </form>
+
+                        <!-- Gérer les projets (PRO uniquement) -->
+                        {% if c.plan == 'pro' %}
+                        <a href="{{ url_for('admin.liste_projets', client_id=c.id) }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-violet-300 bg-violet-600 text-white text-xs font-semibold rounded-lg hover:bg-violet-700 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                            Projets ({{ c.projets.count() }})
+                        </a>
+                        {% endif %}
 
                         <!-- Supprimer -->
                         <form method="POST" action="{{ url_for('admin.supprimer_client', client_id=c.id) }}"

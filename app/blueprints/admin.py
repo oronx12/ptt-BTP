@@ -13,7 +13,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required, current_user
 
 from .. import db
-from ..models import Client, User
+from ..models import Client, User, Projet, MembreProjet
 from ..services.r2_service import upload_excel as r2_upload_excel
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -189,6 +189,17 @@ def toggle_client(client_id):
     return redirect(url_for("admin.dashboard"))
 
 
+@admin_bp.route("/clients/<int:client_id>/toggle-plan", methods=["POST"])
+@admin_required
+def toggle_plan(client_id):
+    """Bascule le plan d'un client entre 'solo' et 'pro'."""
+    client = db.get_or_404(Client, client_id)
+    client.plan = "pro" if client.plan == "solo" else "solo"
+    db.session.commit()
+    flash(f"Client « {client.nom} » basculé en plan {client.plan.upper()}.", "success")
+    return redirect(url_for("admin.dashboard"))
+
+
 @admin_bp.route("/clients/<int:client_id>/supprimer", methods=["POST"])
 @admin_required
 def supprimer_client(client_id):
@@ -306,3 +317,119 @@ def supprimer_utilisateur(user_id):
     db.session.commit()
     flash(f"Utilisateur « {nom} » supprimé définitivement.", "info")
     return redirect(url_for("admin.dashboard"))
+
+
+# ── Gestion projets V2 PRO ───────────────────────────────────────────────────
+
+@admin_bp.route("/projets/")
+@admin_required
+def liste_projets():
+    client_id = request.args.get("client_id", type=int)
+    if client_id:
+        client  = db.get_or_404(Client, client_id)
+        projets = Projet.query.filter_by(client_id=client_id).order_by(Projet.created_at.desc()).all()
+    else:
+        client  = None
+        projets = Projet.query.order_by(Projet.created_at.desc()).all()
+    return render_template("admin/projets_liste.html", projets=projets, client=client)
+
+
+@admin_bp.route("/projets/nouveau", methods=["GET", "POST"])
+@admin_required
+def nouveau_projet():
+    clients_pro = Client.query.filter_by(plan="pro", actif=True).order_by(Client.nom).all()
+    if request.method == "POST":
+        client_id     = request.form.get("client_id", type=int)
+        nom           = request.form.get("nom", "").strip()
+        description   = request.form.get("description", "").strip()
+        pk_debut      = request.form.get("pk_debut", "").strip()
+        pk_fin        = request.form.get("pk_fin", "").strip()
+        tolerance_str = request.form.get("tolerance_defaut", "").strip()
+
+        if not nom or not client_id:
+            flash("Le nom et le client sont obligatoires.", "danger")
+            return render_template("admin/projet_form.html", clients_pro=clients_pro)
+
+        projet = Projet(
+            client_id=client_id,
+            nom=nom,
+            description=description or None,
+            pk_debut=pk_debut or None,
+            pk_fin=pk_fin or None,
+            tolerance_defaut=float(tolerance_str) if tolerance_str else None,
+        )
+        db.session.add(projet)
+        db.session.commit()
+        flash(f"Projet « {nom} » créé.", "success")
+        return redirect(url_for("admin.detail_projet", projet_id=projet.id))
+
+    preselect = request.args.get("client_id", type=int)
+    return render_template("admin/projet_form.html", clients_pro=clients_pro, preselect=preselect)
+
+
+@admin_bp.route("/projets/<int:projet_id>")
+@admin_required
+def detail_projet(projet_id):
+    projet = db.get_or_404(Projet, projet_id)
+    # Utilisateurs du même client (candidats membres)
+    users_client = (User.query
+                    .filter_by(client_id=projet.client_id, actif=True, role="client")
+                    .order_by(User.nom).all())
+    membres_ids = {m.user_id for m in projet.membres}
+    return render_template("admin/projet_detail.html",
+                           projet=projet,
+                           users_client=users_client,
+                           membres_ids=membres_ids)
+
+
+@admin_bp.route("/projets/<int:projet_id>/toggle", methods=["POST"])
+@admin_required
+def toggle_projet(projet_id):
+    projet = db.get_or_404(Projet, projet_id)
+    projet.actif = not projet.actif
+    db.session.commit()
+    etat = "activé" if projet.actif else "désactivé"
+    flash(f"Projet « {projet.nom} » {etat}.", "info")
+    return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
+
+@admin_bp.route("/projets/<int:projet_id>/membres/ajouter", methods=["POST"])
+@admin_required
+def ajouter_membre(projet_id):
+    projet  = db.get_or_404(Projet, projet_id)
+    user_id = request.form.get("user_id", type=int)
+    role    = request.form.get("role", "")
+    email_notif   = request.form.get("email_notif", "").strip()
+    nom_affichage = request.form.get("nom_affichage", "").strip()
+
+    if not user_id or role not in ("mdc", "entreprise"):
+        flash("Utilisateur et rôle (mdc / entreprise) obligatoires.", "danger")
+        return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
+    if MembreProjet.query.filter_by(projet_id=projet_id, user_id=user_id).first():
+        flash("Cet utilisateur est déjà membre du projet.", "warning")
+        return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
+    user   = db.get_or_404(User, user_id)
+    membre = MembreProjet(
+        projet_id=projet_id,
+        user_id=user_id,
+        role=role,
+        email_notif=email_notif or user.email,
+        nom_affichage=nom_affichage or user.nom,
+    )
+    db.session.add(membre)
+    db.session.commit()
+    flash(f"« {user.nom} » ajouté en tant que {role}.", "success")
+    return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
+
+@admin_bp.route("/projets/<int:projet_id>/membres/<int:membre_id>/supprimer", methods=["POST"])
+@admin_required
+def supprimer_membre(projet_id, membre_id):
+    membre = db.get_or_404(MembreProjet, membre_id)
+    nom = membre.user.nom
+    db.session.delete(membre)
+    db.session.commit()
+    flash(f"Membre « {nom} » retiré du projet.", "info")
+    return redirect(url_for("admin.detail_projet", projet_id=projet_id))

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projets PRO — Administration RECEPTA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: { DEFAULT:'#1e3a5f', dark:'#0f2744' } } } }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="font-sans bg-slate-50 min-h-screen">
+
+<header class="bg-gradient-to-r from-primary-dark to-primary sticky top-0 z-50 shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="/admin/" class="flex items-center gap-2 hover:opacity-80 transition" style="text-decoration:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:18px;height:18px;">
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#fbbf24;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                </div>
+                <span style="color:white;font-size:14px;font-weight:800;letter-spacing:1px;">RECEPTA</span>
+            </a>
+            <span class="text-white/40">›</span>
+            <a href="{{ url_for('admin.dashboard') }}" class="text-white/70 text-sm hover:text-white transition">Administration</a>
+            <span class="text-white/40">›</span>
+            <span class="text-white/80 text-sm">
+                {% if client %}Projets — {{ client.nom }}{% else %}Tous les projets{% endif %}
+            </span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="text-red-300 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition">Déconnexion</a>
+    </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="px-4 py-3 rounded-xl text-sm font-medium
+                {% if category == 'success' %}bg-emerald-50 text-emerald-700 border border-emerald-200
+                {% elif category == 'danger' %}bg-red-50 text-red-700 border border-red-200
+                {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-xl font-bold text-slate-800">
+                {% if client %}Projets de {{ client.nom }}{% else %}Tous les projets V2{% endif %}
+            </h1>
+            <p class="text-sm text-slate-400 mt-0.5">{{ projets|length }} projet(s)</p>
+        </div>
+        <a href="{{ url_for('admin.nouveau_projet', client_id=client.id if client else '') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Nouveau projet
+        </a>
+    </div>
+
+    {% if projets %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="divide-y divide-slate-100">
+            {% for p in projets %}
+            <div class="px-6 py-4 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-4 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        {{ p.nom[0]|upper }}
+                    </div>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-slate-800 truncate">{{ p.nom }}</div>
+                        <div class="text-xs text-slate-400 truncate mt-0.5">
+                            {{ p.client.nom }} —
+                            {% if p.pk_debut and p.pk_fin %}PK {{ p.pk_debut }} → {{ p.pk_fin }}{% else %}PK non définis{% endif %}
+                            — {{ p.membres.count() }} membre(s)
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    {% if p.actif %}
+                        <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-full">Actif</span>
+                    {% else %}
+                        <span class="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded-full">Inactif</span>
+                    {% endif %}
+                    <a href="{{ url_for('admin.detail_projet', projet_id=p.id) }}"
+                       class="px-3 py-1.5 text-xs font-medium rounded-lg border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 transition">
+                        Gérer
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-6 py-16 text-center">
+        <div class="text-slate-300 text-5xl mb-4">📂</div>
+        <p class="text-slate-500 text-sm">Aucun projet pour l'instant.</p>
+        <a href="{{ url_for('admin.nouveau_projet', client_id=client.id if client else '') }}"
+           class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-violet-600 text-white text-sm font-semibold rounded-xl hover:bg-violet-700 transition">
+            Créer le premier projet
+        </a>
+    </div>
+    {% endif %}
+
+</main>
+</body>
+</html>

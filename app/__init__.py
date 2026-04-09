@@ -29,8 +29,15 @@ def create_app(env: str = None) -> Flask:
         return db.session.get(User, int(user_id))
 
     # Création des tables au premier lancement
+    # Enveloppé dans try/except : un timeout réseau Supabase ne doit pas crasher le démarrage
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                "db.create_all() échoué au démarrage (BDD inaccessible ?) : %s", e
+            )
 
     # Blueprints
     from .blueprints.pages import pages_bp

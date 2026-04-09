@@ -1,7 +1,7 @@
 # CLAUDE.md — RECEPTA by OPTILAB : Système de Réception Topographique BTP
 
 > Fichier de référence projet. Toute personne (ou IA) travaillant sur ce code doit lire ce fichier en premier.
-> **Dernière mise à jour : 2026-04-07** — Identité visuelle RECEPTA + refonte UX réception + corrections interpolation
+> **Dernière mise à jour : 2026-04-09** — V2 PRO planifiée + réorganisation racine + fixes email/PDF + logo RECEPTA CSS partout
 
 ---
 
@@ -77,7 +77,7 @@ Elle permet de :
 │   │   ├── pages.py                # Routes HTML (/, /editeur, /reception, /points-kilometriques, /historique)
 │   │   ├── api.py                  # Routes API (/api/excel/*, /api/*-pdf, /api/send-email, /api/download)
 │   │   ├── auth.py                 # Authentification : /login, /logout
-│   │   └── admin.py                # Panel admin : /admin/* (CRUD clients/users, upload Excel)
+│   │   └── admin.py                # Panel admin : /admin/* (CRUD clients/users, upload Excel, sélecteur fichier test)
 │   │
 │   ├── services/
 │   │   ├── excel_service.py        # Lecture et parsing du fichier Excel (local ou R2)
@@ -88,20 +88,20 @@ Elle permet de :
 │   │   ├── auth/
 │   │   │   └── login.html          # Page de connexion
 │   │   ├── admin/
-│   │   │   ├── dashboard.html      # Dashboard admin (liste clients + users)
+│   │   │   ├── dashboard.html      # Dashboard admin (liste clients + users + sélecteur Excel test)
 │   │   │   ├── client_form.html    # Formulaire création client
 │   │   │   └── user_form.html      # Formulaire création utilisateur
-│   │   ├── home.html               # Page d'accueil + choix du pipeline
-│   │   ├── index.html              # Phase 1 : Éditeur de profil (canvas)
-│   │   ├── points_kilometriques.html  # Phase 2 : Gestion des PK
-│   │   ├── reception_topographique.html  # Phase 3 : Réception + visualisation + PDF + email
+│   │   ├── home.html               # Page d'accueil + lien "Phase Conception" (discret)
+│   │   ├── index.html              # Phase Conception : Éditeur de profil (canvas)
+│   │   ├── points_kilometriques.html  # Phase Conception : Gestion des PK
+│   │   ├── reception_topographique.html  # Réception + visualisation + PDF + email (~5000 lignes)
 │   │   ├── historique.html         # Historique des fiches archivées (R2)
 │   │   └── pdf/
 │   │       └── fiche_reception.html   # Template PDF/impression Jinja2
 │   │
 │   └── static/
 │       ├── style.css               # Design system CSS global
-│       └── img/                    # Images statiques (logos, icônes)
+│       └── img/                    # Images statiques
 │
 ├── core/
 │   └── profile_utils.py            # Logique géométrique pure Python (sans Flask)
@@ -109,16 +109,17 @@ Elle permet de :
 ├── data/
 │   ├── Projet_Routier_Topographie.xlsx  # Fichier Excel modèle local (fallback dev)
 │   ├── clients/                    # Fichiers Excel par client (fallback local R2)
+│   ├── modeles_recepta/            # 4 modèles Excel assainissement générés (P1→P4)
+│   ├── sources/                    # Fichiers Excel sources clients (référence)
 │   └── tmp/                        # Fichiers générés temporaires (PDF, exports)
 │
+├── docs/                           # Documentation (DOCUMENTATION_PROJET.md, RECEPTA_V2_CONCEPTION.md)
+├── scripts/                        # Scripts utilitaires (gen_modeles_v3.py, create_admin.py, r2_manager.py)
 ├── logo/                           # Assets logo OPTILAB
-│
 ├── archive/                        # Anciennes versions — NE PAS MODIFIER
-│
 ├── tests/
 │   ├── __init__.py
-│   └── test_profile_utils.py       # Tests unitaires logique géométrique
-│
+│   └── test_profile_utils.py
 └── venv/                           # Environnement virtuel Python (non commité)
 ```
 
@@ -397,6 +398,11 @@ tr.row-interpolated{ background: #f8fafc; border-left: 3px solid #cbd5e1; }
 | Colonnes côtes non détectées | Cherchait `'COTE'` dans le nom | `pd.api.types.is_numeric_dtype()` |
 | `DATABASE_URL` avec `postgres://` | SQLAlchemy 2.x exige `postgresql://` | `str.replace()` au démarrage |
 | PDF non généré sur Render | WeasyPrint nécessite GTK absent sur Render | Remplacement par xhtml2pdf |
+| Email envoie HTML au lieu de PDF | Pièce jointe non obligatoire + mauvais format | `make_pdf_bytes_any` obligatoire + base64 |
+| Pièce jointe corrompue (Resend) | `list(pdf_bytes)` → entiers, Resend attend base64 | `base64.b64encode(pdf_bytes).decode()` |
+| Deploy Render crash au démarrage | `db.create_all()` plante si Supabase DNS timeout | Enveloppé dans `try/except` dans `__init__.py` |
+| Admin voit toujours l'ancien Excel | Admin sans client tombe sur `MODEL_EXCEL` figé | Sélecteur fichier test en session dans `/admin/` |
+| Logo image manquant sur Render | `optilab_logo.png` non trouvé | Logo CSS 2×2 points (cyan/jaune) dans tous les headers |
 
 ---
 
@@ -505,4 +511,41 @@ Python version : **3.11** (fichier `.python-version` à la racine).
 
 ---
 
-*Dernière mise à jour : 2026-04-07 — Identité RECEPTA + théodolite spirale + UX réception + corrections interpolation*
+## 18. CHANGELOG 2026-04-09
+
+### Réorganisation de la racine
+- `docs/` : DOCUMENTATION_PROJET.md, RECEPTA_V2_CONCEPTION.md, INST.txt, pooler.example
+- `scripts/` : gen_*.py, create_admin.py, r2_manager.py
+- `data/sources/` : fichiers Excel sources clients
+- `data/modeles_recepta/` : 4 modèles Excel assainissement (P1→P4, 1km à 5km)
+
+### Logo RECEPTA CSS sur toutes les pages
+- Tous les headers remplacent `optilab_logo.png` par le logo CSS grille 2×2 (cyan/jaune)
+- Pages concernées : `reception_topographique.html`, `historique.html`, `admin/dashboard.html`, `index.html`, `points_kilometriques.html`
+
+### Navigation simplifiée
+- Bouton `← Phase 2 : Points km` supprimé de la barre du bas de la réception
+- "Mode manuel (avancé)" renommé **"Phase Conception"** dans le footer de `home.html`
+
+### Fixes email et PDF
+- Pièce jointe PDF encodée en **base64** (format attendu par SDK Resend)
+- `/generate-pdf` utilise désormais `make_pdf_bytes_any` (xhtml2pdf sur Render)
+- `@login_required` ajouté sur `/generate-pdf` et `/preview-pdf` (manquait)
+
+### Admin — sélecteur fichier Excel de test
+- Nouvelle carte orange dans `/admin/` : dropdown de tous les `.xlsx` locaux
+- Le choix est mémorisé en session Flask → `_get_excel_source()` le sert
+- Permet à l'admin de tester n'importe quel modèle sans passer par R2
+
+### Robustesse déploiement
+- `db.create_all()` enveloppé dans `try/except` → Render ne plante plus si Supabase DNS timeout
+
+### V2 PRO — planification
+- Deux produits décidés : **RECEPTA SOLO** (29-49€/mois) et **RECEPTA PRO** (149-299€/mois/projet)
+- Un seul codebase, une seule URL, différenciation par champ `plan` sur le modèle `Client`
+- Architecture V2 complète documentée dans `docs/RECEPTA_V2_CONCEPTION.md`
+- Prochaine étape V2 : ajouter `plan` sur `Client`, créer `blueprints/pro/`, implémenter `Projet` + `Portion` + `MembreProjet`
+
+---
+
+*Dernière mise à jour : 2026-04-09 — Fixes email/PDF + logo CSS + réorganisation racine + V2 PRO planifiée*

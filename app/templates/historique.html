@@ -18,13 +18,18 @@
 <header class="bg-gradient-to-r from-primary-dark to-primary sticky top-0 z-50 shadow-lg">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <a href="/" class="flex items-center hover:opacity-80 transition">
-                <img src="{{ url_for('static', filename='img/optilab_logo.png') }}"
-                     alt="OPTILAB"
-                     style="height:34px; filter:brightness(0) invert(1);">
+            <a href="/" class="flex items-center gap-2 hover:opacity-80 transition" style="text-decoration:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:18px;height:18px;flex-shrink:0;">
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#fbbf24;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                </div>
+                <div style="display:flex;flex-direction:column;line-height:1.15;">
+                    <span style="color:white;font-size:14px;font-weight:800;letter-spacing:1px;">RECEPTA</span>
+                    <span style="color:rgba(255,255,255,0.55);font-size:9px;font-weight:500;">by OPTILAB</span>
+                </div>
             </a>
-            <span class="text-white/40 hidden sm:block">›</span>
-            <span class="text-white/80 text-sm hidden sm:block">Historique</span>
         </div>
         <div class="flex items-center gap-3">
             <a href="/" class="text-white/70 hover:text-white text-sm transition px-3 py-1.5 rounded-lg hover:bg-white/10">Accueil</a>

@@ -653,10 +653,17 @@
 <body>
     <header class="site-header">
         <div class="site-title">
-            <a href="/" style="display:flex; align-items:center; text-decoration:none;">
-                <img src="{{ url_for('static', filename='img/optilab_logo.png') }}"
-                     alt="OPTILAB"
-                     style="height:38px; filter:brightness(0) invert(1);">
+            <a href="/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:18px;height:18px;flex-shrink:0;">
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#fbbf24;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                </div>
+                <div style="display:flex;flex-direction:column;line-height:1.15;">
+                    <span style="color:white;font-size:14px;font-weight:800;letter-spacing:1px;">RECEPTA</span>
+                    <span style="color:rgba(255,255,255,0.55);font-size:9px;font-weight:500;">by OPTILAB</span>
+                </div>
             </a>
         </div>
         <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Menu">

@@ -426,6 +426,58 @@ def toggle_plan_projet(projet_id):
     return redirect(url_for("admin.detail_projet", projet_id=projet_id))
 
 
+@admin_bp.route("/projets/<int:projet_id>/membres/creer", methods=["POST"])
+@admin_required
+def creer_membre(projet_id):
+    """Crée un nouvel utilisateur PRO et l'ajoute directement comme membre du projet."""
+    projet = db.get_or_404(Projet, projet_id)
+
+    nom           = request.form.get("nom", "").strip()
+    email         = request.form.get("email", "").strip().lower()
+    password      = request.form.get("password", "").strip()
+    role          = request.form.get("role", "")
+    email_notif   = request.form.get("email_notif", "").strip()
+    nom_affichage = request.form.get("nom_affichage", "").strip()
+
+    if not nom or not email or not password or role not in ("mdc", "entreprise"):
+        flash("Nom, email, mot de passe et rôle sont obligatoires.", "danger")
+        return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
+    if User.query.filter_by(email=email).first():
+        flash(f"L'email « {email} » est déjà utilisé par un autre compte.", "danger")
+        return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
+    nb_role = MembreProjet.query.filter_by(projet_id=projet_id, role=role).count()
+    if nb_role >= 5:
+        flash(f"Limite atteinte : maximum 5 membres {role.upper()} par projet.", "danger")
+        return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
+    # Création utilisateur avec profil PRO automatique
+    user = User(
+        email=email,
+        nom=nom,
+        role="client",
+        profil="pro",
+        client_id=projet.client_id,
+    )
+    user.set_password(password)
+    db.session.add(user)
+    db.session.flush()  # obtenir user.id avant le commit
+
+    membre = MembreProjet(
+        projet_id=projet_id,
+        user_id=user.id,
+        role=role,
+        email_notif=email_notif or email,
+        nom_affichage=nom_affichage or nom,
+    )
+    db.session.add(membre)
+    db.session.commit()
+
+    flash(f"Utilisateur « {nom} » créé (PRO) et ajouté en tant que {role.upper()}.", "success")
+    return redirect(url_for("admin.detail_projet", projet_id=projet_id))
+
+
 @admin_bp.route("/projets/<int:projet_id>/membres/ajouter", methods=["POST"])
 @admin_required
 def ajouter_membre(projet_id):

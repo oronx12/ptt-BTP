@@ -636,4 +636,139 @@ Création des modèles dans `app/models.py` :
 
 ---
 
-*Document généré automatiquement — PTT BTP SaaS — Mars 2026*
+## 11. Génération du Plan en Long à partir des fichiers Excel
+
+### Qu'est-ce que le plan en long ?
+
+Le **plan en long** est une représentation graphique de la route vue de profil : on trace la **cote NGF (altitude) de l'axe** en ordonnée, et la **distance cumulée (ou le PK)** en abscisse. C'est un document fondamental en topographie routière pour vérifier les pentes, les points hauts/bas, et les conformités altimétriques.
+
+---
+
+### Les données disponibles dans les fichiers Excel
+
+Chaque fichier Excel assainissement (`data/modeles_recepta/`) contient deux onglets dédiés à la spatialisation :
+
+#### Onglet `PK_Coordonnees`
+
+| Colonne | Description |
+|---------|-------------|
+| `PK` | Identifiant du point kilométrique (ex: `0+000`, `0+025`) |
+| `X (m)` | Coordonnée Lambert 93 — Est |
+| `Y (m)` | Coordonnée Lambert 93 — Nord |
+| `Z axe (m)` | **Cote NGF de l'axe chaussée** — c'est la valeur clé pour le plan en long |
+| `Gisement (°)` | Direction de la route en degrés (0°=Nord, 90°=Est) |
+| `Dist. cumulée (m)` | Distance depuis l'origine du projet (abscisse du plan en long) |
+
+> **Note :** Les coordonnées fournies sont des données de démonstration. Les valeurs réelles doivent être remplacées par celles issues du levé topographique ou du GPS.
+
+#### Onglet `OFFSETS_TRANSVERSAUX`
+
+| Colonne | Description |
+|---------|-------------|
+| `Élément` | Nom de l'élément (Canal_G, Bord_Chaussee_D, etc.) |
+| `Distance / axe (m)` | Distance transversale depuis l'axe (négatif = gauche, positif = droite) |
+| `Côté` | Gauche / Droit / Axe |
+| `Colonne cote référence` | Nom de la colonne dans `Cote_Gauche` ou `Cote_Droit` qui donne la cote de cet élément |
+| `Onglet source` | `Cote_Gauche` ou `Cote_Droit` |
+
+---
+
+### Comment construire le plan en long depuis l'Excel
+
+#### Méthode 1 — Graphique Excel (simple)
+
+1. Ouvrir le fichier Excel (`P1_RN_2x2voies_TPC_3km.xlsx` par exemple)
+2. Aller dans l'onglet `PK_Coordonnees`
+3. Sélectionner les colonnes **`Dist. cumulée (m)`** (colonne F) et **`Z axe (m)`** (colonne D)
+4. Insérer un graphique **Courbes** (ou **Nuage de points avec courbes**)
+5. Axe X = distance cumulée, Axe Y = cote NGF
+6. Ajouter un second axe pour superposer les côtes théoriques (`Cote_Gauche` / `Cote_Droit`)
+
+#### Méthode 2 — Superposer la cote théorique des éléments
+
+Pour chaque élément (ex: `Tablier_Fini_G`), la cote en chaque PK se trouve dans l'onglet `Cote_Gauche` (ou `Cote_Droit`). On peut ainsi tracer plusieurs lignes sur le même plan en long :
+
+```
+Axe Z                 ←── PK_Coordonnees.Z_axe
+Tablier_Fini_G        ←── Cote_Gauche.Tablier_Fini_G
+Tablier_Fini_D        ←── Cote_Droit.Tablier_Fini_D
+Canal_G               ←── Cote_Gauche.G_Roulement (fond de caniveau)
+Canal_D               ←── Cote_Droit.D_Roulement
+```
+
+#### Méthode 3 — Script Python (automatique)
+
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+from pathlib import Path
+
+fichier = Path("data/modeles_recepta/P1_RN_2x2voies_TPC_3km.xlsx")
+
+# Lire les coordonnées axe
+df_pk = pd.read_excel(fichier, sheet_name="PK_Coordonnees", skiprows=3)
+# Lire les côtes théoriques gauche
+df_g  = pd.read_excel(fichier, sheet_name="Cote_Gauche")
+
+# Fusionner sur le PK
+merged = pd.merge(df_pk, df_g, on="PK", how="inner")
+
+# Tracer le plan en long
+fig, ax = plt.subplots(figsize=(20, 6))
+ax.plot(merged["Dist. cumulée (m)"], merged["Z axe (m)"], label="Axe chaussée", lw=2, color="#00FFFF")
+ax.plot(merged["Dist. cumulée (m)"], merged["Tablier_Fini_G"], label="Tablier fini G", lw=1.5, color="#F87171", ls="--")
+ax.set_xlabel("Distance cumulée (m)")
+ax.set_ylabel("Cote NGF (m)")
+ax.set_title("Plan en long — Route Nationale 2x2 voies TPC")
+ax.legend()
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig("plan_en_long_P1.png", dpi=150)
+```
+
+---
+
+### Calcul de la position GPS de chaque élément (plan en plan)
+
+L'onglet `OFFSETS_TRANSVERSAUX` donne la **distance transversale** de chaque élément par rapport à l'axe. Pour calculer les coordonnées X/Y d'un élément à un PK donné :
+
+```
+X_element = X_axe  +  dist_transversale × sin(gisement + 90°)
+Y_element = Y_axe  +  dist_transversale × cos(gisement + 90°)
+```
+
+Où :
+- `X_axe`, `Y_axe` viennent de `PK_Coordonnees`
+- `dist_transversale` vient de `OFFSETS_TRANSVERSAUX` (négatif = gauche, positif = droite)
+- `gisement` est en radians (`gisement_deg × π / 180`)
+
+---
+
+### Données par projet
+
+| Fichier | PK de départ | Gisement initial | Pente | Longueur |
+|---------|-------------|-----------------|-------|---------|
+| P1_RN_2x2voies_TPC_3km | X=839 420 / Y=6 516 800 / Z=105.85 | 42.5° (NE) | +0.15 m/100m | 3 km |
+| P2_Urbain_Trottoirs_1.5km | X=841 750 / Y=6 518 200 / Z=98.32 | 355° (N) | −0.08 m/100m | 1.5 km |
+| P3_Autoroute_2x3_5km | X=836 100 / Y=6 512 500 / Z=112.45 | 18° (NNE) | +0.25 m/100m | 5 km |
+| P4_Rural_1x2_1km | X=833 650 / Y=6 520 100 / Z=142.78 | 285° (WNW) | −0.35 m/100m | 1 km |
+
+> Le gisement varie légèrement en cours de tracé (±3° sur 800 m) pour simuler une courbure réelle — voir `scripts/add_coords_to_models.py`, fonction `generate_coords()`.
+
+---
+
+### Script de régénération
+
+Pour regénérer les deux onglets sur tous les fichiers (après modification des coordonnées de départ ou des offsets) :
+
+```bash
+cd "c:/Users/Oronx/Documents/projet_assainissement/projet PTT BTP/FEVRIER_2026/02_2026_Setup_app_01"
+venv/Scripts/python.exe scripts/add_coords_to_models.py
+```
+
+Le script se trouve dans [scripts/add_coords_to_models.py](../scripts/add_coords_to_models.py).
+Il lit les PK depuis l'onglet `Cote_Gauche` de chaque fichier, calcule les coordonnées, puis écrit/écrase les deux onglets `PK_Coordonnees` et `OFFSETS_TRANSVERSAUX`.
+
+---
+
+*Document mis à jour — RECEPTA by OPTILAB — Avril 2026*

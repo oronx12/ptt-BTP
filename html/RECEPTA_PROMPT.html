@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RECEPTA — Prompt de conception complet</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #07101c;
+  --bg2:   #0d1b2e;
+  --bg3:   #0f2038;
+  --cyan:  #00ffff;
+  --gold:  #fbbf24;
+  --green: #22c55e;
+  --red:   #ef4444;
+  --tx:    #dff0ff;
+  --tx2:   rgba(180,215,240,.6);
+  --tx3:   rgba(180,215,240,.35);
+  --bd:    rgba(0,255,255,.08);
+  --bda:   rgba(0,255,255,.2);
+  --mono:  'JetBrains Mono',monospace;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body { background:var(--bg); color:var(--tx); font-family:'Inter',sans-serif; line-height:1.6; }
+
+/* ── Layout ── */
+.layout { display:grid; grid-template-columns:260px 1fr; min-height:100vh; }
+
+/* ── Sidebar ── */
+aside {
+  position:sticky; top:0; height:100vh; overflow-y:auto;
+  background:var(--bg2); border-right:1px solid var(--bd);
+  padding:28px 20px;
+}
+.sb-logo { display:flex; align-items:center; gap:8px; margin-bottom:32px; }
+.sb-dots { display:grid; grid-template-columns:1fr 1fr; gap:2px; width:16px; height:16px; }
+.sb-dots span { border-radius:1.5px; }
+.sb-dots span:nth-child(1) { background:#00ffff; }
+.sb-dots span:nth-child(2) { background:#fbbf24; }
+.sb-dots span:nth-child(3) { background:#00ffff; }
+.sb-dots span:nth-child(4) { background:#00ffff; }
+.sb-title { font-size:12px; font-weight:800; letter-spacing:2.5px; color:var(--cyan); }
+
+.sb-section { margin-bottom:26px; }
+.sb-label { font-size:.65rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--tx3); margin-bottom:8px; }
+.sb-links { list-style:none; display:flex; flex-direction:column; gap:2px; }
+.sb-links a {
+  display:block; padding:6px 10px; border-radius:7px;
+  font-size:.82rem; color:var(--tx2); text-decoration:none;
+  transition:background .15s, color .15s;
+}
+.sb-links a:hover { background:var(--bd); color:var(--tx); }
+.sb-links a.active { background:rgba(0,255,255,.08); color:var(--cyan); }
+.sb-badge {
+  display:inline-block; margin-left:6px;
+  font-size:.6rem; font-weight:700; padding:2px 6px; border-radius:4px;
+  vertical-align:middle;
+}
+.badge-cyan  { background:rgba(0,255,255,.1);  color:var(--cyan); }
+.badge-gold  { background:rgba(251,191,36,.1); color:var(--gold); }
+.badge-green { background:rgba(34,197,94,.1);  color:var(--green); }
+
+/* ── Main content ── */
+main { padding:48px 56px; max-width:900px; }
+
+/* ── Copy button ── */
+.copy-bar {
+  position:sticky; top:0; z-index:50;
+  background:rgba(7,16,28,.92); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--bd);
+  padding:10px 0; margin:-48px -56px 40px; padding:10px 56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.copy-bar h1 { font-size:.85rem; font-weight:700; color:var(--tx2); letter-spacing:.5px; }
+.copy-btn {
+  display:flex; align-items:center; gap:7px;
+  padding:7px 16px; background:var(--cyan); border:none; border-radius:7px;
+  color:var(--bg); font-family:'Inter',sans-serif; font-size:.8rem; font-weight:700;
+  cursor:pointer; transition:background .2s, transform .15s;
+}
+.copy-btn:hover { background:#7ffff4; transform:translateY(-1px); }
+.copy-btn svg { width:13px; height:13px; }
+
+/* ── Prompt block ── */
+.prompt-block {
+  background:var(--bg2); border:1px solid var(--bda);
+  border-radius:14px; overflow:hidden; margin-bottom:32px;
+}
+.pb-header {
+  padding:12px 20px; background:var(--bg3);
+  border-bottom:1px solid var(--bd);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.pb-title { font-size:.76rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--cyan); display:flex; align-items:center; gap:8px; }
+.pb-title::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--cyan); opacity:.7; flex-shrink:0; }
+.pb-copy { font-size:.7rem; color:var(--tx3); cursor:pointer; padding:4px 10px; border:1px solid var(--bd); border-radius:5px; background:transparent; color:var(--tx2); transition:background .15s; font-family:'Inter',sans-serif; }
+.pb-copy:hover { background:var(--bd); color:var(--tx); }
+.pb-body {
+  padding:24px; font-family:var(--mono); font-size:.8rem;
+  line-height:1.8; color:var(--tx2); white-space:pre-wrap;
+}
+
+/* ── Section blocks ── */
+.section { margin-bottom:56px; scroll-margin-top:80px; }
+.section-title {
+  font-size:1.4rem; font-weight:800; color:var(--tx);
+  margin-bottom:6px; display:flex; align-items:center; gap:10px;
+}
+.section-title .num {
+  font-family:'JetBrains Mono',monospace; font-size:.9rem;
+  color:var(--cyan); opacity:.6;
+}
+.section-desc { font-size:.9rem; color:var(--tx2); margin-bottom:24px; line-height:1.7; }
+
+/* ── Feature cards ── */
+.feature-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px; }
+.feature-card {
+  background:var(--bg2); border:1px solid var(--bd); border-radius:12px;
+  padding:18px; transition:border-color .2s;
+}
+.feature-card:hover { border-color:var(--bda); }
+.fc-label { font-size:.7rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--cyan); margin-bottom:8px; }
+.fc-desc  { font-size:.82rem; color:var(--tx2); line-height:1.65; }
+
+/* ── UI spec table ── */
+.spec-table { width:100%; border-collapse:collapse; margin-top:16px; }
+.spec-table th {
+  padding:10px 14px; background:var(--bg3);
+  font-size:.7rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--tx3); text-align:left; border-bottom:1px solid var(--bd);
+}
+.spec-table td {
+  padding:10px 14px; font-size:.82rem; color:var(--tx2);
+  border-bottom:1px solid var(--bd); vertical-align:top; line-height:1.6;
+}
+.spec-table tr:last-child td { border-bottom:none; }
+.spec-table td:first-child { color:var(--tx); font-weight:600; white-space:nowrap; }
+.spec-table td code {
+  font-family:var(--mono); font-size:.75rem;
+  background:var(--bg3); padding:1px 6px; border-radius:4px; color:var(--cyan);
+}
+
+/* ── Color swatches ── */
+.swatch-grid { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+.swatch { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.swatch-dot { width:44px; height:44px; border-radius:10px; border:1px solid rgba(255,255,255,.08); }
+.swatch-name { font-size:.68rem; color:var(--tx3); font-family:var(--mono); }
+.swatch-val  { font-size:.68rem; color:var(--tx2); font-family:var(--mono); }
+
+/* ── Page wireframe ── */
+.wireframe { background:var(--bg3); border:1px solid var(--bd); border-radius:12px; padding:20px; margin-top:16px; font-family:var(--mono); font-size:.75rem; color:var(--tx2); white-space:pre; overflow-x:auto; line-height:1.6; }
+
+/* ── Inline code ── */
+code { font-family:var(--mono); font-size:.78rem; background:var(--bg3); padding:1px 6px; border-radius:4px; color:var(--cyan); }
+
+/* ── Divider ── */
+hr { border:none; border-top:1px solid var(--bd); margin:40px 0; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── SIDEBAR ───────────────────────────────────────────────── -->
+<aside>
+  <div class="sb-logo">
+    <div class="sb-dots"><span></span><span></span><span></span><span></span></div>
+    <span class="sb-title">RECEPTA</span>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label">Projet</div>
+    <ul class="sb-links">
+      <li><a href="#overview" class="active">Vue d'ensemble</a></li>
+      <li><a href="#stack">Stack technique</a></li>
+      <li><a href="#design">Design system</a></li>
+    </ul>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label">Pages publiques</div>
+    <ul class="sb-links">
+      <li><a href="#landing">Landing <code class="sb-badge badge-cyan">/</code></a></li>
+      <li><a href="#login">Connexion <code class="sb-badge badge-cyan">/login</code></a></li>
+    </ul>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label">Espace PRO</div>
+    <ul class="sb-links">
+      <li><a href="#projets">Mes projets <code class="sb-badge badge-gold">PRO</code></a></li>
+      <li><a href="#projet-hub">Hub projet <code class="sb-badge badge-gold">PRO</code></a></li>
+      <li><a href="#reception">Réception <code class="sb-badge badge-gold">PRO</code></a></li>
+      <li><a href="#demandes">Demandes <code class="sb-badge badge-gold">PRO</code></a></li>
+      <li><a href="#rapport">Rapport <code class="sb-badge badge-gold">PRO</code></a></li>
+      <li><a href="#historique">Historique</a></li>
+      <li><a href="#carte">Carte GPS</a></li>
+    </ul>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label">Admin</div>
+    <ul class="sb-links">
+      <li><a href="#admin-dashboard">Dashboard</a></li>
+      <li><a href="#admin-projet">Détail projet</a></li>
+      <li><a href="#admin-visualisation">Visualisation</a></li>
+    </ul>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label">Prompt IA</div>
+    <ul class="sb-links">
+      <li><a href="#prompt-master">Prompt complet</a></li>
+      <li><a href="#prompt-ui">Prompt UI/UX</a></li>
+      <li><a href="#prompt-landing">Prompt landing</a></li>
+    </ul>
+  </div>
+</aside>
+
+<!-- ── MAIN ──────────────────────────────────────────────────── -->
+<main>
+
+  <div class="copy-bar">
+    <h1>RECEPTA · Documentation de conception & Prompts IA</h1>
+    <button class="copy-btn" onclick="copyAll()">
+      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
+      Copier le prompt master
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       VUE D'ENSEMBLE
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="overview">
+    <div class="section-title"><span class="num">01</span> Vue d'ensemble du projet</div>
+    <p class="section-desc">
+      <strong>RECEPTA</strong> est une application web SaaS Flask (Python) destinée aux <strong>ingénieurs et techniciens BTP</strong>.
+      Elle automatise la <strong>réception topographique</strong> de chantiers routiers : comparaison côtes mesurées / côtes théoriques,
+      génération de fiches PDF officielles, archivage cloud, workflow MDC ↔ Entreprise de Travaux.
+    </p>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="fc-label">Produits</div>
+        <div class="fc-desc">
+          <strong>RECEPTA SOLO</strong> — accès direct, un seul utilisateur par projet<br>
+          <strong>RECEPTA PRO</strong> — workflow MDC/ET, demandes de réception, validation, partenariat
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-label">Modes de réception</div>
+        <div class="fc-desc">
+          <strong>Assainissement (ASS)</strong> — 9 colonnes, profil en travers drainage<br>
+          <strong>Terrassement (TER)</strong> — 11 colonnes, dist. axe + pente
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-label">Rôles utilisateurs</div>
+        <div class="fc-desc">
+          <strong>admin</strong> — gestion globale plateforme<br>
+          <strong>MDC</strong> — Mission de Contrôle, valide les réceptions<br>
+          <strong>ET</strong> — Entreprise de Travaux, soumet les demandes
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-label">Données Excel V3</div>
+        <div class="fc-desc">
+          Onglets : <code>GEN</code> <code>AXE</code> <code>TER</code> <code>ASG</code> <code>ASD</code> <code>ASS</code>
+          <code>GEO</code> <code>DIV</code> <code>PK_Coordonnees</code> <code>OFFSETS_TRANSVERSAUX</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       STACK TECHNIQUE
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="stack">
+    <div class="section-title"><span class="num">02</span> Stack technique</div>
+    <table class="spec-table">
+      <thead><tr><th>Composant</th><th>Technologie</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Backend</td><td>Python / Flask ≥ 2.3</td><td>Application Factory pattern, blueprints</td></tr>
+        <tr><td>ORM / BDD</td><td>Flask-SQLAlchemy + PostgreSQL</td><td>Hébergé sur Supabase</td></tr>
+        <tr><td>Auth</td><td>Flask-Login</td><td>Rôles : <code>admin</code> / client (MDC ou ET)</td></tr>
+        <tr><td>Excel</td><td>pandas ≥ 2.0 + openpyxl ≥ 3.1</td><td>Fichiers V3 stockés sur R2</td></tr>
+        <tr><td>PDF</td><td>xhtml2pdf</td><td>WeasyPrint retiré (incompatible Render/GTK)</td></tr>
+        <tr><td>Cloud</td><td>Cloudflare R2 via boto3</td><td>Excel clients + fiches archivées</td></tr>
+        <tr><td>Email</td><td>Resend API</td><td>Fiches PDF en base64 en pièce jointe</td></tr>
+        <tr><td>Frontend</td><td>HTML5 + CSS3 + Vanilla JS + Tailwind CDN</td><td>Pas de framework JS</td></tr>
+        <tr><td>Cartes</td><td>Leaflet 1.9.4 + proj4 2.9.0</td><td>Lambert 93 → WGS84</td></tr>
+        <tr><td>Graphiques</td><td>Chart.js 4.4.0</td><td>Profil en long, init lazy par tab</td></tr>
+        <tr><td>Hébergement</td><td>Render (prod) / Waitress (local Windows)</td><td>Python 3.11</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       DESIGN SYSTEM
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="design">
+    <div class="section-title"><span class="num">03</span> Design system RECEPTA</div>
+
+    <p class="section-desc">Thème unique dark navy. Pas de mode clair dans l'app (seulement sur la landing publique).</p>
+
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#07101c;"></div>
+        <div class="swatch-name">bg-base</div>
+        <div class="swatch-val">#07101c</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#0d1b2e;"></div>
+        <div class="swatch-name">bg-card</div>
+        <div class="swatch-val">#0d1b2e</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#0f2038;"></div>
+        <div class="swatch-name">bg-3</div>
+        <div class="swatch-val">#0f2038</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#1e3a5f;border:1px solid rgba(255,255,255,.1)"></div>
+        <div class="swatch-name">border</div>
+        <div class="swatch-val">#1e3a5f</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#00ffff;"></div>
+        <div class="swatch-name">cyan</div>
+        <div class="swatch-val">#00ffff</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#fbbf24;"></div>
+        <div class="swatch-name">gold</div>
+        <div class="swatch-val">#fbbf24</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#7c3aed;"></div>
+        <div class="swatch-name">violet (MDC)</div>
+        <div class="swatch-val">#7c3aed</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#f59e0b;"></div>
+        <div class="swatch-name">amber (ET)</div>
+        <div class="swatch-val">#f59e0b</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#22c55e;"></div>
+        <div class="swatch-name">success</div>
+        <div class="swatch-val">#22c55e</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#ef4444;"></div>
+        <div class="swatch-name">error</div>
+        <div class="swatch-val">#ef4444</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-dot" style="background:#94a3b8;"></div>
+        <div class="swatch-name">interp.</div>
+        <div class="swatch-val">#94a3b8</div>
+      </div>
+    </div>
+
+    <br>
+    <table class="spec-table">
+      <thead><tr><th>Élément</th><th>Valeur</th></tr></thead>
+      <tbody>
+        <tr><td>Police principale</td><td><code>Inter</code> — poids 400/500/600/700/800/900</td></tr>
+        <tr><td>Police display</td><td><code>Bebas Neue</code> — titres landing/grands chiffres</td></tr>
+        <tr><td>Police monospace</td><td><code>JetBrains Mono</code> — PK, valeurs numériques, code</td></tr>
+        <tr><td>Logo RECEPTA</td><td>Grille CSS 2×2 dots : cyan/gold/cyan/cyan. Jamais d'image fichier.</td></tr>
+        <tr><td>Bordure radius</td><td>Cards: 12-16px · Boutons: 8-10px · Pills: 100px</td></tr>
+        <tr><td>MDC couleur</td><td>Violet <code>#7c3aed</code> / <code>#a78bfa</code></td></tr>
+        <tr><td>ET couleur</td><td>Ambre <code>#f59e0b</code> / <code>#fbbf24</code></td></tr>
+        <tr><td>Plan AUTONOME</td><td>Gris slate <code>#475569</code></td></tr>
+        <tr><td>Plan PARTENARIAT</td><td>Violet <code>#c084fc</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PAGES — LANDING
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="landing">
+    <div class="section-title"><span class="num">04</span> Landing page publique <code>/</code></div>
+    <p class="section-desc">Page de présentation pour les visiteurs non connectés. Thème dark/light toggle. Three.js terrain topographique animé côté droit.</p>
+
+    <div class="wireframe">
+┌─ NAV (sticky, blur) ──────────────────────────────────────────────────────┐
+│ [●●] RECEPTA · by OPTILAB   Comment ça marche  Fonctionnalités  [🌙] [Connexion→] │
+└───────────────────────────────────────────────────────────────────────────┘
+
+┌─ HERO (sticky scroll, 280vh) ─────────────────────────────────────────────┐
+│                                     │  Three.js wireframe terrain          │
+│  ┌ eyebrow ┐                        │  topographique animé (cyan)          │
+│  Réception                          │  + points mesure (gold)              │
+│  TOPOGRAPHIQUE   ← Bebas Neue 7rem  │  + lignes PK                        │
+│  SaaS professionnel pour ing. BTP   │                                      │
+│                                     │                                      │
+│  [→ Accéder à la plateforme] [Voir comment ça marche]                     │
+│                                     │                                      │
+│  [4 étapes] [PDF] [MDC/ET] [R2]    │  ← overlay faux data mi-scroll       │
+│                                     │  (PK/mesures/scan line)              │
+│  ↓ Découvrir                        │                                      │
+└───────────────────────────────────────────────────────────────────────────┘
+
+┌─ PROCESS (4 étapes) ─────────────────────────────────────────────────────┐
+│  01 Configuration  02 Sélection  03 Saisie terrain  04 Réception & PDF   │
+│  (cards hover → top border gradient cyan→gold, translateY(-7px))          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ FEATURES (list gauche + faux écran droite) ─────────────────────────────┐
+│  ✓ Comparaison auto   │  Faux tableau résultats :                         │
+│  ✓ PDF officiels      │  PK 0+050 · G_Roulement · +0.002 ● vert          │
+│  ✓ Email auto         │  PK 0+050 · D_Base_BB   · +0.027 ● rouge         │
+│  ✓ MDC/ET partenariat │  PK 0+150 · interpolé   · ~                      │
+│  ✓ Archivage R2       │  Bilan : 5/6 conformes — 83%                     │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ METRICS (4 colonnes) ───────────────────────────────────────────────────┐
+│   100%              4 étapes         &lt;30s              2 clics           │
+│  Calcul auto      Workflow guidé   Génération PDF    Envoi email          │
+│  (counter animation on scroll)                                            │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ TÉMOIGNAGES (3 cards) ──────────────────────────────────────────────────┐
+│  "..." — Pierre M. MDC       "..." — Sarah D.       "..." — Karim A. ET  │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌─ CTA ──────── ┐   ┌─ FOOTER ─────────────────────────────────────────────┐
+│ Prêt à        │   │  Logo + tagline │ Outil │ Modes │ Contact             │
+│ réceptionner? │   │  © 2026 OPTILAB · RECEPTA v2 · Production            │
+└───────────────┘   └─────────────────────────────────────────────────────┘</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PAGES — RÉCEPTION TOPOGRAPHIQUE
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="reception">
+    <div class="section-title"><span class="num">05</span> Réception topographique <code>/reception</code></div>
+    <p class="section-desc">
+      Page centrale de l'outil (~4000 lignes). Workflow en 4 étapes guidées.
+      Thème actuel : light (blanc/bleu). Un toggle permet de basculer vers le thème dark navy du prototype.
+    </p>
+
+    <div class="wireframe">
+┌─ HEADER (sticky) ─────────────────────────────────────────────────────────┐
+│ [●●]RECEPTA  ← [Phase 2]  →[Résultats]  [Généreer PDF]  [📧 Email]       │
+│ Indicateur: étape 1/2/3/4/5 · Projet chargé · Mode ASS/TER                │
+└───────────────────────────────────────────────────────────────────────────┘
+
+ÉTAPE 1 — SOURCE EXCEL
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Charger depuis :  [Cloud R2 ▾]  [Fichier local]                        │
+│  Projet sélectionné : A89 — Lot 3 · PK 0+000 → 1+100                   │
+│  ✓ 4 onglets chargés · Mode : Assainissement                            │
+└─────────────────────────────────────────────────────────────────────────┘
+
+ÉTAPE 2 — SÉLECTION DES ÉLÉMENTS
+┌─────────────────────────────────────────────────────────────────────────┐
+│  PK disponibles : [0+000][0+050][0+100]...[1+100]  [Tout][Aucun]        │
+│  ┌── Côté gauche ──────┐  ┌── Axe ───────┐  ┌── Côté droit ──────┐    │
+│  │ ☑ G_Roulement       │  │ ☑ A_Roulement│  │ ☑ D_Roulement      │    │
+│  │ ☑ G_Base_BB         │  │ ☑ A_Base_BB  │  │ ☑ D_Base_BB        │    │
+│  │ ☑ G_Fond_Fouille    │  │              │  │ ☑ D_Fond_Fouille   │    │
+│  └─────────────────────┘  └──────────────┘  └────────────────────┘    │
+│  [+ PK hors-plan]  [▾ Schéma profil en travers]                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+ÉTAPE 3 — SAISIE DES MESURES (par station)
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Station 1 · PK 0+000 → 0+200                                           │
+│  Cote repère: [162.480]  LAV: [1.842]  Pente: [2.5%]                   │
+│                                                                         │
+│  PK     │ Élément        │ LAV  │ Côte LAV│ Mesurée │ Théo  │Δ+  │Δ−  │Valid│Obs│
+│  0+000  │ G_Roulement    │      │         │[      ] │162.345│    │    │ — │ 📷│
+│  0+000  │ A_Roulement    │      │         │[      ] │162.358│    │    │ — │   │
+│  ←RED→  │ D_Base_BB      │      │         │[0.389 ] │162.362│+.027│   │ ⚠ │   │
+│  ─ ─ ─ ─ + ─ ─ ─ [insérer point interpolé entre 0+050 et 0+100]       │
+│  0+050  │ G_Roulement    │      │         │[      ] │       │    │    │   │   │
+│                                                                         │
+│  [+ Nouvelle station]         [Vue: Tableau ↕ Cartes]                  │
+└─────────────────────────────────────────────────────────────────────────┘
+  Statuts lignes :
+  ecart-ok (≤ tol) = vert  |  ecart-positif = rouge  |  ecart-negatif = rouge
+  row-interpolated = gris  |  Vue Cartes = card mobile par PK×élément
+
+ÉTAPE 4 — INFORMATIONS CHANTIER
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Projet: [      ]  Section/Tronçon: [       ]  Date: [      ]           │
+│  Opérateur: [      ]  Météo: [      ]  Tolérance: [ 2.0 cm ]           │
+│  Mode: [◉ Assainissement]  [○ Terrassement]                             │
+└─────────────────────────────────────────────────────────────────────────┘
+
+ÉTAPE 5 — SIGNATURES
+┌─────────────────────────────────────────────────────────────────────────┐
+│  ┌── MDC ─────────────────────┐  ┌── Entreprise de Travaux ────────────┐│
+│  │ Nom: [    ]  Société: [  ] │  │ Nom: [    ]  Société: [    ]        ││
+│  │ Date: [  ]                 │  │ Date: [  ]                          ││
+│  │ [Zone signature tactile]   │  │ [Zone signature tactile]            ││
+│  │ [Effacer]                  │  │ [Effacer]                           ││
+│  └────────────────────────────┘  └─────────────────────────────────────┘│
+│  Observations générales : [                                            ] │
+│  Options PDF : [○ Séparer G/D] [○ Fusionner]                           │
+└─────────────────────────────────────────────────────────────────────────┘
+
+RÉSULTATS (après calcul)
+┌─────────────────────────────────────────────────────────────────────────┐
+│  ┌─ KPIs ──────────────────────────────────────────────────────────────┐│
+│  │  24 points   │   83% conformes   │  20 OK   │  4 hors tol.         ││
+│  └─────────────────────────────────────────────────────────────────────┘│
+│  Tableau résultats coloré (vert/rouge/gris interpolé)                   │
+│  [Générer PDF]  [Prévisualiser]  [Envoyer par email]                   │
+└─────────────────────────────────────────────────────────────────────────┘</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PAGES — PROJETS LISTE + HUB
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="projets">
+    <div class="section-title"><span class="num">06</span> Mes projets <code>/pro/projets</code></div>
+    <div class="wireframe">
+┌─ HEADER sticky cyan ─────────────────────────────────────────────────────┐
+│ [●●]RECEPTA  [Historique]  [Admin si admin]  Nom utilisateur  [Déconnexion]│
+└──────────────────────────────────────────────────────────────────────────┘
+  Bonjour, [Prénom] · Vous avez accès à N projets · [M demandes en attente]
+
+┌─ SECTION MDC (violet) ──────┐  ┌─ SECTION ET (ambre) ──────────────────┐
+│ Card projet :                │  │ Card projet :                          │
+│  [V] Nom projet              │  │  [E] Nom projet                       │
+│      Intitulé tronçon        │  │      Intitulé                         │
+│  [MDC/ADMIN][PARTENARIAT]    │  │  [ET] [AUTONOME/PARTENARIAT]          │
+│  PK 0+000 → 3+500 · Tol 2cm │  │  PK · Tol                             │
+│  ● Modèle Excel associé      │  │  ● Modèle Excel disponible            │
+│  🔴 3 demandes en attente    │  │                                        │
+│  Ouvrir le projet →     [3]  │  │  Ouvrir le projet →                   │
+└─────────────────────────────┘  └────────────────────────────────────────┘</div>
+  </div>
+
+  <div class="section" id="projet-hub">
+    <div class="section-title"><span class="num">07</span> Hub projet <code>/pro/projets/&lt;id&gt;</code></div>
+    <div class="wireframe">
+┌─ BANDEAU PROJET ──────────────────────────────────────────────────────────┐
+│ ← Mes projets  │  [V] NOM PROJET  [MDC][PARTENARIAT]                      │
+│ PK 0+000→3+500  Tol. 2.0 cm  ● Excel  [logo MDC] [logo ET]               │
+└───────────────────────────────────────────────────────────────────────────┘
+
+MODE MDC × PARTENARIAT :
+┌─ Tuiles primaires (côte à côte) ──────────────────────────────────────────┐
+│  [⊕ Initier une réception]    │  [🔔 Demandes à traiter N]               │
+│  Créer directement une fiche  │  Réceptions soumises par l'ET             │
+└───────────────────────────────────────────────────────────────────────────┘
+
+MODE MDC × AUTONOME :
+┌─ Tuile primaire full-width ───────────────────────────────────────────────┐
+│  [⊕ Top Réception]  Lancer une réception topographique                    │
+└───────────────────────────────────────────────────────────────────────────┘
+
+Grille secondaire :
+│ [📊 Rapport]  [∿ Simulation]  [🗺 Carte]  [👁 Visualisation]  [📄 Format PDF] │
+
+Section admin :
+│ [⚙ Paramètres]  [📋 Dashboard]                                           │</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PAGES — ADMIN
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="admin-visualisation">
+    <div class="section-title"><span class="num">08</span> Visualisation admin <code>/admin/projets/&lt;id&gt;/visualisation</code></div>
+    <div class="wireframe">
+┌─ BANDEAU PROJET ──────────────────────────────────────────────────────────┐
+│ ← Projet  │  NOM PROJET  [plan]  PK range  Tol  [logo MDC] [logo ET]     │
+└───────────────────────────────────────────────────────────────────────────┘
+┌─ TABS ────────────────────────────────────────────────────────────────────┐
+│ [Aperçu] [Identité] [Profil en long] [Profil en travers] [Sections] [Éléments] [Carte] │
+└───────────────────────────────────────────────────────────────────────────┘
+
+TAB Aperçu : KPIs (PK range, nb sections, nb éléments, tolérance)
+TAB Identité : Formulaire édition (nom, intitulé, pk_debut, pk_fin, tolerance, logos)
+TAB Profil en long : Chart.js — axe altitude vs PK
+TAB Profil en travers : SVG généré generate_section_svg() — couches chaussée
+TAB Sections : Tableau des sections avec éléments
+TAB Éléments : Liste éléments par onglet Excel
+TAB Carte : Leaflet map Lambert 93→WGS84, tracé PK, markers mesures</div>
+  </div>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PROMPT MASTER
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="prompt-master">
+    <div class="section-title"><span class="num">09</span> Prompt master — Description complète du projet</div>
+    <p class="section-desc">Copier ce bloc pour briefer une IA sur l'intégralité du projet RECEPTA.</p>
+
+    <div class="prompt-block">
+      <div class="pb-header">
+        <span class="pb-title">PROMPT MASTER · RECEPTA</span>
+        <button class="pb-copy" onclick="copyBlock(this)">Copier</button>
+      </div>
+      <div class="pb-body" id="prompt-master-text">Tu travailles sur RECEPTA, une application web SaaS Flask (Python) pour la réception topographique BTP.
+
+== IDENTITÉ ==
+Nom commercial : RECEPTA (en cyan #00ffff, lettres capitales, espacement 2px)
+Suite : OPTILAB (sous-titre "by OPTILAB", discret)
+Logo : grille CSS 2×2 points (#00ffff / #fbbf24 / #00ffff / #00ffff) — jamais d'image
+Fond principal : #07101c (navy très sombre)
+Accent principal : #00ffff (cyan)
+Accent secondaire : #fbbf24 (gold/ambre)
+MDC = violet #7c3aed | ET = ambre #f59e0b
+
+== CONTEXTE MÉTIER ==
+Secteur : BTP, chantiers routiers/autoroutiers, assainissement, terrassement
+Utilisateurs : Contrôleurs topographiques (MDC), Techniciens Entreprise de Travaux (ET), Admin
+Objectif : Comparer les côtes mesurées sur le terrain aux côtes théoriques issues du modèle Excel,
+  calculer les écarts, valider la conformité selon une tolérance (en cm), générer une fiche
+  de réception PDF officielle avec signatures manuscrites, l'envoyer par email, l'archiver.
+
+== MODES DE RÉCEPTION ==
+ASS (Assainissement) : 9 colonnes — PK, Élément, LAV, Côte LAV, Mesurée, Théorique, Écart+, Écart−, Obs
+TER (Terrassement)   : 11 colonnes — idem + Dist. axe, Pente
+
+== WORKFLOW EN 4 ÉTAPES ==
+1. Informations générales — Projet, Date, Opérateur, Section, Météo, Tolérance, Mode (ASS/TER)
+2. Sélection — cocher les PK et les éléments (gauche/axe/droite) à mesurer
+3. Saisie mesures — tableau par station (Cote repère, LAV, puis lignes PK×Élément)
+   - Écart = Côte mesurée − Côte théorique (signe conservé)
+   - Statut : ecart-ok (|Δ| ≤ tol), ecart-positif (Δ > 0 hors tol), ecart-negatif (Δ < 0 hors tol)
+   - row-interpolated : point interpolé entre deux PK, exclu du bilan
+   - Validation par ligne : — / ✓ / ⚠ (cyclable)
+   - Vue Tableau ou Vue Cartes (mobile-friendly)
+4. Signatures — MDC + ET (canvas tactile), Observations générales, Verdict (Validée/Non validée/À reprendre)
+
+== RÉSULTATS ==
+KPIs : total points, % conformité, nb conformes, nb hors tolérance
+Tableau coloré, PDF généré, envoi email Resend, archivage R2
+
+== MODÈLE EXCEL V3 ==
+Onglets : GEN, AXE, TER, ASG (côté gauche), ASD (côté droit), ASS, GEO, DIV, PK_Coordonnees, OFFSETS_TRANSVERSAUX
+Parsing : pandas + openpyxl, NaN/Inf → null, colonne PK cherchée par nom 'PK' ou 'KILOMETRIQUE'
+Stockage : Cloudflare R2 via boto3 (clé : data/clients/{client_id}/modele.xlsx)
+
+== RÔLES & ACCÈS ==
+admin        → /admin/* — gestion globale
+MDC          → role = 'mdc' sur MembreProjet — initie réceptions, valide demandes ET
+ET           → role = 'entreprise' sur MembreProjet — soumet demandes
+Plan SOLO    → 1 utilisateur/projet, pas de workflow demandes
+Plan PRO     → MDC + ET distincts, demandes de réception, validation, rapport période
+
+== STACK ==
+Backend : Flask + SQLAlchemy + PostgreSQL (Supabase)
+Auth     : Flask-Login (@login_required / @pro_required / @admin_required)
+PDF      : xhtml2pdf (WeasyPrint retiré — pas de GTK sur Render)
+Email    : Resend API, pièce jointe base64
+Cloud    : Cloudflare R2 (boto3)
+Frontend : Vanilla JS, sessionStorage inter-pages, Tailwind CDN (admin/pro), Chart.js, Leaflet+proj4
+Déploiement : Render (gunicorn wsgi:app), Python 3.11
+
+== DESIGN RULES ==
+- Fond dark navy #07101c, cards #0d1b2e/#0f2038, border rgba(0,255,255,.08)
+- Boutons primaires : background cyan → color dark navy
+- Police : Inter (app), Bebas Neue (landing/grands titres)
+- Pas de mode clair dans l'app (seulement option toggle sur landing)
+- Pas d'emojis sauf validation cyclable (✓ ⚠) et indicateurs
+- Commentaires code en français
+- Vanilla JS uniquement — pas de React/Vue/jQuery
+- SVG inline pour les icônes (pas de Font Awesome)
+
+== FICHIERS PRINCIPAUX ==
+app/blueprints/pages.py       → routes HTML principales
+app/blueprints/api.py         → API REST (/api/*)
+app/blueprints/auth.py        → /login /logout
+app/blueprints/admin.py       → /admin/*
+app/blueprints/pro/projets.py → /pro/projets/* (hub, rapport, visualisation)
+app/blueprints/pro/demandes.py→ /pro/demandes/* (soumission, historique)
+app/models.py                 → Projet, User, Client, MembreProjet, ClientProjet, DemandeReception, FicheReception
+app/services/excel_service.py → parse_modele_config(), parse_profil_long()
+app/services/pdf_service.py   → make_pdf_bytes_any()
+app/services/r2_service.py    → upload/download/presigned_url
+app/services/visualization_service.py → generate_section_svg()
+app/templates/reception_topographique.html → 4000+ lignes, page centrale
+app/templates/pro/projet_hub.html          → hub projet PRO
+app/templates/admin/projet_visualisation.html → 7 onglets admin
+
+== CONVENTIONS ==
+- Toujours lire CLAUDE.md avant de modifier le code
+- Ne jamais écraser des valeurs déjà saisies (auto-fill seulement si champ vide)
+- Gestion d'erreur API : {"error": str(e)}, 500
+- NaN/Inf dans pandas → None avant JSON
+- Pièce jointe email : base64.b64encode(pdf_bytes).decode()
+</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PROMPT UI/UX
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="prompt-ui">
+    <div class="section-title"><span class="num">10</span> Prompt UI/UX — Interface de réception</div>
+
+    <div class="prompt-block">
+      <div class="pb-header">
+        <span class="pb-title">PROMPT · RECEPTION UI</span>
+        <button class="pb-copy" onclick="copyBlock(this)">Copier</button>
+      </div>
+      <div class="pb-body">Conçois l'interface de réception topographique RECEPTA en respectant ces règles :
+
+CONTEXTE : L'utilisateur est un topographe sur un chantier BTP, souvent en plein soleil sur
+une tablette ou un smartphone. L'interface doit être lisible en plein air, avec des cibles
+tactiles généreuses (min 44px), et un workflow sans ambiguïté.
+
+ÉTAPE 3 — SAISIE DES MESURES (la plus critique) :
+
+Structure d'un tableau par station :
+- En-tête station : numéro, plage PK, [Cote repère] [LAV] [Pente %]
+- Colonnes (ASS 9 cols) : PK | Élément | LAV calc | Côte LAV | [Mesurée] | Théorique | Δ+ | Δ− | ✓/⚠/— | 📷
+- Colonnes (TER 11 cols) : + Dist. axe | Pente
+- Chaque ligne <tr> porte une classe CSS : ecart-ok / ecart-positif / ecart-negatif / row-interpolated
+- Couleurs : vert (#22c55e) = conforme, rouge (#ef4444) = hors tol, gris (#94a3b8) = interpolé
+- Les lignes gauche (G_*) = teinte rouge-pâle, droite (D_*) = teinte bleue-pâle
+- Bouton "+" entre deux PK = insérer un point interpolé entre ces deux PK
+- Vue Tableau vs Vue Cartes : toggle dans le header du step (pas un tweak panel)
+
+VUE CARTES (mobile) :
+- Une card par combinaison PK×Élément
+- Affiche : PK en grand, Élément, [input Mesurée], Théo, Δ, statut dot coloré
+- Disposition : grille 2 colonnes sur tablette, 1 colonne sur mobile
+
+VALIDATION CYCLABLE :
+- Bouton dans colonne "Valid." : — → ✓ → ⚠ → — (cycle au clic)
+- — = en attente (gris), ✓ = validé (vert), ⚠ = à reprendre (orange)
+
+INTERPOLATION :
+- Petit bouton "+" discret entre deux lignes de PK différents
+- Au clic : modal/inline pour saisir PK1 et PK2 (pré-remplis), confirmer
+- La ligne interpolée a class row-interpolated, est grisée, exclue du bilan
+
+OBSERVATIONS PAR LIGNE :
+- Icône 📷 → ouvre un mini-panneau : titre libre + commentaire + photo (caméra ou fichier)
+- Ne pas bloquer le workflow principal
+
+STATUT CONFORMITÉ :
+- Lire row.classList.contains('ecart-positif') ou 'ecart-negatif' pour le bilan
+- ecartNeg contient déjà le signe −, ne pas re-préfixer
+- Bilan : count des lignes, exclure row-interpolated</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PROMPT LANDING
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="prompt-landing">
+    <div class="section-title"><span class="num">11</span> Prompt Landing page RECEPTA</div>
+
+    <div class="prompt-block">
+      <div class="pb-header">
+        <span class="pb-title">PROMPT · LANDING PAGE</span>
+        <button class="pb-copy" onclick="copyBlock(this)">Copier</button>
+      </div>
+      <div class="pb-body">Crée une landing page marketing complète pour RECEPTA, application SaaS de réception
+topographique BTP. Le fichier est app/templates/landing.html (Jinja2 Flask).
+
+IDENTITÉ VISUELLE :
+- Logo : grille CSS 2×2 dots (cyan/gold/cyan/cyan) — jamais d'image
+- "RECEPTA" en #00ffff, font-weight:800, letter-spacing:3px
+- "by OPTILAB" en sous-titre discret
+- Couleurs : fond #07101c, cyan #00ffff, gold #fbbf24
+- Police display : Bebas Neue (Google Fonts) pour les grands titres
+- Police corps : Inter
+- Pas d'emojis
+
+STRUCTURE DE LA PAGE (dans cet ordre) :
+1. NAV sticky blur — logo gauche, liens milieu, [toggle dark/light] + [Connexion→] droite
+2. HERO sticky scroll (height:280vh) :
+   - Gauche : eyebrow cyan + titre Bebas Neue (Réception / TOPOGRAPHIQUE / sous-titre)
+             + description + 2 boutons (primaire cyan + secondaire ghost) + 4 stat-pills
+   - Droite : Three.js terrain wireframe topographique animé (mesh animé + points gold flottants)
+   - Mi-scroll : overlay faux data de mesures (PK, cotes, scan line animée)
+3. PROCESSUS — 4 cards (01 Config → 02 Sélection → 03 Saisie → 04 PDF)
+   - Hover : translateY(-7px) + top border gradient cyan→gold
+   - Numéro Bebas Neue en filigrane, devient cyan au hover
+4. FONCTIONNALITÉS — grid 1fr 1fr : liste feat-items gauche + faux écran résultats droite
+   - Écran montre un tableau de résultats avec lignes ok/err/interp et bilan 83%
+5. MÉTRIQUES — 4 colonnes : 100% | 4 étapes | <30s | 2 clics
+   - Counter animation au scroll (IntersectionObserver)
+6. TÉMOIGNAGES — 3 cards avec étoiles, citation italique, auteur + rôle
+7. CTA — centered, titre Bebas Neue, 2 boutons
+8. FOOTER — logo + tagline + cols (Outil / Modes / Contact) + badge version
+
+ANIMATIONS :
+- Curseur custom (dot cyan + ring, ring s'agrandit sur hover lien/bouton)
+- Barre de progression scroll en haut de page (gradient cyan→gold)
+- Blobs animés (keyframe blobDrift, border-radius morphing)
+- Overlay hero fade + parallax au scroll (heroContent translateY + opacity)
+- Reveal au scroll (IntersectionObserver + class .in, transition translateY 36px→0)
+- Counter animation sur les métriques
+- Three.js terrain : PlaneGeometry 52×40, wireframe cyan opacity:0.09, vertices animés
+  (sin waves sur Y), Spheres gold pour points de mesure flottants, lignes PK gold
+
+TECHNIQUE :
+- Tailwind : NON (pur CSS custom avec var())
+- url_for('auth.login') pour le bouton connexion (c'est du Jinja2)
+- JS : vanilla uniquement, IntersectionObserver pour reveal/counter
+- Three.js depuis cdnjs r128
+- Responsive : nav links cachés <960px, hero layout stacked, three-wrap caché mobile
+
+CONTRAINTES :
+- Page autonome, tout en un seul fichier HTML
+- Pas de commentaires PHP ou d'autres langages
+- Pas de frameworks JS (pas de jQuery, Alpine, etc.)
+- Les couleurs CSS doivent utiliser des variables :root pour le dual theme dark/light</div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// Sidebar active link on scroll
+const sections = document.querySelectorAll('.section[id]');
+const links = document.querySelectorAll('.sb-links a');
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => {
+        l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+sections.forEach(s => obs.observe(s));
+
+// Copy block
+function copyBlock(btn) {
+  const body = btn.closest('.prompt-block').querySelector('.pb-body');
+  navigator.clipboard.writeText(body.textContent.trim()).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copié !';
+    setTimeout(() => btn.textContent = orig, 1800);
+  });
+}
+
+// Copy all (master prompt)
+function copyAll() {
+  const text = document.getElementById('prompt-master-text').textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg> Copié !';
+    setTimeout(() => {
+      btn.innerHTML = '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg> Copier le prompt master';
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>

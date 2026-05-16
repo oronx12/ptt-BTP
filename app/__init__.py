@@ -51,8 +51,10 @@ def create_app(env: str = None) -> Flask:
     app.register_blueprint(admin_bp)
 
     # Blueprints V2 PRO
-    from .blueprints.pro.projets import pro_projets_bp
+    from .blueprints.pro.projets  import pro_projets_bp
+    from .blueprints.pro.demandes import pro_demandes_bp
 
     app.register_blueprint(pro_projets_bp)
+    app.register_blueprint(pro_demandes_bp)
 
     return app

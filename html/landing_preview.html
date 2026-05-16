@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RECEPTA — Réception Topographique BTP · by OPTILAB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root { --tr: 0.4s cubic-bezier(0.23,1,0.32,1); }
+
+[data-theme="dark"] {
+  --bg:     #07101c;
+  --bg2:    #0d1b2e;
+  --bg3:    #0f2038;
+  --sf:     rgba(255,255,255,.04);
+  --sf2:    rgba(255,255,255,.07);
+  --bd:     rgba(0,255,255,.07);
+  --bda:    rgba(0,255,255,.22);
+  --tx:     #dff0ff;
+  --tx2:    rgba(170,210,240,.55);
+  --tx3:    rgba(170,210,240,.3);
+  --navbg:  rgba(7,16,28,.92);
+  --shadow: 0 24px 64px rgba(0,0,0,.65);
+  --blob:   rgba(0,255,255,.08);
+  --ov:     linear-gradient(to right, rgba(7,16,28,.97) 25%, rgba(7,16,28,.55) 62%, transparent 100%);
+  --acc:    #00ffff;
+  --acc2:   #00B8DC;
+  --gold:   #fbbf24;
+}
+[data-theme="light"] {
+  --bg:     #eef4fc;
+  --bg2:    #e2ecf8;
+  --bg3:    #d5e4f2;
+  --sf:     rgba(255,255,255,.75);
+  --sf2:    #ffffff;
+  --bd:     rgba(0,100,180,.1);
+  --bda:    rgba(0,160,210,.3);
+  --tx:     #07101c;
+  --tx2:    rgba(15,32,56,.6);
+  --tx3:    rgba(15,32,56,.35);
+  --navbg:  rgba(238,244,252,.93);
+  --shadow: 0 20px 60px rgba(0,100,180,.12);
+  --blob:   rgba(0,184,220,.1);
+  --ov:     linear-gradient(to right, rgba(238,244,252,.97) 25%, rgba(238,244,252,.55) 62%, transparent 100%);
+  --acc:    #00B8DC;
+  --acc2:   #0088b0;
+  --gold:   #d97706;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body { background:var(--bg); color:var(--tx); font-family:'Inter',sans-serif; overflow-x:hidden; cursor:none; transition:background var(--tr), color var(--tr); }
+
+/* ── Custom cursor ─────────────────────────────────────────────── */
+.cur-dot, .cur-ring {
+  position:fixed; top:0; left:0; pointer-events:none; z-index:9999;
+  border-radius:50%; transform:translate(-50%,-50%);
+}
+.cur-dot  { width:7px; height:7px; background:var(--acc); box-shadow:0 0 10px var(--acc); transition:width .15s,height .15s; }
+.cur-ring { width:32px; height:32px; border:1.5px solid rgba(0,255,255,.35); transition:width .22s, height .22s, border-color .22s; }
+body:has(a:hover) .cur-ring,
+body:has(button:hover) .cur-ring { width:46px; height:46px; border-color:var(--acc); }
+
+/* ── Progress bar ──────────────────────────────────────────────── */
+#pbar { position:fixed; top:0; left:0; z-index:500; height:2px; width:0%; background:linear-gradient(to right, var(--acc), var(--gold)); box-shadow:0 0 10px var(--acc); transition:width .08s; }
+
+/* ── Nav ───────────────────────────────────────────────────────── */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:300;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:15px 52px;
+  background:var(--navbg);
+  backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--bd);
+  transition:background var(--tr), border-color var(--tr);
+}
+.nav-logo { display:flex; align-items:center; gap:9px; text-decoration:none; }
+.logo-dots { display:grid; grid-template-columns:1fr 1fr; gap:3px; width:18px; height:18px; }
+.logo-dots span { border-radius:2px; }
+.logo-dots span:nth-child(1) { background:#00ffff; }
+.logo-dots span:nth-child(2) { background:#fbbf24; }
+.logo-dots span:nth-child(3) { background:#00ffff; }
+.logo-dots span:nth-child(4) { background:#00ffff; }
+.logo-text { display:flex; flex-direction:column; line-height:1.1; }
+.logo-text strong { color:var(--acc); font-size:13px; font-weight:800; letter-spacing:3px; transition:color var(--tr); }
+.logo-text small  { color:var(--tx3); font-size:8px; font-weight:600; letter-spacing:2px; text-transform:uppercase; }
+
+.nav-links { display:flex; gap:30px; list-style:none; }
+.nav-links a { font-size:.86rem; font-weight:500; color:var(--tx2); text-decoration:none; transition:color .2s; }
+.nav-links a:hover { color:var(--acc); }
+
+.nav-right { display:flex; align-items:center; gap:12px; }
+
+.theme-tgl {
+  width:48px; height:26px;
+  background:var(--sf2); border:1.5px solid var(--bda); border-radius:100px;
+  position:relative; cursor:none; transition:background .3s, border-color .3s;
+  flex-shrink:0;
+}
+.theme-tgl::after {
+  content:''; position:absolute; top:3px; left:3px;
+  width:18px; height:18px; border-radius:50%;
+  background:var(--acc); transition:transform .3s cubic-bezier(.23,1,.32,1), background .3s;
+}
+[data-theme="light"] .theme-tgl::after { transform:translateX(22px); }
+
+.nav-cta {
+  padding:8px 22px; background:var(--acc); border:none; border-radius:8px;
+  color:var(--bg); font-family:'Inter',sans-serif; font-size:.85rem; font-weight:700;
+  cursor:none; transition:background .25s, box-shadow .25s, transform .2s;
+  box-shadow:0 4px 22px color-mix(in srgb, var(--acc) 40%, transparent);
+  text-decoration:none; display:inline-flex; align-items:center; gap:7px;
+}
+.nav-cta:hover { transform:translateY(-1px); box-shadow:0 6px 32px color-mix(in srgb, var(--acc) 50%, transparent); }
+.nav-cta svg { width:13px; height:13px; }
+
+/* ── HERO ──────────────────────────────────────────────────────── */
+#hero { position:relative; height:280vh; }
+.hero-sticky {
+  position:sticky; top:0; width:100%; height:100vh;
+  overflow:hidden; background:var(--bg);
+  transition:background var(--tr);
+}
+
+/* Animated blobs */
+.blob { position:absolute; border-radius:50%; pointer-events:none; }
+.blob-1 { width:400px; height:380px; top:-100px; left:-80px; background:var(--blob); animation:blobDrift 10s ease-in-out infinite alternate; border-radius:62% 38% 55% 45%; }
+.blob-2 { width:280px; height:300px; top:-50px; right:-60px; background:color-mix(in srgb, var(--gold) 60%, transparent); opacity:.06; animation:blobDrift 14s ease-in-out infinite alternate-reverse; border-radius:46% 54% 40% 60%; }
+.blob-3 { width:240px; height:200px; bottom:80px; left:35%; background:var(--blob); animation:blobDrift 12s ease-in-out infinite alternate; border-radius:55% 45% 52% 48%; }
+@keyframes blobDrift { 0%{transform:scale(1) translate(0,0)} 100%{transform:scale(1.14) translate(22px,-14px)} }
+
+.hero-overlay { position:absolute; inset:0; background:var(--ov); pointer-events:none; z-index:5; transition:background var(--tr); }
+
+/* Three.js canvas */
+#three-wrap {
+  position:absolute; right:0; top:0; width:54%; height:100%;
+  z-index:2; pointer-events:none; opacity:0; transition:opacity 1.2s ease;
+}
+#three-wrap.active { opacity:1; }
+#three-canvas { width:100%; height:100%; display:block; }
+
+/* Hero content */
+.hero-content {
+  position:absolute; left:52px; top:50%; transform:translateY(-50%);
+  z-index:10; max-width:530px; padding-top:40px;
+}
+
+.hero-eyebrow {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:5px 14px; background:color-mix(in srgb, var(--acc) 8%, transparent);
+  border:1px solid color-mix(in srgb, var(--acc) 22%, transparent);
+  border-radius:100px; font-size:.71rem; font-weight:600; letter-spacing:2.5px;
+  text-transform:uppercase; color:var(--acc); margin-bottom:22px;
+  opacity:0; transform:translateY(16px); animation:fadeUp .7s .3s forwards;
+}
+.e-dot { width:5px; height:5px; border-radius:50%; background:var(--acc); animation:dotPulse 1.8s infinite; flex-shrink:0; }
+@keyframes dotPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.7);opacity:.5} }
+
+.hero-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(3rem, 5.8vw, 7rem);
+  line-height:.91; letter-spacing:1px; color:var(--tx);
+  margin-bottom:24px; opacity:0; transform:translateY(22px);
+  animation:fadeUp .85s .5s forwards;
+}
+.hero-title .l2 { color:var(--acc); display:block; }
+.hero-title .l3 {
+  display:block; font-family:'Inter',sans-serif;
+  font-size:clamp(.65rem,.9vw,.9rem); font-weight:700;
+  letter-spacing:4px; text-transform:uppercase;
+  color:var(--tx3); margin-top:4px;
+}
+
+.hero-sub {
+  font-size:.97rem; line-height:1.76; color:var(--tx2);
+  max-width:450px; margin-bottom:34px;
+  opacity:0; transform:translateY(16px); animation:fadeUp .8s .7s forwards;
+}
+.hero-sub strong { color:var(--tx); font-weight:600; }
+
+.hero-btns {
+  display:flex; gap:12px; flex-wrap:wrap;
+  opacity:0; transform:translateY(16px); animation:fadeUp .8s .9s forwards;
+}
+.btn-p {
+  padding:13px 28px;
+  background:linear-gradient(135deg, var(--acc), var(--acc2));
+  border:none; border-radius:10px; color:var(--bg);
+  font-family:'Inter',sans-serif; font-size:.9rem; font-weight:700;
+  cursor:none; transition:box-shadow .3s, transform .2s;
+  box-shadow:0 6px 28px color-mix(in srgb, var(--acc) 35%, transparent);
+  display:flex; align-items:center; gap:8px; text-decoration:none;
+}
+.btn-p:hover { box-shadow:0 10px 44px color-mix(in srgb, var(--acc) 50%, transparent); transform:translateY(-2px); }
+.btn-p svg { width:16px; height:16px; }
+.btn-s {
+  padding:12px 24px; background:transparent;
+  border:1.5px solid var(--bda); border-radius:10px;
+  color:var(--tx); font-family:'Inter',sans-serif; font-size:.9rem; font-weight:500;
+  cursor:none; text-decoration:none;
+  transition:border-color .3s, background .3s, transform .2s;
+}
+.btn-s:hover { border-color:var(--gold); background:color-mix(in srgb, var(--gold) 7%, transparent); transform:translateY(-2px); }
+
+/* Stats pills */
+.hero-stats {
+  display:flex; gap:14px; margin-top:36px;
+  opacity:0; transform:translateY(12px); animation:fadeUp .8s 1.1s forwards;
+  flex-wrap:wrap;
+}
+.stat-pill {
+  display:flex; flex-direction:column; padding:11px 18px;
+  background:var(--sf); border:1px solid var(--bd); border-radius:10px;
+  transition:background var(--tr), border-color var(--tr);
+}
+.sv { font-family:'Bebas Neue',sans-serif; font-size:1.55rem; line-height:1; color:var(--acc); }
+.sl { font-size:.68rem; color:var(--tx3); font-weight:500; margin-top:3px; }
+
+/* Scroll arrow */
+.scroll-arrow {
+  position:absolute; bottom:28px; left:52px; z-index:20;
+  display:flex; flex-direction:column; align-items:flex-start; gap:6px;
+  opacity:0; animation:fadeUp 1s 1.5s forwards;
+}
+.scroll-arrow span { font-size:.65rem; letter-spacing:2.5px; text-transform:uppercase; color:var(--tx3); }
+.arr { width:1px; height:36px; background:linear-gradient(to bottom, var(--acc), transparent); animation:arrSlide 2s ease-in-out infinite; }
+@keyframes arrSlide { 0%{transform:scaleY(0);transform-origin:top;opacity:0} 50%{transform:scaleY(1);transform-origin:top;opacity:1} 100%{transform:scaleY(1) translateY(16px);transform-origin:top;opacity:0} }
+
+/* Screen overlay (faux measurement data) */
+#screen-zoom {
+  position:absolute; width:22vw; height:16vw; right:20%; bottom:34vh;
+  border-radius:8px; overflow:hidden; opacity:0;
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent), 0 24px 80px rgba(0,0,0,.55);
+  pointer-events:none; z-index:15; transition:opacity .4s, transform .4s;
+}
+.scan-line {
+  position:absolute; left:0; right:0; height:2px; opacity:.7;
+  background:linear-gradient(to right, transparent, var(--acc), var(--gold), transparent);
+  animation:scanMove 2.4s ease-in-out infinite;
+}
+@keyframes scanMove { 0%{top:0} 100%{top:100%} }
+.cdot { position:absolute; width:8px; height:8px; border-radius:50%; background:var(--gold); box-shadow:0 0 12px var(--gold); animation:dotPulse 2s infinite; }
+
+/* ── SECTIONS ──────────────────────────────────────────────────── */
+.section {
+  padding:110px 56px; position:relative; z-index:10;
+  background:var(--bg); transition:background var(--tr);
+}
+.section.alt { background:var(--bg2); }
+
+.section-blob { position:absolute; pointer-events:none; border-radius:50%; background:var(--blob); }
+
+/* Section labels + titles */
+.stag {
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:.7rem; font-weight:600; letter-spacing:3px; text-transform:uppercase;
+  color:var(--acc); margin-bottom:14px; opacity:.8;
+}
+.stag::before { content:''; width:22px; height:2px; background:linear-gradient(to right, var(--acc), var(--gold)); border-radius:2px; flex-shrink:0; }
+
+.stitle {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.2rem, 4vw, 4.2rem); line-height:1;
+  color:var(--tx); margin-bottom:14px;
+}
+.stitle .a { color:var(--acc); }
+.stitle .b { color:var(--gold); }
+
+.ssub { font-size:.96rem; line-height:1.76; color:var(--tx2); max-width:520px; }
+
+/* Reveal animations */
+.reveal { opacity:0; transform:translateY(36px); transition:opacity .75s cubic-bezier(.23,1,.32,1), transform .75s cubic-bezier(.23,1,.32,1); }
+.reveal.in { opacity:1; transform:translateY(0); }
+
+/* ── PROCESS ───────────────────────────────────────────────────── */
+.process-wrap { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:60px; }
+.proc-card {
+  background:var(--sf); border:1px solid var(--bd); border-radius:16px;
+  padding:28px 22px; position:relative; overflow:hidden; cursor:none;
+  transition:transform .3s cubic-bezier(.23,1,.32,1), border-color .3s, box-shadow .3s, background var(--tr);
+}
+.proc-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(to right, var(--acc), var(--gold));
+  transform:scaleX(0); transform-origin:left;
+  transition:transform .4s cubic-bezier(.23,1,.32,1);
+}
+.proc-card:hover { transform:translateY(-7px); border-color:var(--bda); box-shadow:var(--shadow); }
+.proc-card:hover::before { transform:scaleX(1); }
+.proc-num {
+  font-family:'Bebas Neue',sans-serif; font-size:3.2rem; line-height:1;
+  color:color-mix(in srgb, var(--acc) 10%, transparent); margin-bottom:14px; transition:color .3s;
+}
+.proc-card:hover .proc-num { color:var(--acc); }
+.proc-ico {
+  width:44px; height:44px; border-radius:10px;
+  background:color-mix(in srgb, var(--acc) 8%, transparent);
+  border:1px solid color-mix(in srgb, var(--acc) 15%, transparent);
+  display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+}
+.proc-ico svg { width:20px; height:20px; stroke:var(--acc); fill:none; stroke-width:1.8; }
+.proc-card h3 { font-size:.93rem; font-weight:700; color:var(--tx); margin-bottom:8px; }
+.proc-card p { font-size:.82rem; line-height:1.72; color:var(--tx2); }
+
+/* Connector arrow between steps */
+.proc-connector {
+  display:flex; align-items:center; justify-content:center;
+  color:var(--bda); margin-top:26px; padding:0 8px;
+}
+
+/* ── FEATURES ──────────────────────────────────────────────────── */
+.feat-layout { display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center; margin-top:60px; }
+.feat-list { display:flex; flex-direction:column; gap:12px; }
+.feat-item {
+  display:flex; gap:14px; align-items:flex-start; padding:18px;
+  background:var(--sf); border:1px solid var(--bd); border-radius:12px;
+  cursor:none; transition:transform .3s, border-color .3s, box-shadow .3s, background var(--tr);
+}
+.feat-item:hover { transform:translateX(6px); border-color:var(--bda); box-shadow:0 8px 32px color-mix(in srgb, var(--acc) 8%, transparent); }
+.feat-ico {
+  width:42px; height:42px; flex-shrink:0; border-radius:10px;
+  background:linear-gradient(135deg, color-mix(in srgb, var(--acc) 12%, transparent), color-mix(in srgb, var(--gold) 8%, transparent));
+  border:1px solid color-mix(in srgb, var(--acc) 18%, transparent);
+  display:flex; align-items:center; justify-content:center;
+}
+.feat-ico svg { width:18px; height:18px; stroke:var(--acc); fill:none; stroke-width:1.8; }
+.feat-item h4 { font-size:.92rem; font-weight:700; color:var(--tx); margin-bottom:5px; }
+.feat-item p { font-size:.82rem; line-height:1.66; color:var(--tx2); }
+
+/* Faux réception screen */
+.feat-visual {
+  position:relative; border-radius:20px; overflow:hidden;
+  background:var(--bg3); border:1px solid var(--bda);
+}
+.feat-screen {
+  padding:24px; display:flex; flex-direction:column; gap:10px;
+  background:linear-gradient(160deg, var(--bg3), var(--bg2));
+}
+.ft-header {
+  font-size:.68rem; font-weight:600; letter-spacing:2px; text-transform:uppercase;
+  color:var(--tx3); margin-bottom:4px; display:flex; align-items:center; gap:8px;
+}
+.ft-header::before { content:''; width:18px; height:1px; background:var(--acc); opacity:.4; }
+.ft-row {
+  display:flex; gap:10px; align-items:center; padding:9px 12px;
+  border-radius:7px; border:1px solid var(--bd); font-size:.77rem;
+  transition:border-color .2s;
+}
+.ft-row.ok  { border-color:rgba(34,197,94,.2);  background:rgba(34,197,94,.03); }
+.ft-row.err { border-color:rgba(239,68,68,.22); background:rgba(239,68,68,.04); }
+.ft-row.itp { border-color:rgba(148,163,184,.15); background:rgba(148,163,184,.03); opacity:.7; }
+.ft-pk  { font-family:monospace; font-size:.73rem; color:var(--tx3); width:58px; flex-shrink:0; }
+.ft-el  { flex:1; color:var(--tx2); }
+.ft-val { font-weight:700; font-family:monospace; font-size:.79rem; color:var(--tx); width:56px; text-align:right; flex-shrink:0; }
+.ft-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.ft-dot.ok  { background:#22c55e; box-shadow:0 0 6px #22c55e; }
+.ft-dot.err { background:#ef4444; box-shadow:0 0 6px #ef4444; }
+.ft-dot.itp { background:#94a3b8; }
+.ft-bilan {
+  margin-top:10px; padding:12px 16px; border-radius:9px;
+  background:rgba(34,197,94,.05); border:1px solid rgba(34,197,94,.18);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.ft-bilan-label { font-size:.78rem; color:#86efac; font-weight:600; }
+.ft-bilan-pct { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:#22c55e; }
+
+/* Glow on screen hover */
+.feat-visual::after {
+  content:''; position:absolute; inset:0; border-radius:20px;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--acc) 20%, transparent);
+  pointer-events:none;
+}
+
+/* ── METRICS ───────────────────────────────────────────────────── */
+.metrics-section {
+  background:var(--bg2);
+  border-top:1px solid var(--bd); border-bottom:1px solid var(--bd);
+  transition:background var(--tr), border-color var(--tr);
+}
+.metrics-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--bd); }
+.metric-card { padding:48px 32px; background:var(--bg2); text-align:center; transition:background var(--tr); }
+.mv {
+  font-family:'Bebas Neue',sans-serif; font-size:3.6rem; line-height:1;
+  background:linear-gradient(135deg, var(--acc), var(--gold));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  margin-bottom:8px;
+}
+.ml { font-size:.82rem; color:var(--tx2); font-weight:500; }
+
+/* ── TESTIMONIALS ──────────────────────────────────────────────── */
+.testi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:56px; }
+.testi-card {
+  background:var(--sf); border:1px solid var(--bd); border-radius:16px;
+  padding:26px; position:relative; overflow:hidden; cursor:none;
+  transition:transform .3s, border-color .3s, box-shadow .3s, background var(--tr);
+}
+.testi-card:hover { transform:translateY(-5px); border-color:var(--bda); box-shadow:var(--shadow); }
+.testi-card::before {
+  content:'"'; position:absolute; top:-10px; right:18px;
+  font-size:7rem; font-family:'Bebas Neue',sans-serif;
+  color:color-mix(in srgb, var(--gold) 8%, transparent); line-height:1; pointer-events:none;
+}
+.testi-stars { color:var(--gold); font-size:.82rem; letter-spacing:2px; margin-bottom:12px; }
+.testi-text { font-size:.85rem; line-height:1.76; color:var(--tx2); font-style:italic; margin-bottom:18px; }
+.testi-author { display:flex; align-items:center; gap:12px; }
+.testi-av {
+  width:38px; height:38px; border-radius:50%; flex-shrink:0;
+  background:linear-gradient(135deg, var(--acc), var(--gold));
+  display:flex; align-items:center; justify-content:center;
+  font-size:.9rem; font-weight:700; color:var(--bg);
+}
+.testi-name { font-size:.86rem; font-weight:700; color:var(--tx); }
+.testi-role { font-size:.7rem; color:var(--tx3); margin-top:2px; }
+
+/* ── CTA ───────────────────────────────────────────────────────── */
+.cta-section {
+  text-align:center;
+  background:linear-gradient(135deg, color-mix(in srgb, var(--acc) 4%, transparent), color-mix(in srgb, var(--gold) 3%, transparent));
+  border-top:1px solid var(--bd);
+}
+.cta-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.4rem, 5.2vw, 5.2rem); line-height:1; letter-spacing:.5px;
+  color:var(--tx); margin-bottom:18px;
+}
+.cta-title .a { color:var(--acc); }
+.cta-sub { font-size:.97rem; color:var(--tx2); max-width:480px; margin:0 auto 38px; line-height:1.7; }
+.cta-btns { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+
+/* ── FOOTER ────────────────────────────────────────────────────── */
+footer { padding:56px 56px 34px; background:var(--bg2); border-top:1px solid var(--bd); transition:background var(--tr); }
+.footer-top { display:flex; justify-content:space-between; gap:36px; flex-wrap:wrap; margin-bottom:44px; }
+.footer-brand { max-width:270px; }
+.footer-tagline { font-size:.83rem; line-height:1.66; color:var(--tx2); margin-top:11px; }
+.footer-cols { display:flex; gap:52px; }
+.footer-col h5 { font-size:.7rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--acc); margin-bottom:14px; opacity:.7; }
+.footer-col ul { list-style:none; display:flex; flex-direction:column; gap:9px; }
+.footer-col a { font-size:.83rem; color:var(--tx2); text-decoration:none; transition:color .2s; }
+.footer-col a:hover { color:var(--tx); }
+.footer-bottom { display:flex; justify-content:space-between; align-items:center; padding-top:26px; border-top:1px solid var(--bd); flex-wrap:wrap; gap:10px; }
+.footer-copy { font-size:.76rem; color:var(--tx3); }
+.footer-badge { font-size:.7rem; font-weight:600; padding:4px 12px; background:color-mix(in srgb, var(--acc) 8%, transparent); border:1px solid color-mix(in srgb, var(--acc) 20%, transparent); border-radius:100px; color:var(--acc); }
+
+/* Keyframes */
+@keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+/* ── RESPONSIVE ────────────────────────────────────────────────── */
+@media (max-width:960px) {
+  nav { padding:14px 20px; }
+  .nav-links { display:none; }
+  .hero-content { left:20px; max-width:88%; }
+  .hero-title { font-size:2.7rem; }
+  #three-wrap { display:none; }
+  .section { padding:72px 20px; }
+  .process-wrap { grid-template-columns:1fr 1fr; }
+  .feat-layout { grid-template-columns:1fr; }
+  .metrics-grid { grid-template-columns:1fr 1fr; }
+  .testi-grid { grid-template-columns:1fr; }
+  .footer-top { flex-direction:column; }
+  .footer-cols { flex-wrap:wrap; gap:28px; }
+  .hero-stats { flex-wrap:wrap; }
+  footer { padding:40px 20px 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div class="cur-dot" id="curDot"></div>
+<div class="cur-ring" id="curRing"></div>
+
+<!-- Progress bar -->
+<div id="pbar"></div>
+
+<!-- Three.js canvas (fixed background) -->
+<div id="three-wrap">
+  <canvas id="three-canvas"></canvas>
+</div>
+
+<!-- ── NAV ─────────────────────────────────────────────────────── -->
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="logo-dots">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="logo-text">
+      <strong>RECEPTA</strong>
+      <small>by OPTILAB</small>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#process">Comment ça marche</a></li>
+    <li><a href="#features">Fonctionnalités</a></li>
+    <li><a href="#metrics">Performances</a></li>
+    <li><a href="#temoignages">Témoignages</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="theme-tgl" id="themeTgl" title="Changer le thème" aria-label="Thème"></button>
+    <a href="/login" class="nav-cta">
+      Connexion
+      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+    </a>
+  </div>
+</nav>
+
+<!-- ── HERO ─────────────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="hero-sticky">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="hero-overlay"></div>
+
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span class="e-dot"></span>
+        Topographie BTP · Réception terrain
+      </div>
+
+      <h1 class="hero-title">
+        Réception
+        <span class="l2">Topographique</span>
+        <span class="l3">SaaS professionnel pour ingénieurs BTP</span>
+      </h1>
+
+      <p class="hero-sub">
+        Comparez les côtes mesurées aux côtes théoriques en temps réel.
+        Validez la conformité section par section et générez les
+        <strong>fiches de réception officielles PDF</strong> directement depuis le chantier.
+      </p>
+
+      <div class="hero-btns">
+        <a href="/login" class="btn-p">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
+          Accéder à la plateforme
+        </a>
+        <a href="#process" class="btn-s">Voir comment ça marche</a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat-pill">
+          <span class="sv">4</span>
+          <span class="sl">Étapes guidées</span>
+        </div>
+        <div class="stat-pill">
+          <span class="sv">PDF</span>
+          <span class="sl">Fiche officielle</span>
+        </div>
+        <div class="stat-pill">
+          <span class="sv">MDC/ET</span>
+          <span class="sl">Mode partenariat</span>
+        </div>
+        <div class="stat-pill">
+          <span class="sv">R2</span>
+          <span class="sl">Cloud Archivage</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Faux data overlay (visible mid-scroll) -->
+    <div id="screen-zoom">
+      <div style="width:100%;height:100%;background:var(--bg3);padding:14px;font-size:.62rem;font-family:monospace;color:var(--tx2);display:flex;flex-direction:column;gap:5px;">
+        <div style="color:var(--acc);font-weight:700;margin-bottom:4px;letter-spacing:1px;">PK 0+050 → 0+200 · Réception</div>
+        <div style="color:#86efac;">✓ 0+050 · G_Roulement · Δ = +0.002 m</div>
+        <div style="color:#86efac;">✓ 0+050 · A_Roulement · Δ = -0.001 m</div>
+        <div style="color:#fca5a5;">✗ 0+050 · D_Base_BB  · Δ = +0.027 m</div>
+        <div style="color:#86efac;">✓ 0+100 · G_Roulement · Δ = -0.003 m</div>
+        <div style="color:#86efac;">✓ 0+100 · A_Roulement · Δ = +0.000 m</div>
+        <div style="color:var(--gold);">~ 0+150 · G_Fond_Fouille · Interpolé</div>
+      </div>
+      <div class="scan-line"></div>
+      <div class="cdot" style="top:38%;left:28%"></div>
+      <div class="cdot" style="top:60%;left:62%;animation-delay:.7s"></div>
+    </div>
+
+    <div class="scroll-arrow">
+      <span>Découvrir</span>
+      <div class="arr"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROCESS ───────────────────────────────────────────────────── -->
+<section class="section reveal" id="process">
+  <div class="section-blob" style="width:500px;height:500px;top:-120px;right:-120px;opacity:.05;"></div>
+
+  <div class="stag">Comment ça marche</div>
+  <h2 class="stitle">4 étapes pour <span class="a">réceptionner</span><br>un tronçon de <span class="b">chaussée</span></h2>
+  <p class="ssub">De la configuration du projet à la fiche PDF signée — tout en moins de 10 minutes sur le terrain.</p>
+
+  <div class="process-wrap">
+
+    <div class="proc-card reveal">
+      <div class="proc-num">01</div>
+      <div class="proc-ico">
+        <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z"/></svg>
+      </div>
+      <h3>Configuration</h3>
+      <p>Téléversez votre fichier Excel modèle avec les PK, côtes théoriques par couche et tolérance par défaut.</p>
+    </div>
+
+    <div class="proc-card reveal" style="transition-delay:.1s">
+      <div class="proc-num">02</div>
+      <div class="proc-ico">
+        <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+      </div>
+      <h3>Sélection</h3>
+      <p>Choisissez les points kilométriques et les éléments (rive gauche, axe, rive droite) à contrôler pour chaque station.</p>
+    </div>
+
+    <div class="proc-card reveal" style="transition-delay:.2s">
+      <div class="proc-num">03</div>
+      <div class="proc-ico">
+        <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/></svg>
+      </div>
+      <h3>Saisie terrain</h3>
+      <p>Entrez les côtes mesurées en temps réel. L'écart théorique/mesuré est calculé automatiquement, avec code couleur conformité.</p>
+    </div>
+
+    <div class="proc-card reveal" style="transition-delay:.3s">
+      <div class="proc-num">04</div>
+      <div class="proc-ico">
+        <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <h3>Réception & PDF</h3>
+      <p>Signez la fiche, choisissez le verdict (Validée / Non validée / À reprendre), générez et archivez le PDF officiel.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── FEATURES ──────────────────────────────────────────────────── -->
+<section class="section alt reveal" id="features">
+  <div class="stag">Fonctionnalités</div>
+  <h2 class="stitle">Tout ce qu'il faut pour le <span class="a">contrôle</span><br>et la <span class="b">validation</span> terrain</h2>
+
+  <div class="feat-layout">
+
+    <div class="feat-list">
+      <div class="feat-item reveal">
+        <div class="feat-ico">
+          <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+        </div>
+        <div>
+          <h4>Comparaison automatique</h4>
+          <p>Écarts théorique/mesuré calculés en temps réel avec code couleur de conformité (vert/rouge) selon la tolérance définie.</p>
+        </div>
+      </div>
+
+      <div class="feat-item reveal" style="transition-delay:.08s">
+        <div class="feat-ico">
+          <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+        </div>
+        <div>
+          <h4>Fiches PDF officielles</h4>
+          <p>Génération de fiches conformes aux exigences contractuelles — signatures manuscrites, logos MDC/ET, observations par ligne.</p>
+        </div>
+      </div>
+
+      <div class="feat-item reveal" style="transition-delay:.16s">
+        <div class="feat-ico">
+          <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+        </div>
+        <div>
+          <h4>Envoi email automatique</h4>
+          <p>Expédition immédiate aux parties prenantes (MDC + Entreprise) avec la fiche PDF en pièce jointe via Resend.</p>
+        </div>
+      </div>
+
+      <div class="feat-item reveal" style="transition-delay:.24s">
+        <div class="feat-ico">
+          <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+        </div>
+        <div>
+          <h4>Mode PARTENARIAT MDC/ET</h4>
+          <p>Workflow collaboratif MDC ↔ Entreprise de Travaux : demandes de réception, validation, historique partagé.</p>
+        </div>
+      </div>
+
+      <div class="feat-item reveal" style="transition-delay:.32s">
+        <div class="feat-ico">
+          <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+        </div>
+        <div>
+          <h4>Archivage cloud Cloudflare R2</h4>
+          <p>Toutes les fiches sont archivées sur Cloudflare R2. Historique complet consultable et téléchargeable à tout moment.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Faux screen -->
+    <div class="feat-visual reveal" style="transition-delay:.1s">
+      <div class="feat-screen">
+        <div class="ft-header">Résultats · PK 0+050 → 0+200</div>
+        <div class="ft-row ok">
+          <span class="ft-dot ok"></span>
+          <span class="ft-pk">0+050</span>
+          <span class="ft-el">G_Roulement</span>
+          <span class="ft-val">+0.002</span>
+        </div>
+        <div class="ft-row ok">
+          <span class="ft-dot ok"></span>
+          <span class="ft-pk">0+050</span>
+          <span class="ft-el">A_Roulement</span>
+          <span class="ft-val">−0.001</span>
+        </div>
+        <div class="ft-row err">
+          <span class="ft-dot err"></span>
+          <span class="ft-pk">0+050</span>
+          <span class="ft-el">D_Base_BB</span>
+          <span class="ft-val">+0.027</span>
+        </div>
+        <div class="ft-row ok">
+          <span class="ft-dot ok"></span>
+          <span class="ft-pk">0+100</span>
+          <span class="ft-el">G_Roulement</span>
+          <span class="ft-val">−0.003</span>
+        </div>
+        <div class="ft-row ok">
+          <span class="ft-dot ok"></span>
+          <span class="ft-pk">0+100</span>
+          <span class="ft-el">A_Fond_Fouille</span>
+          <span class="ft-val">+0.000</span>
+        </div>
+        <div class="ft-row itp">
+          <span class="ft-dot itp"></span>
+          <span class="ft-pk">0+150</span>
+          <span class="ft-el">G_Roulement</span>
+          <span class="ft-val">interp.</span>
+        </div>
+        <div class="ft-row ok">
+          <span class="ft-dot ok"></span>
+          <span class="ft-pk">0+200</span>
+          <span class="ft-el">G_Fond_Fouille</span>
+          <span class="ft-val">+0.004</span>
+        </div>
+        <div class="ft-bilan">
+          <span class="ft-bilan-label">5 / 6 points conformes</span>
+          <span class="ft-bilan-pct">83%</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── METRICS ───────────────────────────────────────────────────── -->
+<section class="metrics-section reveal" id="metrics">
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="mv" data-count="100" data-suffix="%">—</div>
+      <div class="ml">Calcul d'écart automatique</div>
+    </div>
+    <div class="metric-card">
+      <div class="mv" data-count="4" data-suffix=" étapes">—</div>
+      <div class="ml">Workflow terrain guidé</div>
+    </div>
+    <div class="metric-card">
+      <div class="mv" data-prefix="&lt; " data-count="30" data-suffix="s">—</div>
+      <div class="ml">Génération PDF officiel</div>
+    </div>
+    <div class="metric-card">
+      <div class="mv" data-count="2" data-suffix=" clics">—</div>
+      <div class="ml">Envoi fiche par email</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TÉMOIGNAGES ───────────────────────────────────────────────── -->
+<section class="section reveal" id="temoignages">
+  <div class="stag">Témoignages</div>
+  <h2 class="stitle">Ils utilisent <span class="a">RECEPTA</span><br>sur le <span class="b">chantier</span></h2>
+
+  <div class="testi-grid">
+    <div class="testi-card reveal">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">
+        "Avant, on passait 2h à remplir les fiches à la main. Avec RECEPTA on est à 15 minutes
+        chrono, fiche PDF envoyée depuis le terrain."
+      </p>
+      <div class="testi-author">
+        <div class="testi-av">PM</div>
+        <div>
+          <div class="testi-name">Pierre M.</div>
+          <div class="testi-role">Contrôleur topographique · MDC</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card reveal" style="transition-delay:.1s">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-text">
+        "Le mode PARTENARIAT a changé notre organisation. L'entreprise dépose ses demandes,
+        on reçoit une notif et on valide depuis l'appli. Efficace."
+      </p>
+      <div class="testi-author">
+        <div class="testi-av">SD</div>
+        <div>
+          <div class="testi-name">Sarah D.</div>
+          <div class="testi-role">Ingénieure travaux · Bureau de Contrôle</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card reveal" style="transition-delay:.2s">
+      <div class="testi-stars">★★★★☆</div>
+      <p class="testi-text">
+        "L'archivage automatique sur le cloud et l'historique des fiches nous ont sauvé
+        lors d'un audit. Tout était là, consultable en 2 clics."
+      </p>
+      <div class="testi-author">
+        <div class="testi-av">KA</div>
+        <div>
+          <div class="testi-name">Karim A.</div>
+          <div class="testi-role">Chef de projet BTP · Entreprise de Travaux</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ───────────────────────────────────────────────────────── -->
+<section class="section cta-section reveal">
+  <h2 class="cta-title">
+    Prêt à <span class="a">réceptionner</span><br>votre premier tronçon ?
+  </h2>
+  <p class="cta-sub">
+    RECEPTA est opérationnel en moins de 5 minutes. Téléversez votre modèle Excel
+    et commencez votre première réception immédiatement.
+  </p>
+  <div class="cta-btns">
+    <a href="/login" class="btn-p">
+      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      Accéder à RECEPTA
+    </a>
+    <a href="mailto:contact@optilab.fr" class="btn-s">Contacter l'équipe</a>
+  </div>
+</section>
+
+<!-- ── FOOTER ────────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="logo-dots">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div class="logo-text">
+          <strong>RECEPTA</strong>
+          <small>by OPTILAB</small>
+        </div>
+      </div>
+      <p class="footer-tagline">Solution SaaS de réception topographique pour les chantiers BTP. Fiches PDF, conformité terrain, multi-projets.</p>
+    </div>
+    <div class="footer-cols">
+      <div class="footer-col">
+        <h5>Outil</h5>
+        <ul>
+          <li><a href="/login">Se connecter</a></li>
+          <li><a href="#process">Comment ça marche</a></li>
+          <li><a href="#features">Fonctionnalités</a></li>
+          <li><a href="#metrics">Performances</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Modes</h5>
+        <ul>
+          <li><a href="#">RECEPTA SOLO</a></li>
+          <li><a href="#">RECEPTA PRO</a></li>
+          <li><a href="#">Assainissement</a></li>
+          <li><a href="#">Terrassement</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="mailto:contact@optilab.fr">contact@optilab.fr</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2026 OPTILAB · Tous droits réservés</span>
+    <span class="footer-badge">RECEPTA v2 · Production</span>
+  </div>
+</footer>
+
+<script>
+// ── Custom cursor ──────────────────────────────────────────────
+const curDot  = document.getElementById('curDot');
+const curRing = document.getElementById('curRing');
+let mx=0, my=0, rx=0, ry=0;
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  curDot.style.left = mx + 'px';
+  curDot.style.top  = my + 'px';
+});
+(function ringLoop() {
+  rx += (mx - rx) * .12;
+  ry += (my - ry) * .12;
+  curRing.style.left = rx + 'px';
+  curRing.style.top  = ry + 'px';
+  requestAnimationFrame(ringLoop);
+})();
+
+// ── Progress bar ───────────────────────────────────────────────
+const pbar = document.getElementById('pbar');
+window.addEventListener('scroll', () => {
+  const p = window.scrollY / (document.body.scrollHeight - innerHeight) * 100;
+  pbar.style.width = p + '%';
+}, { passive: true });
+
+// ── Theme toggle ───────────────────────────────────────────────
+document.getElementById('themeTgl').addEventListener('click', () => {
+  const html = document.documentElement;
+  html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark';
+});
+
+// ── Three.js — Topographic terrain ────────────────────────────
+(function initThree() {
+  if (!window.THREE) return;
+  const wrap   = document.getElementById('three-wrap');
+  const canvas = document.getElementById('three-canvas');
+  const W = wrap.offsetWidth, H = wrap.offsetHeight;
+
+  const scene    = new THREE.Scene();
+  const camera   = new THREE.PerspectiveCamera(42, W / H, 0.1, 200);
+  camera.position.set(0, 11, 20);
+  camera.lookAt(0, -1, 0);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.setClearColor(0, 0);
+
+  // ── Topographic wireframe terrain
+  const COLS = 52, ROWS = 40;
+  const geo  = new THREE.PlaneGeometry(22, 18, COLS, ROWS);
+  geo.rotateX(-Math.PI / 2.5);
+  const origPos = geo.attributes.position.array.slice();
+
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0x00ffff, wireframe: true,
+    opacity: 0.09, transparent: true
+  });
+  const terrain = new THREE.Mesh(geo, mat);
+  scene.add(terrain);
+
+  // ── Gold measurement-point dots
+  const dotGeo = new THREE.SphereGeometry(.16, 8, 8);
+  const dotMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+  const dotData = [
+    [-4, 0, -3], [-2, 0, -3], [0, 0, -3], [2, 0, -3], [4, 0, -3],
+    [-4, 0, 0],  [-2, 0, 0],  [0, 0, 0],  [2, 0, 0],  [4, 0, 0],
+    [-4, 0, 3],  [-2, 0, 3],  [0, 0, 3],  [2, 0, 3],  [4, 0, 3],
+  ];
+  const dotMeshes = dotData.map(p => {
+    const m = new THREE.Mesh(dotGeo, dotMat);
+    m.position.set(p[0], p[1], p[2]);
+    scene.add(m);
+    return m;
+  });
+
+  // ── Grid lines (PK lines)
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xfbbf24, opacity: 0.25, transparent: true });
+  [-3, 0, 3].forEach(z => {
+    const pts = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5].map(x => new THREE.Vector3(x, .05, z));
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
+  });
+
+  // ── Faint grid overlay (topographic grid)
+  const gridMat = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.04, transparent: true });
+  for (let x = -5; x <= 5; x += 1) {
+    const pts = [new THREE.Vector3(x, .02, -6), new THREE.Vector3(x, .02, 6)];
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+  }
+  for (let z = -6; z <= 6; z += 1) {
+    const pts = [new THREE.Vector3(-5, .02, z), new THREE.Vector3(5, .02, z)];
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+  }
+
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    t += 0.007;
+
+    // Animate terrain vertices
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x0 = origPos[i * 3];
+      const z0 = origPos[i * 3 + 2];
+      pos.setY(i, origPos[i * 3 + 1]
+        + Math.sin(x0 * 0.5 + t) * Math.cos(z0 * 0.4 + t * 0.6) * 0.55
+        + Math.sin(x0 * 0.2 + t * 0.4) * Math.cos(z0 * 0.3) * 0.25
+      );
+    }
+    pos.needsUpdate = true;
+
+    // Dots float up/down sinusoidally
+    dotMeshes.forEach((m, i) => {
+      m.position.y = Math.sin(t * 1.1 + i * 0.6) * 0.28 + 0.3;
+    });
+
+    // Slow terrain rotation
+    terrain.rotation.y = Math.sin(t * 0.06) * 0.1;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+  wrap.classList.add('active');
+
+  window.addEventListener('resize', () => {
+    const W2 = wrap.offsetWidth, H2 = wrap.offsetHeight;
+    camera.aspect = W2 / H2;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W2, H2);
+  });
+})();
+
+// ── Hero scroll animation ──────────────────────────────────────
+const heroContent = document.querySelector('.hero-content');
+const screenZoom  = document.getElementById('screen-zoom');
+
+window.addEventListener('scroll', () => {
+  const progress = Math.min(window.scrollY / (innerHeight * 1.4), 1);
+
+  // Screen data overlay fades in mid-scroll
+  if (progress > 0.2 && progress < 0.72) {
+    const p = (progress - 0.2) / 0.52;
+    screenZoom.style.opacity = Math.min(p * 2, 1).toString();
+    screenZoom.style.transform = `scale(${0.9 + p * 0.1})`;
+  } else {
+    screenZoom.style.opacity = '0';
+    screenZoom.style.transform = 'scale(0.9)';
+  }
+
+  // Hero text fades and rises
+  heroContent.style.opacity = Math.max(1 - progress * 2.2, 0).toString();
+  heroContent.style.transform = `translateY(calc(-50% + ${-progress * 28}px))`;
+}, { passive: true });
+
+// ── Scroll reveal ──────────────────────────────────────────────
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      const delay = parseFloat(e.target.style.transitionDelay || '0') * 1000;
+      setTimeout(() => e.target.classList.add('in'), delay || i * 55);
+      revealObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(r => revealObs.observe(r));
+
+// ── Counter animation ──────────────────────────────────────────
+const counterObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const el     = e.target;
+    const target = +el.dataset.count;
+    const suffix = el.dataset.suffix || '';
+    const prefix = el.dataset.prefix || '';
+    let cur = 0;
+    const step = target / 45;
+    const timer = setInterval(() => {
+      cur = Math.min(cur + step, target);
+      el.innerHTML = prefix + Math.round(cur) + suffix;
+      if (cur >= target) clearInterval(timer);
+    }, 28);
+    counterObs.unobserve(el);
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('[data-count]').forEach(c => counterObs.observe(c));
+
+// ── Animate .ft-row in feat-visual (looping) ──────────────────
+(function animateScreen() {
+  const rows = document.querySelectorAll('.ft-row');
+  let active = 0;
+  setInterval(() => {
+    rows.forEach((r, i) => {
+      r.style.transform = i === active ? 'scale(1.015) translateX(4px)' : '';
+      r.style.transition = 'transform .3s';
+    });
+    active = (active + 1) % rows.length;
+  }, 900);
+})();
+</script>
+
+</body>
+</html>

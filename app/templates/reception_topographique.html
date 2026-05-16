@@ -1083,6 +1083,24 @@
         tr.data-row.ecart-negatif { background: #eff6ff !important; }
         tr.data-row.row-interpolated { background: var(--surface-2) !important; }
 
+        /* ===== PK HORS-PLAN (IMPREVUS) ===== */
+        tr.data-row.row-imprevu { background: #fffbeb !important; border-left: 3px solid #f59e0b; }
+        tr.data-row.row-imprevu .element-label-cell { color: #92400e; font-style: italic; }
+        tr.data-row.row-imprevu .element-label-cell::before {
+            content:''; display:inline-block; width:7px; height:7px;
+            background:#f59e0b; border-radius:50%; margin-right:5px; vertical-align:middle;
+        }
+        .pk-separator-imprevu {
+            padding:6px 12px 4px; font-size:0.72rem; font-weight:700;
+            color:#92400e; background:#fef3c7; border-top:1px solid #fcd34d;
+            border-bottom:1px solid #fcd34d; text-transform:uppercase; letter-spacing:.4px; margin:4px 0;
+        }
+        .imprevus-col-section { padding:12px; border-top:2px solid #f59e0b; background:#fffbeb; }
+        .imprevus-col-title {
+            font-weight:700; font-size:.78rem; text-transform:uppercase; letter-spacing:.6px;
+            margin-bottom:10px; padding-bottom:8px; border-bottom:2px solid #f59e0b; color:#92400e;
+        }
+
         /* ===== BOUTON VALIDATION PAR LIGNE ===== */
         .btn-validation {
             display: inline-flex; align-items: center; justify-content: center;
@@ -1328,6 +1346,7 @@
 
                 <!-- Sélection PK / côtes -->
                 <div id="data-selection" style="display:none;">
+
                     <div class="selection-columns">
                         <div class="selection-box">
                             <div class="selection-box-header">
@@ -1358,6 +1377,25 @@
                             <div id="cotes-checkboxes" style="overflow-y: auto; max-height: 350px;"></div>
                         </div>
                     </div>
+
+                    <!-- Schéma profil en travers (Feature 5 — chargé si projet PRO) -->
+                    <div id="schema-couches-wrap" style="display:none; margin-top:16px;">
+                        <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.sch-chev').textContent=this.nextElementSibling.style.display==='block'?'▴':'▾';"
+                             style="cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+                                    padding:10px 16px; background:var(--surface-2); border:1px solid var(--border-color);
+                                    border-radius:10px; font-size:.82rem; font-weight:700; color:var(--text-secondary);
+                                    text-transform:uppercase; letter-spacing:.4px;">
+                            <span>Schéma profil en travers</span>
+                            <span class="sch-chev">▾</span>
+                        </div>
+                        <div id="schema-couches-body" style="display:none; margin-top:8px; background:white;
+                             border:1px solid var(--border-color); border-radius:10px; padding:12px; overflow-x:auto;">
+                            <div id="schema-couches-svg" style="min-height:60px; color:#94a3b8; font-style:italic; font-size:.82rem;">
+                                Chargement du schéma…
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Options PDF : séparation par côté -->
                     <div style="margin-top:18px; padding:14px 18px; background:var(--surface-2); border:1px solid var(--border-color); border-radius:10px;">
                         <div style="font-size:0.82rem; font-weight:700; color:var(--text-secondary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.4px;">Options de génération PDF</div>
@@ -1464,12 +1502,46 @@
                         <div style="color:rgba(255,255,255,0.7); font-size:0.82rem; margin-top:1px;">Analyse de conformité topographique</div>
                     </div>
                 </div>
-                <div id="resultats-badges" style="display:flex; gap:8px; align-items:center;"></div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div id="resultats-logos" style="display:flex; gap:8px; align-items:center;"></div>
+                    <div id="resultats-badges" style="display:flex; gap:8px; align-items:center;"></div>
+                </div>
             </div>
             <div style="background:white; border:1px solid #e2e8f0; border-top:none; border-radius:0 0 16px 16px; padding:28px;">
                 <div id="resultats-stats" style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:32px;"></div>
                 <div id="resultats-tables"></div>
             </div>
+        </div>
+
+        <!-- ── Verdict de la réception (tous modes) ───────────────────────── -->
+        <div id="statut-final-card" style="margin-top:20px; background:white; border:1px solid #e2e8f0; border-radius:14px; padding:20px 24px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 12l2 2 4-4m-1 9a9 9 0 10-18 0 9 9 0 0018 0z"/>
+                </svg>
+                <span style="font-size:.9rem; font-weight:700; color:#1e293b;">Verdict de la réception</span>
+                <span style="font-size:.75rem; color:#94a3b8;">— enregistré avec la fiche générée</span>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div class="sv-btn" id="sv-validee" onclick="selectStatutVerdict('validee')"
+                     style="padding:10px 20px; border-radius:10px; border:2px solid #e2e8f0; font-size:.85rem; font-weight:700;
+                            color:#475569; display:flex; align-items:center; gap:8px; cursor:pointer; transition:all .15s; user-select:none;">
+                    <span>✓</span> Validée
+                </div>
+                <div class="sv-btn" id="sv-non_validee" onclick="selectStatutVerdict('non_validee')"
+                     style="padding:10px 20px; border-radius:10px; border:2px solid #e2e8f0; font-size:.85rem; font-weight:700;
+                            color:#475569; display:flex; align-items:center; gap:8px; cursor:pointer; transition:all .15s; user-select:none;">
+                    <span>✗</span> Non validée
+                </div>
+                <div class="sv-btn" id="sv-a_reprendre" onclick="selectStatutVerdict('a_reprendre')"
+                     style="padding:10px 20px; border-radius:10px; border:2px solid #e2e8f0; font-size:.85rem; font-weight:700;
+                            color:#475569; display:flex; align-items:center; gap:8px; cursor:pointer; transition:all .15s; user-select:none;">
+                    <span>↩</span> À reprendre
+                </div>
+            </div>
+            <p style="font-size:.75rem; color:#94a3b8; margin-top:10px;">
+                Sélectionnez le verdict avant de générer la fiche. Ce choix sera enregistré dans la base de données.
+            </p>
         </div>
 
         <div class="wizard-nav" style="margin-top:24px;">
@@ -1850,6 +1922,30 @@
     // ===== NAVIGATION WIZARD =====
     let currentStep = 1;
 
+    // ── Verdict de réception ─────────────────────────────────────────────────
+    let _statutVerdict = null;
+
+    function selectStatutVerdict(val) {
+        _statutVerdict = val;
+        const styles = {
+            'validee':     { border: '#10b981', bg: '#d1fae5', color: '#065f46' },
+            'non_validee': { border: '#ef4444', bg: '#fee2e2', color: '#991b1b' },
+            'a_reprendre': { border: '#f59e0b', bg: '#fef3c7', color: '#92400e' },
+        };
+        document.querySelectorAll('.sv-btn').forEach(btn => {
+            btn.style.borderColor = '#e2e8f0';
+            btn.style.background  = 'transparent';
+            btn.style.color       = '#475569';
+        });
+        const el = document.getElementById(`sv-${val}`);
+        const s  = styles[val];
+        if (el && s) {
+            el.style.borderColor = s.border;
+            el.style.background  = s.bg;
+            el.style.color       = s.color;
+        }
+    }
+
     function wizardTo(n) {
         if (n < 1 || n > 5) return;
 
@@ -2211,6 +2307,9 @@
         let selectedSheet = null;       // Utilisé par le mode Manuel
         let allSheetsData = {};         // Mode Excel : { "Cote_Gauche": {...}, "Cote_Droit": {...} }
         let commonPKs = [];             // PKs communs à tous les onglets Excel
+        let regularSheetsData  = {};    // Onglets Cote_Gauche, Cote_Droit... (hors IMPREVUS)
+        let imprévusSheetsData = {};    // Onglets IMPREVUS* (PK hors-plan)
+        let horsPlanPKs        = [];    // PK présents dans IMPREVUS mais absents de commonPKs
         // receptionMode est maintenant une variable globale définie plus haut
         
         // Initialiser la date d'aujourd'hui
@@ -2269,8 +2368,203 @@
             return metersToPK(meters);
         }
         
+        // ── Paramètres PRO depuis URL ─────────────────────────────────────────
+        const _urlParams   = new URLSearchParams(window.location.search);
+        const _demandeId   = _urlParams.get('demande_id');   // MDC: pré-remplir depuis demande
+        const _simulation  = _urlParams.get('simulation');   // ET: mode simulation
+        const _proMode     = _urlParams.get('pro');          // présent si lancé depuis PRO
+        const _projetIdUrl = _urlParams.get('projet_id');    // direct depuis admin/projet_detail
+        const _pkDebutUrl  = _urlParams.get('pk_debut');
+        const _pkFinUrl    = _urlParams.get('pk_fin');
+
+        // Logos et projet (remplis depuis params_demande si PRO)
+        let _logoMdcUrl = null;
+        let _logoEtUrl  = null;
+        let _projetId   = null;
+
+
+        // Mode PRO MDC : aller directement au step 3 IMMÉDIATEMENT (sans attendre le chargement Excel)
+        if (_demandeId && _proMode === '1') {
+            wizardTo(3);
+        }
+
+        // Si mode simulation ET : skip step 1 & 2, aller directement au step 3
+        // + masquer signatures (step 5) + email + filigrane
+        if (_simulation === '1') {
+            wizardTo(3);
+            // Masquer step 5 dans l'indicateur wizard
+            const wi5  = document.getElementById('wi-5');
+            const wl45 = document.getElementById('wl-4-5');
+            if (wi5)  wi5.style.display  = 'none';
+            if (wl45) wl45.style.display = 'none';
+            // Masquer bouton email et step 5 panel
+            document.getElementById('send-email-btn')?.closest('div')?.style.setProperty('display','none');
+            // Patch wizardTo pour ignorer step 5 en simulation
+            const _origWizardTo = wizardTo;
+            window.wizardTo = function(n) {
+                if (n === 5) n = 4; // reste sur étape 4
+                _origWizardTo(n);
+            };
+            // Remplacer le bouton "Signatures →" de l'étape 4 par "Exporter →"
+            setTimeout(() => {
+                document.querySelectorAll('.btn-wz-next').forEach(btn => {
+                    if (btn.textContent.includes('Signatures')) {
+                        btn.textContent = 'Exporter les résultats';
+                        btn.onclick = null; // désactiver navigation vers step 5
+                        btn.style.display = 'none';
+                    }
+                });
+            }, 200);
+            // Filigrane SIMULATION
+            document.body.insertAdjacentHTML('beforeend',
+                '<div id="filigrane-sim" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;' +
+                'pointer-events:none;z-index:9999;transform:rotate(-35deg);opacity:.05;">' +
+                '<span style="font-size:90px;font-weight:900;color:#f59e0b;white-space:nowrap;letter-spacing:8px;font-family:Inter,sans-serif;">SIMULATION</span>' +
+                '</div>');
+            // Bandeau info simulation
+            document.body.insertAdjacentHTML('afterbegin',
+                '<div style="background:#1a0d00;border-bottom:2px solid #f59e0b;padding:8px 16px;text-align:center;font-size:.82rem;color:#fbbf24;font-weight:600;letter-spacing:.3px;">' +
+                '⚠ MODE SIMULATION — Auto-vérification Entreprise — Pas de signatures ni d\'envoi' +
+                '</div>');
+        }
+
         // Charger tous les onglets au démarrage
-        loadAllSheetsData();
+        loadAllSheetsData().then(async () => {
+            // ── Import automatique depuis la demande MDC (sans bouton) ────────
+            if (_demandeId && _proMode === '1') {
+                try {
+                    const r = await fetch(`/pro/demandes/${_demandeId}/params`);
+                    if (!r.ok) return;
+                    const p = await r.json();
+
+                    // Mode assainissement / terrassement
+                    if (p.mode === 'terrassement' && receptionMode !== 'terrassement') {
+                        receptionMode = 'terrassement';
+                        const ts = document.getElementById('mode-toggle-switch');
+                        if (ts) ts.classList.add('active');
+                        document.getElementById('label-assainissement')?.classList.remove('active');
+                        document.getElementById('label-terrassement')?.classList.add('active');
+                    }
+
+                    // Tolérance
+                    const tolEl = document.getElementById('tolerance');
+                    if (tolEl && p.tolerance) {
+                        tolEl.value = p.tolerance;
+                        tolEl.dispatchEvent(new Event('input'));
+                    }
+
+                    // Météo
+                    const meteoEl = document.getElementById('meteo');
+                    if (meteoEl && p.meteo) meteoEl.value = p.meteo;
+
+                    // ── PK : sélection précise depuis pks_list, ou plage pk_debut/pk_fin ──
+                    if (p.pks_list && p.pks_list.length > 0) {
+                        // pks_list : liste exacte des PK choisis par l'ET dans la demande
+                        document.querySelectorAll('.pk-checkbox').forEach(cb => { cb.checked = false; });
+                        const pksSet = new Set(p.pks_list);
+                        document.querySelectorAll('#pk-checkboxes .checkbox-item').forEach(item => {
+                            const lbl = item.querySelector('label');
+                            const cb  = item.querySelector('input[type=checkbox]');
+                            if (lbl && cb && pksSet.has(lbl.textContent.trim())) {
+                                cb.checked = true;
+                            }
+                        });
+                    } else if (p.pk_debut && p.pk_fin) {
+                        // Fallback : plage via les selects PK début / fin
+                        const startSel = document.getElementById('pk-start');
+                        const endSel   = document.getElementById('pk-end');
+                        if (startSel) {
+                            const opt = Array.from(startSel.options).find(o => o.text === p.pk_debut);
+                            if (opt) startSel.value = opt.value;
+                        }
+                        if (endSel) {
+                            const opt = Array.from(endSel.options).find(o => o.text === p.pk_fin);
+                            if (opt) endSel.value = opt.value;
+                        }
+                        document.getElementById('select-range-pk')?.click();
+                    }
+
+                    // ── Éléments : décocher tout, cocher exactement ceux de la demande ──
+                    let cochees = 0;
+                    if (p.parties && p.parties.length > 0) {
+                        document.querySelectorAll('#cotes-checkboxes input[type=checkbox]')
+                                .forEach(cb => { cb.checked = false; });
+                        p.parties.forEach(item => {
+                            let cb = null;
+                            if (item.key) {
+                                // Format paramétrique {key, label}
+                                cb = document.querySelector(`#cotes-checkboxes input[data-key="${item.key}"]`);
+                            } else if (item.sheet && item.col) {
+                                // Format legacy {sheet, col}
+                                cb = document.querySelector(`#cotes-checkboxes input[data-sheet="${item.sheet}"][data-col="${item.col}"]`);
+                            }
+                            if (cb) { cb.checked = true; cochees++; }
+                        });
+                    }
+
+                    // Logos et projet_id
+                    if (p.logo_mdc_url) _logoMdcUrl = p.logo_mdc_url;
+                    if (p.logo_et_url)  _logoEtUrl  = p.logo_et_url;
+                    if (p.projet_id)    _projetId   = p.projet_id;
+
+                    // Charger le schéma SVG des couches si projet_id disponible
+                    if (_projetId) _loadSectionSvg(_projetId);
+
+                    // ── Bandeau de confirmation ────────────────────────────────
+                    const indicator = document.getElementById('sheets-loaded-indicator');
+                    if (indicator) {
+                        indicator.innerHTML =
+                            `✓ <strong>${cochees} élément${cochees > 1 ? 's' : ''}</strong> importé${cochees > 1 ? 's' : ''} automatiquement depuis la demande` +
+                            ` — vérifiez la sélection puis cliquez <strong>Générer la fiche →</strong>`;
+                        indicator.style.background = '#eff6ff';
+                        indicator.style.borderColor = '#93c5fd';
+                        indicator.style.color       = '#1e40af';
+                    }
+
+                } catch(e) {
+                    console.warn('Auto-import PRO échoué:', e);
+                }
+            }
+
+            // ── Import depuis projet_id direct (sans demande — ex: admin) ──────
+            if (_projetIdUrl && _proMode === '1' && !_demandeId) {
+                try {
+                    const r = await fetch(`/api/pro/projets/${_projetIdUrl}/config`);
+                    if (!r.ok) return;
+                    const cfg = await r.json();
+
+                    _projetId = parseInt(_projetIdUrl);
+                    if (cfg.logo_mdc_url) _logoMdcUrl = cfg.logo_mdc_url;
+                    if (cfg.logo_et_url)  _logoEtUrl  = cfg.logo_et_url;
+                    _loadSectionSvg(_projetId);
+
+                    // Tolérance
+                    const tolEl = document.getElementById('tolerance');
+                    if (tolEl && cfg.tolerance) {
+                        tolEl.value = cfg.tolerance;
+                        tolEl.dispatchEvent(new Event('input'));
+                    }
+
+                    // PK depuis URL puis depuis config
+                    const pkDeb = _pkDebutUrl || cfg.pk_debut;
+                    const pkFin = _pkFinUrl   || cfg.pk_fin;
+                    if (pkDeb && pkFin) {
+                        const startSel = document.getElementById('pk-start');
+                        const endSel   = document.getElementById('pk-end');
+                        if (startSel) {
+                            const opt = Array.from(startSel.options).find(o => o.text === pkDeb);
+                            if (opt) startSel.value = opt.value;
+                        }
+                        if (endSel) {
+                            const opt = Array.from(endSel.options).find(o => o.text === pkFin);
+                            if (opt) endSel.value = opt.value;
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Auto-config PRO (projet_id) échoué:', e);
+                }
+            }
+        });
 
         // Vérifier les données manuelles au démarrage
         checkManualData();
@@ -2322,13 +2616,31 @@
                     return;
                 }
 
-                // Calculer les PK communs à tous les onglets (intersection)
-                const allPKSets = Object.values(allSheetsData).map(d => new Set(d.pks));
-                const firstSet = allPKSets[0];
-                commonPKs = [...firstSet].filter(pk => allPKSets.every(s => s.has(pk)));
+                // Séparer onglets réguliers / IMPREVUS (optionnel)
+                regularSheetsData  = {};
+                imprévusSheetsData = {};
+                Object.entries(allSheetsData).forEach(([name, data]) => {
+                    if (name.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().startsWith('IMPREVUS'))
+                        imprévusSheetsData[name] = data;
+                    else
+                        regularSheetsData[name] = data;
+                });
+
+                // commonPKs = intersection des onglets RÉGULIERS seulement (comportement inchangé si pas d'IMPREVUS)
+                const regularVals = Object.values(regularSheetsData);
+                if (regularVals.length === 0) { showError('Aucun onglet régulier chargé.'); return; }
+                const allPKSets = regularVals.map(d => new Set(d.pks));
+                commonPKs = [...allPKSets[0]].filter(pk => allPKSets.every(s => s.has(pk)));
                 commonPKs.sort((a, b) => parsePKToMeters(a) - parsePKToMeters(b));
 
-                console.log(`PK communs: ${commonPKs.length} points`);
+                // horsPlanPKs = PK de IMPREVUS absents de commonPKs
+                const commonSet = new Set(commonPKs);
+                const hpSet = new Set();
+                Object.values(imprévusSheetsData).forEach(d => d.pks.forEach(pk => hpSet.add(pk)));
+                horsPlanPKs = [...hpSet].filter(pk => !commonSet.has(pk));
+                horsPlanPKs.sort((a, b) => parsePKToMeters(a) - parsePKToMeters(b));
+
+                console.log(`PK communs: ${commonPKs.length} | PK hors-plan: ${horsPlanPKs.length}`);
 
                 // Afficher l'UI
                 document.getElementById('loading-message').style.display = 'none';
@@ -2339,6 +2651,7 @@
 
                 document.getElementById('data-selection').style.display = 'block';
                 console.log('Section de sélection affichée');
+
 
             } catch (error) {
                 console.error('Erreur lors du chargement:', error);
@@ -2366,8 +2679,25 @@
                 container.appendChild(div);
             });
             console.log('Checkboxes PK créées:', pks.length);
-            
-            // Remplir aussi les selects de plage
+
+            // Section PK hors-plan si onglet IMPREVUS présent
+            if (horsPlanPKs.length > 0) {
+                const sep = document.createElement('div');
+                sep.className = 'pk-separator-imprevu';
+                sep.textContent = '⚠ PK hors-plan (IMPREVUS)';
+                container.appendChild(sep);
+                horsPlanPKs.forEach(pk => {
+                    const div = document.createElement('div');
+                    div.className = 'checkbox-item';
+                    div.innerHTML = `
+                        <input type="checkbox" value="${pk}" class="pk-checkbox pk-checkbox-imprevu"
+                               id="pk-hp-${pk}" data-imprevu="true" data-pk-value="${pk}">
+                        <label for="pk-hp-${pk}" style="color:#92400e;font-style:italic;">⚠ ${pk}</label>`;
+                    container.appendChild(div);
+                });
+            }
+
+            // Remplir aussi les selects de plage (PK planifiés seulement)
             populatePKRangeSelects(pks);
         }
         
@@ -2400,7 +2730,10 @@
             if (!container) return;
             container.innerHTML = '';
 
-            const sheetNames = Object.keys(allSheetsData);
+            // Onglets réguliers seulement dans la grille principale (pas IMPREVUS)
+            const sheetNames = Object.keys(regularSheetsData).length > 0
+                ? Object.keys(regularSheetsData)
+                : Object.keys(allSheetsData).filter(n => !n.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().startsWith('IMPREVUS'));
             if (sheetNames.length === 0) return;
 
             const grid = document.createElement('div');
@@ -2428,6 +2761,7 @@
                                id="${uniqueId}"
                                value="${colName}"
                                data-sheet="${sheetName}"
+                               data-col="${colName}"
                                data-label="${label}">
                         <label for="${uniqueId}">${label}</label>
                     `;
@@ -2438,6 +2772,33 @@
             });
 
             container.appendChild(grid);
+
+            // Section colonnes hors-plan si onglet IMPREVUS présent
+            if (Object.keys(imprévusSheetsData).length > 0) {
+                const secDiv = document.createElement('div');
+                secDiv.className = 'imprevus-col-section';
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'imprevus-col-title';
+                titleDiv.textContent = '⚠ Colonnes hors-plan (IMPREVUS)';
+                secDiv.appendChild(titleDiv);
+                Object.entries(imprévusSheetsData).forEach(([sheetName, sheetData]) => {
+                    sheetData.cote_columns.forEach((colName, i) => {
+                        const label = colName.replace(/^[GD]_/, '').replace(/_/g, ' ');
+                        const uid = `cote-imp-${sheetName}-${i}`;
+                        const d = document.createElement('div');
+                        d.className = 'checkbox-item';
+                        d.innerHTML = `
+                            <input type="checkbox" class="cote-checkbox cote-checkbox-imprevu"
+                                   id="${uid}" value="${colName}"
+                                   data-sheet="${sheetName}" data-col="${colName}"
+                                   data-label="${label} (HP)" data-imprevu="true">
+                            <label for="${uid}" style="color:#92400e;font-style:italic;">⚠ ${label}</label>`;
+                        secDiv.appendChild(d);
+                    });
+                });
+                container.appendChild(secDiv);
+            }
+
             console.log('UI de sélection des éléments générée');
         }
         
@@ -2617,9 +2978,11 @@
                 selectedPKs.forEach((pkCheckbox, idx) => {
                     const pkIndex = parseInt(pkCheckbox.value);
                     let pkValue, pkInMeters;
+                    const isImprevu = pkCheckbox.dataset && pkCheckbox.dataset.imprevu === 'true';
 
                     if (isExcelMode) {
-                        pkValue = commonPKs[pkIndex];
+                        // PK hors-plan : la value est directement le PK (pas un index)
+                        pkValue = isImprevu ? pkCheckbox.value : commonPKs[pkIndex];
                     } else {
                         pkValue = currentSheetData.pks[pkIndex];
                     }
@@ -2638,7 +3001,10 @@
                             // Mode Excel : chercher la valeur dans le bon onglet
                             const sheetName = coteCheckbox.dataset.sheet;
                             const label = coteCheckbox.dataset.label || coteName;
-                            const sheetData = allSheetsData[sheetName];
+                            // PK hors-plan : chercher en priorité dans imprévusSheetsData
+                            const sheetData = isImprevu
+                                ? (imprévusSheetsData[sheetName] || allSheetsData[sheetName])
+                                : allSheetsData[sheetName];
                             if (!sheetData) return;
                             const sheetPKIndex = sheetData.pks.indexOf(pkValue);
                             if (sheetPKIndex === -1) return;
@@ -2655,7 +3021,8 @@
                                 sheetName,
                                 label,
                                 coteTheorique: parseFloat(coteTheorique),
-                                rowData
+                                rowData,
+                                isImprevu
                             });
                         } else {
                             // Mode Manuel : utiliser currentSheetData
@@ -2832,11 +3199,12 @@
                     const side = label.toLowerCase().includes('gauche') ? 'gauche'
                                : label.toLowerCase().includes('droit')  ? 'droit' : '';
                     const tr = document.createElement('tr');
-                    tr.className = 'data-row';
+                    tr.className = 'data-row' + (point.isImprevu ? ' row-imprevu' : '');
                     tr.setAttribute('data-pk', point.pkValue);
                     tr.setAttribute('data-cote-name', point.coteName);
                     tr.setAttribute('data-cote-theorique', point.coteTheorique);
                     tr.setAttribute('data-element-label', label);
+                    if (point.isImprevu) tr.setAttribute('data-imprevu', 'true');
                     tr.setAttribute('data-validation-status', 'pending');
                     if (side) tr.setAttribute('data-side', side);
                     tr.innerHTML = window.generateRowHTML(stationNum, point.pkValue, point.pkInMeters.toFixed(3), point.coteTheorique, false, label);
@@ -3945,7 +4313,10 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(receptionData)
+                    body: JSON.stringify({
+                        ...receptionData,
+                        demande_id: (_demandeId && _proMode === '1') ? parseInt(_demandeId) : null
+                    })
                 });
 
                 if (!response.ok) {
@@ -4027,6 +4398,9 @@
                 signature_controleur: getSignatureBase64('controleur'),
                 signature_entreprise: getSignatureBase64('entreprise'),
 
+                // Verdict de réception (sélectionné en étape 4)
+                statut_verdict: _statutVerdict,
+
                 stations: []
             };
 
@@ -4104,7 +4478,8 @@
                                 validation_status: validationStatus,
                                 side,
                                 row_observations: rowObs,
-                                is_interpolated: isInterpolatedRow
+                                is_interpolated: isInterpolatedRow,
+                                is_imprevu: row.getAttribute('data-imprevu') === 'true'
                             });
                         }
                     });
@@ -4409,7 +4784,32 @@
             document.getElementById('resultats-section').scrollIntoView({ behavior: 'smooth' });
         });
 
+        // ── Chargement SVG schéma des couches (Feature 5) ────────────────────────
+        function _loadSectionSvg(projetId) {
+            fetch(`/api/projets/${projetId}/section-svg`)
+                .then(r => r.ok ? r.json() : null)
+                .then(d => {
+                    if (!d || !d.available || !d.svg) return;
+                    const wrap = document.getElementById('schema-couches-wrap');
+                    const body = document.getElementById('schema-couches-svg');
+                    if (wrap && body) {
+                        body.innerHTML = d.svg;
+                        wrap.style.display = 'block';
+                    }
+                })
+                .catch(() => {});
+        }
+
         function renderResultatsSection(data) {
+            // --- Logos MDC/ET dans le header résultats ---
+            const logosEl = document.getElementById('resultats-logos');
+            if (logosEl) {
+                logosEl.innerHTML = [
+                    _logoMdcUrl ? `<img src="${_logoMdcUrl}" style="max-height:38px;max-width:100px;object-fit:contain;border-radius:4px;background:rgba(255,255,255,.15);padding:2px 4px;" alt="MDC">` : '',
+                    _logoEtUrl  ? `<img src="${_logoEtUrl}"  style="max-height:38px;max-width:100px;object-fit:contain;border-radius:4px;background:rgba(255,255,255,.15);padding:2px 4px;" alt="ET">` : '',
+                ].join('');
+            }
+
             // --- Calcul des stats globales ---
             let total = 0, conformes = 0, nonConformes = 0, warnings = 0, interpolated = 0;
             data.stations.forEach(st => {

@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ projet.nom }} — Aperçu Projet — RECEPTA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/proj4@2.9.0/dist/proj4.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #07101c; color: #e2e8f0; }
+
+        /* ── Project strip ── */
+        .proj-strip {
+            background: linear-gradient(135deg, #0d1b2e, #0f2038);
+            border: 1px solid #1e3a5f; border-radius: 18px;
+            padding: 20px 24px; display: flex; align-items: center; gap: 18px;
+        }
+        .proj-avatar {
+            width: 56px; height: 56px; border-radius: 14px;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: 900; color: white; flex-shrink: 0;
+        }
+
+        /* ── Main tab nav ── */
+        .tab-nav {
+            display: flex; gap: 4px; overflow-x: auto; padding: 4px;
+            background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+            border-radius: 14px; scrollbar-width: none;
+        }
+        .tab-nav::-webkit-scrollbar { display: none; }
+        .main-tab {
+            display: flex; align-items: center; gap: 7px;
+            padding: 10px 18px; border-radius: 10px;
+            font-size: .74rem; font-weight: 700; letter-spacing: .04em;
+            text-transform: uppercase; cursor: pointer;
+            border: 1.5px solid transparent; transition: all .2s;
+            color: #475569; background: transparent; white-space: nowrap; flex-shrink: 0;
+        }
+        .main-tab.active { background: rgba(0,255,255,.08); border-color: rgba(0,255,255,.3); color: #00ffff; }
+        .main-tab:hover:not(.active) { color: #94a3b8; background: rgba(255,255,255,.04); }
+        .main-tab svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+        /* ── Panes ── */
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; animation: fadeIn .18s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+
+        /* ── Cards ── */
+        .vis-card { background: linear-gradient(145deg,#0d1b2e,#0f2038); border:1px solid #1e3a5f; border-radius:16px; overflow:hidden; }
+        .vis-card-head { padding:14px 20px; border-bottom:1px solid #1e3a5f; background:#0a1525;
+                         font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#64748b; }
+        .vis-card-body { padding:20px; }
+
+        /* ── KPIs ── */
+        .kpi { background:#0f2236; border:1px solid #1e3a5f; border-radius:12px; padding:16px 20px; }
+        .kpi-val { font-size:1.75rem; font-weight:800; line-height:1; }
+        .kpi-lbl { font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:#64748b; margin-top:5px; }
+
+        /* ── Component status ── */
+        .comp-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:.82rem; }
+        .comp-row:last-child { border-bottom:none; }
+
+        /* ── Params ── */
+        .param-chip { display:inline-flex; align-items:center; gap:4px; background:#0f2236; border:1px solid #1e3a5f;
+                      border-radius:8px; padding:4px 10px; font-size:.72rem; color:#64748b; margin:3px 4px; }
+        .param-chip span { color:#e2e8f0; font-weight:600; }
+
+        /* ── Tags ── */
+        .tag { display:inline-block; padding:2px 9px; border-radius:999px; font-size:.68rem; font-weight:700; letter-spacing:.04em; }
+
+        /* ── Inner tabs ── */
+        .inner-tab { padding:6px 14px; border-radius:8px; font-size:.72rem; font-weight:600;
+                     cursor:pointer; border:1px solid transparent; transition:all .15s; color:#64748b; background:transparent; }
+        .inner-tab.active { background:#1e3a5f; border-color:#00ffff; color:#00ffff; }
+        .inner-tab:hover:not(.active) { color:#94a3b8; }
+        .inner-pane { display:none; }
+        .inner-pane.active { display:block; }
+
+        /* ── Section blocks ── */
+        .sec-block { margin-bottom:10px; border-radius:10px; overflow:hidden; border:1px solid #1e3a5f; }
+        .sec-block-head { padding:8px 14px; background:#0a1525; font-size:.72rem; font-weight:600; }
+        .sec-block-body { padding:10px 14px; display:flex; flex-wrap:wrap; }
+
+        /* ── Elements ── */
+        .elt-row { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+        .elt-row:last-child { border-bottom:none; }
+        .elt-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+        /* ── Layer legend ── */
+        .layer-chip { display:flex; align-items:center; gap:10px; padding:8px 12px;
+                      background:#0f2236; border-radius:8px; border:1px solid #1e3a5f; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<header style="background:rgba(7,16,28,.95);border-bottom:1px solid #1e3a5f;backdrop-filter:blur(8px);" class="sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-sm">
+            <a href="/admin/" class="flex items-center gap-2 hover:opacity-80 transition" style="text-decoration:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:14px;height:14px;">
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#fbbf24;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                </div>
+                <span style="color:#00ffff;font-weight:800;letter-spacing:1px;font-size:.85rem;">RECEPTA</span>
+            </a>
+            <span style="color:rgba(255,255,255,.2);">›</span>
+            {% if role is defined and role != 'admin' %}
+            <a href="{{ url_for('pro_projets.projet_hub', projet_id=projet.id) }}"
+               style="color:rgba(255,255,255,.4);text-decoration:none;font-size:.8rem;" class="hover:text-white transition truncate max-w-[160px]">{{ projet.nom }}</a>
+            {% else %}
+            <a href="{{ url_for('admin.dashboard') }}" style="color:rgba(255,255,255,.4);text-decoration:none;font-size:.8rem;" class="hover:text-white transition">Admin</a>
+            <span style="color:rgba(255,255,255,.2);">›</span>
+            <a href="{{ url_for('admin.detail_projet', projet_id=projet.id) }}"
+               style="color:rgba(255,255,255,.4);text-decoration:none;font-size:.8rem;" class="hover:text-white transition truncate max-w-[160px]">{{ projet.nom }}</a>
+            {% endif %}
+            <span style="color:rgba(255,255,255,.2);">›</span>
+            <span style="color:rgba(0,255,255,.8);font-weight:600;font-size:.8rem;">Aperçu Projet</span>
+        </div>
+        <div class="flex items-center gap-3">
+            {% if role is defined and role != 'admin' %}
+            <a href="{{ url_for('pro_projets.projet_hub', projet_id=projet.id) }}"
+               style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.75rem;padding:6px 12px;border:1px solid rgba(255,255,255,.1);border-radius:8px;">
+                ← Retour hub
+            </a>
+            {% else %}
+            <a href="{{ url_for('admin.detail_projet', projet_id=projet.id) }}"
+               style="color:rgba(255,255,255,.5);text-decoration:none;font-size:.75rem;padding:6px 12px;border:1px solid rgba(255,255,255,.1);border-radius:8px;">
+                ← Retour projet
+            </a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}"
+               style="color:#f87171;text-decoration:none;font-size:.75rem;padding:6px 12px;border:1px solid rgba(239,68,68,.2);border-radius:8px;">
+                Déconnexion
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 pt-6 pb-20 space-y-5">
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for category, message in messages %}
+<div class="px-4 py-3 rounded-xl text-sm font-medium border
+    {% if category == 'success' %}bg-emerald-900/40 text-emerald-300 border-emerald-700
+    {% elif category == 'danger' %}bg-red-900/40 text-red-300 border-red-700
+    {% else %}bg-amber-900/40 text-amber-300 border-amber-700{% endif %}">
+    {{ message }}
+</div>
+{% endfor %}
+{% endwith %}
+
+{% if errors %}
+<div class="px-4 py-3 rounded-xl text-sm border bg-amber-900/30 border-amber-700 text-amber-300">
+    <strong>Avertissements :</strong>
+    {% for e in errors %}<div class="mt-1 opacity-80">• {{ e }}</div>{% endfor %}
+</div>
+{% endif %}
+
+<!-- ── Bandeau projet ──────────────────────────────────────────────────────── -->
+<div class="proj-strip">
+    <div class="proj-avatar">{{ projet.nom[0]|upper }}</div>
+    <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap mb-1">
+            <h1 class="text-xl font-black text-white">{{ projet.nom }}</h1>
+            {% if projet.plan == 'pro' %}
+            <span class="tag" style="background:rgba(139,92,246,.15);color:#c084fc;border:1px solid rgba(139,92,246,.3);">PARTENARIAT</span>
+            {% else %}
+            <span class="tag" style="background:rgba(100,116,139,.1);color:#64748b;border:1px solid rgba(100,116,139,.2);">AUTONOME</span>
+            {% endif %}
+            {% if projet.actif %}
+            <span class="tag" style="background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.25);">Actif</span>
+            {% endif %}
+        </div>
+        {% if projet.intitule %}<p class="text-sm text-slate-400 mb-2">{{ projet.intitule }}</p>{% endif %}
+        <div class="flex flex-wrap gap-2">
+            {% if projet.pk_debut and projet.pk_fin %}
+            <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 10px;font-size:.72rem;color:#94a3b8;">
+                PK {{ projet.pk_debut }} → {{ projet.pk_fin }}
+            </span>
+            {% endif %}
+            {% if longueur_m %}
+            <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 10px;font-size:.72rem;color:#94a3b8;">
+                {{ "%.0f"|format(longueur_m) }} m
+            </span>
+            {% endif %}
+            {% if projet.tolerance_defaut %}
+            <span style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 10px;font-size:.72rem;color:#94a3b8;">
+                Tol. ± {{ projet.tolerance_defaut }} cm
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% if logo_mdc_url %}
+    <img src="{{ logo_mdc_url }}" alt="MDC" style="height:48px;max-width:96px;object-fit:contain;border-radius:8px;opacity:.9;">
+    {% endif %}
+    {% if logo_et_url %}
+    <img src="{{ logo_et_url }}" alt="ET" style="height:48px;max-width:96px;object-fit:contain;border-radius:8px;opacity:.9;">
+    {% endif %}
+</div>
+
+<!-- ── Navigation principale ──────────────────────────────────────────────── -->
+<nav class="tab-nav" id="main-tab-nav">
+
+    <button class="main-tab active" onclick="showTab('apercu',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Aperçu
+    </button>
+
+    <button class="main-tab" onclick="showTab('identite',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <path d="M8 10h8M8 14h5"/>
+        </svg>
+        Identité
+    </button>
+
+    {% if has_profil %}
+    <button class="main-tab" onclick="showTab('profil-long',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+        </svg>
+        Profil en long
+    </button>
+    {% endif %}
+
+    <button class="main-tab" onclick="showTab('profil-travers',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M2 15 Q5 9 8 11 Q11 13 12 9 Q13 5 16 9 Q19 13 22 11"/>
+            <line x1="2" y1="18" x2="22" y2="18"/>
+        </svg>
+        Profil en travers
+    </button>
+
+    {% if axe_sections or asg_sections or asd_sections %}
+    <button class="main-tab" onclick="showTab('sections',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="3" y1="15" x2="21" y2="15"/>
+            <line x1="9" y1="9" x2="9" y2="21"/>
+        </svg>
+        Sections
+    </button>
+    {% endif %}
+
+    {% if available_elements or ter_labels %}
+    <button class="main-tab" onclick="showTab('elements',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+        Éléments
+    </button>
+    {% endif %}
+
+    <button class="main-tab" onclick="showTab('carte',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+        </svg>
+        Carte
+    </button>
+
+</nav>
+
+
+<!-- ═══════════════════════════════════ TAB: APERÇU ══════════════════════════ -->
+<div id="tab-apercu" class="tab-pane active space-y-5">
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="kpi">
+            <div class="kpi-val" style="color:#00ffff;">{{ n_pk }}</div>
+            <div class="kpi-lbl">Points PK</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-val" style="color:#4ade80;">
+                {% if longueur_m %}{{ "%.0f"|format(longueur_m) }} m{% else %}—{% endif %}
+            </div>
+            <div class="kpi-lbl">Longueur</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-val" style="color:#f59e0b;">{{ n_axe_sections }}</div>
+            <div class="kpi-lbl">Sections AXE</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-val" style="color:#a78bfa;">
+                {{ (available_elements | length) if available_elements else (ter_labels | length) if ter_labels else 0 }}
+            </div>
+            <div class="kpi-lbl">Groupes éléments</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- Composants Excel -->
+        <div class="vis-card">
+            <div class="vis-card-head">Composants du fichier Excel</div>
+            <div class="vis-card-body">
+                {% set chk = '<svg style="width:16px;height:16px;color:#4ade80;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>' %}
+                {% set xmk = '<svg style="width:16px;height:16px;color:#475569;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' %}
+
+                <div class="comp-row">
+                    {{ (chk if projet.excel_key else xmk) | safe }}
+                    <span class="{{ 'text-slate-200 font-medium' if projet.excel_key else 'text-slate-500' }}">Fichier Excel associé</span>
+                </div>
+                <div class="comp-row">
+                    {{ (chk if has_profil else xmk) | safe }}
+                    <span class="{{ 'text-slate-200 font-medium' if has_profil else 'text-slate-500' }}">Profil en long</span>
+                    {% if has_profil %}<span class="text-xs text-slate-500 ml-auto">{{ n_pk }} points</span>{% endif %}
+                </div>
+                <div class="comp-row">
+                    {{ (chk if layers else xmk) | safe }}
+                    <span class="{{ 'text-slate-200 font-medium' if layers else 'text-slate-500' }}">Profil en travers</span>
+                    {% if layers %}<span class="text-xs text-slate-500 ml-auto">{{ layers | length }} couche(s)</span>{% endif %}
+                </div>
+                <div class="comp-row">
+                    {{ (chk if axe_sections else xmk) | safe }}
+                    <span class="{{ 'text-slate-200 font-medium' if axe_sections else 'text-slate-500' }}">Sections AXE</span>
+                    {% if axe_sections %}<span class="text-xs text-slate-500 ml-auto">{{ axe_sections | length }}</span>{% endif %}
+                </div>
+                <div class="comp-row">
+                    {{ (chk if has_asg else xmk) | safe }}
+                    <span class="{{ 'text-slate-200 font-medium' if has_asg else 'text-slate-500' }}">Assainissement Gauche (ASG)</span>
+                    {% if has_asg %}<span class="text-xs text-slate-500 ml-auto">{{ asg_sections | length }}</span>{% endif %}
+                </div>
+                <div class="comp-row">
+                    {{ (chk if has_asd else xmk) | safe }}
+                    <span class="{{ 'text-slate-200 font-medium' if has_asd else 'text-slate-500' }}">Assainissement Droit (ASD)</span>
+                    {% if has_asd %}<span class="text-xs text-slate-500 ml-auto">{{ asd_sections | length }}</span>{% endif %}
+                </div>
+                <div class="comp-row">
+                    {{ (chk if ter_labels else xmk) | safe }}
+                    <span class="{{ 'text-slate-200 font-medium' if ter_labels else 'text-slate-500' }}">Points TER (terrassement)</span>
+                    {% if ter_labels %}<span class="text-xs text-slate-500 ml-auto">{{ ter_labels | length }} point(s)</span>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Miniature profil en travers -->
+        <div class="vis-card">
+            <div class="vis-card-head">Schéma profil en travers</div>
+            <div class="vis-card-body">
+                {% if section_svg and layers %}
+                <div style="max-height:260px;overflow:hidden;">{{ section_svg | safe }}</div>
+                <div class="flex flex-wrap gap-2 mt-4">
+                    {% for layer in layers %}
+                    <span class="tag" style="background:{{ layer.color }}22;color:{{ layer.color }};border:1px solid {{ layer.color }}55;">{{ layer.label }}</span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="flex flex-col items-center justify-center py-14 text-slate-600">
+                    <svg class="w-12 h-12 mb-3 opacity-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M2 15 Q5 9 8 11 Q11 13 12 9 Q13 5 16 9 Q19 13 22 11"/>
+                        <line x1="2" y1="18" x2="22" y2="18"/>
+                    </svg>
+                    <p class="text-sm">Aucun profil en travers dans ce fichier Excel</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ════════════════════════════════════ TAB: IDENTITÉ ═══════════════════════ -->
+<div id="tab-identite" class="tab-pane space-y-5">
+
+    <div class="vis-card">
+        <div class="vis-card-head">Parties prenantes</div>
+        <div class="vis-card-body">
+            <div class="flex flex-wrap gap-8 items-start">
+                <!-- Logo MDC -->
+                <div class="flex flex-col items-center gap-3">
+                    {% if logo_mdc_url %}
+                    <img src="{{ logo_mdc_url }}" alt="MDC" style="width:80px;height:80px;object-fit:contain;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);padding:6px;">
+                    {% else %}
+                    <div style="width:80px;height:80px;border-radius:12px;background:#0f2236;border:1px solid #1e3a5f;display:flex;align-items:center;justify-content:center;">
+                        <span style="color:#475569;font-size:.72rem;font-weight:700;">MDC</span>
+                    </div>
+                    {% endif %}
+                    <span class="text-xs text-slate-500 font-medium">Mission de Contrôle</span>
+                </div>
+
+                <!-- Infos -->
+                <div class="flex-1 min-w-[200px]">
+                    <h2 class="text-2xl font-black text-white mb-2">{{ projet.nom }}</h2>
+                    {% if projet.intitule %}<p class="text-slate-300 text-sm mb-3">{{ projet.intitule }}</p>{% endif %}
+                    {% if projet.description %}<p class="text-slate-400 text-sm leading-relaxed mb-3 max-w-xl">{{ projet.description }}</p>{% endif %}
+                    <div class="flex flex-wrap gap-2">
+                        {% if projet.plan == 'pro' %}
+                        <span class="tag" style="background:rgba(139,92,246,.15);color:#c084fc;border:1px solid rgba(139,92,246,.3);">PARTENARIAT</span>
+                        {% else %}
+                        <span class="tag" style="background:rgba(100,116,139,.1);color:#64748b;border:1px solid rgba(100,116,139,.2);">AUTONOME</span>
+                        {% endif %}
+                        {% if projet.actif %}
+                        <span class="tag" style="background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.25);">Actif</span>
+                        {% else %}
+                        <span class="tag" style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.25);">Inactif</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Logo ET -->
+                {% if projet.plan == 'pro' %}
+                <div class="flex flex-col items-center gap-3">
+                    {% if logo_et_url %}
+                    <img src="{{ logo_et_url }}" alt="ET" style="width:80px;height:80px;object-fit:contain;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);padding:6px;">
+                    {% else %}
+                    <div style="width:80px;height:80px;border-radius:12px;background:#0f2236;border:1px solid #1e3a5f;display:flex;align-items:center;justify-content:center;">
+                        <span style="color:#475569;font-size:.72rem;font-weight:700;">ET</span>
+                    </div>
+                    {% endif %}
+                    <span class="text-xs text-slate-500 font-medium">Entreprise de Travaux</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="vis-card">
+        <div class="vis-card-head">Caractéristiques techniques</div>
+        <div class="vis-card-body">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div>
+                    <div class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Points kilométriques</div>
+                    {% if projet.pk_debut and projet.pk_fin %}
+                    <div class="text-lg font-bold text-white">{{ projet.pk_debut }} → {{ projet.pk_fin }}</div>
+                    {% if longueur_m %}<div class="text-sm text-slate-400 mt-1">{{ "%.0f"|format(longueur_m) }} m de tracé</div>{% endif %}
+                    {% else %}
+                    <div class="text-slate-600 italic text-sm">Non renseignés</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Tolérance de réception</div>
+                    {% if projet.tolerance_defaut %}
+                    <div class="text-lg font-bold text-white">± {{ projet.tolerance_defaut }} cm</div>
+                    <div class="text-sm text-slate-400 mt-1">Valeur par défaut</div>
+                    {% else %}
+                    <div class="text-slate-600 italic text-sm">Non définie</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Fichier de calcul</div>
+                    {% if projet.excel_key %}
+                    <div class="flex items-center gap-2">
+                        <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
+                        <span class="text-sm text-emerald-400 font-medium">Excel associé</span>
+                    </div>
+                    {% else %}
+                    <div class="flex items-center gap-2">
+                        <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>
+                        <span class="text-sm text-amber-400 font-medium">Aucun Excel</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if gen %}
+    <div class="vis-card">
+        <div class="vis-card-head">Paramètres généraux (onglet GEN)</div>
+        <div class="vis-card-body">
+            <div class="flex flex-wrap">
+                {% for k, v in gen.items() %}
+                {% if v %}
+                <span class="param-chip">{{ k | replace('GEN_','') }}&nbsp;: <span>{{ v }}</span></span>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+
+<!-- ════════════════════════════════ TAB: PROFIL EN LONG ═════════════════════ -->
+{% if has_profil %}
+<div id="tab-profil-long" class="tab-pane space-y-5">
+
+    <div class="vis-card">
+        <div class="vis-card-head">Profil altimétrique de l'axe</div>
+        <div class="vis-card-body" style="padding:20px 12px;">
+            <div style="height:420px;"><canvas id="chartProfilLong"></canvas></div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="kpi">
+            <div class="kpi-val text-base font-bold" style="color:#00ffff;">{{ projet.pk_debut or '—' }}</div>
+            <div class="kpi-lbl">PK Début</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-val text-base font-bold" style="color:#00ffff;">{{ projet.pk_fin or '—' }}</div>
+            <div class="kpi-lbl">PK Fin</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-val text-base font-bold" style="color:#60a5fa;">{{ n_pk }}</div>
+            <div class="kpi-lbl">Nombre de PK</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-val text-base font-bold" style="color:#4ade80;">{{ "%.0f"|format(longueur_m) if longueur_m else '—' }} m</div>
+            <div class="kpi-lbl">Longueur</div>
+        </div>
+    </div>
+
+</div>
+{% endif %}
+
+
+<!-- ══════════════════════════════ TAB: PROFIL EN TRAVERS ════════════════════ -->
+<div id="tab-profil-travers" class="tab-pane space-y-5">
+
+    <div class="vis-card">
+        <div class="vis-card-head">Schéma du profil en travers type</div>
+        <div class="vis-card-body">
+            {% if section_svg %}
+            <div style="overflow-x:auto;">{{ section_svg | safe }}</div>
+            {% else %}
+            <div class="flex flex-col items-center justify-center py-16 text-slate-600">
+                <svg class="w-16 h-16 mb-4 opacity-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <path d="M2 15 Q5 9 8 11 Q11 13 12 9 Q13 5 16 9 Q19 13 22 11"/>
+                    <line x1="2" y1="18" x2="22" y2="18"/>
+                </svg>
+                <p class="text-sm">Aucun profil en travers dans ce fichier Excel</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if layers %}
+    <div class="vis-card">
+        <div class="vis-card-head">Légende des couches</div>
+        <div class="vis-card-body">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {% for layer in layers %}
+                <div class="layer-chip">
+                    <div style="width:28px;height:14px;border-radius:3px;background:{{ layer.color }};opacity:.85;flex-shrink:0;"></div>
+                    <span class="text-sm font-medium text-slate-200">{{ layer.label }}</span>
+                </div>
+                {% endfor %}
+                {% if has_asg %}
+                <div class="layer-chip">
+                    <div style="width:28px;height:14px;border-radius:3px;background:#1a6fb5;opacity:.85;flex-shrink:0;"></div>
+                    <span class="text-sm font-medium text-slate-200">Canal Gauche (ASG)</span>
+                </div>
+                {% endif %}
+                {% if has_asd %}
+                <div class="layer-chip">
+                    <div style="width:28px;height:14px;border-radius:3px;background:#7c3aed;opacity:.85;flex-shrink:0;"></div>
+                    <span class="text-sm font-medium text-slate-200">Canal Droit (ASD)</span>
+                </div>
+                {% endif %}
+                {% if ter_labels %}
+                <div class="layer-chip">
+                    <div style="width:28px;height:14px;border-radius:3px;background:#f59e0b;opacity:.85;flex-shrink:0;"></div>
+                    <span class="text-sm font-medium text-slate-200">Points TER (terrassement)</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+
+<!-- ══════════════════════════════════ TAB: SECTIONS ════════════════════════ -->
+{% if axe_sections or asg_sections or asd_sections %}
+<div id="tab-sections" class="tab-pane space-y-5">
+
+    <div class="vis-card">
+        <div class="vis-card-head" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <span>Sections de calcul</span>
+            <div class="flex gap-1 ml-auto flex-wrap" id="inner-sec-tabs">
+                {% if axe_sections %}
+                <button class="inner-tab active" onclick="switchInnerTab('axe',this)">AXE ({{ axe_sections|length }})</button>
+                {% endif %}
+                {% if asg_sections %}
+                <button class="inner-tab {% if not axe_sections %}active{% endif %}" onclick="switchInnerTab('asg',this)">ASG — Gauche ({{ asg_sections|length }})</button>
+                {% endif %}
+                {% if asd_sections %}
+                <button class="inner-tab {% if not axe_sections and not asg_sections %}active{% endif %}" onclick="switchInnerTab('asd',this)">ASD — Droit ({{ asd_sections|length }})</button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="vis-card-body">
+
+            {% if axe_sections %}
+            <div id="inner-axe" class="inner-pane active">
+                {% for sec in axe_sections %}
+                <div class="sec-block">
+                    <div class="sec-block-head" style="color:#67e8f9;">
+                        PK {{ sec.pk_debut_m // 1000 }}+{{ '%03d' % (sec.pk_debut_m % 1000) }} →
+                        {% if sec.pk_fin_m %}{{ sec.pk_fin_m // 1000 }}+{{ '%03d' % (sec.pk_fin_m % 1000) }}{% else %}fin{% endif %}
+                    </div>
+                    <div class="sec-block-body">
+                        {% for k, v in sec.params.items() %}<span class="param-chip">{{ k }}&nbsp;: <span>{{ v }}</span></span>{% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if asg_sections %}
+            <div id="inner-asg" class="inner-pane {% if not axe_sections %}active{% endif %}">
+                {% for sec in asg_sections %}
+                <div class="sec-block">
+                    <div class="sec-block-head" style="color:#93c5fd;">
+                        PK {{ sec.pk_debut_m // 1000 }}+{{ '%03d' % (sec.pk_debut_m % 1000) }} →
+                        {% if sec.pk_fin_m %}{{ sec.pk_fin_m // 1000 }}+{{ '%03d' % (sec.pk_fin_m % 1000) }}{% else %}fin{% endif %}
+                    </div>
+                    <div class="sec-block-body">
+                        {% for k, v in sec.params.items() %}<span class="param-chip">{{ k }}&nbsp;: <span>{{ v }}</span></span>{% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if asd_sections %}
+            <div id="inner-asd" class="inner-pane {% if not axe_sections and not asg_sections %}active{% endif %}">
+                {% for sec in asd_sections %}
+                <div class="sec-block">
+                    <div class="sec-block-head" style="color:#c4b5fd;">
+                        PK {{ sec.pk_debut_m // 1000 }}+{{ '%03d' % (sec.pk_debut_m % 1000) }} →
+                        {% if sec.pk_fin_m %}{{ sec.pk_fin_m // 1000 }}+{{ '%03d' % (sec.pk_fin_m % 1000) }}{% else %}fin{% endif %}
+                    </div>
+                    <div class="sec-block-body">
+                        {% for k, v in sec.params.items() %}<span class="param-chip">{{ k }}&nbsp;: <span>{{ v }}</span></span>{% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+{% endif %}
+
+
+<!-- ══════════════════════════════════ TAB: ÉLÉMENTS ════════════════════════ -->
+{% if available_elements or ter_labels %}
+<div id="tab-elements" class="tab-pane space-y-5">
+
+    {% if available_elements %}
+    <div class="vis-card">
+        <div class="vis-card-head">Éléments mesurables</div>
+        <div class="vis-card-body">
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {% for groupe, elts in available_elements.items() %}
+                <div>
+                    <div class="text-xs font-bold uppercase tracking-widest mb-3 pb-2" style="border-bottom:1px solid rgba(255,255,255,.06);
+                        color:{% if groupe == 'AXE' %}#67e8f9{% elif groupe == 'ASG' %}#93c5fd{% elif groupe == 'ASD' %}#c4b5fd{% elif groupe == 'TER' %}#fbbf24{% else %}#94a3b8{% endif %};">
+                        {{ groupe }} <span style="color:#475569;font-weight:400;">({{ elts | length }})</span>
+                    </div>
+                    {% for elt in elts %}
+                    <div class="elt-row">
+                        <span class="elt-dot" style="background:{% if groupe == 'AXE' %}#67e8f9{% elif groupe == 'ASG' %}#93c5fd{% elif groupe == 'ASD' %}#c4b5fd{% elif groupe == 'TER' %}#fbbf24{% else %}#94a3b8{% endif %};"></span>
+                        <span class="text-sm font-medium text-slate-200">{{ elt.label }}</span>
+                        {% if elt.description %}<span class="text-xs text-slate-500 ml-auto">{{ elt.description }}</span>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% elif ter_labels %}
+    <div class="vis-card">
+        <div class="vis-card-head">Points de mesure TER</div>
+        <div class="vis-card-body flex flex-wrap gap-2">
+            {% for lbl in ter_labels %}
+            <span class="tag" style="background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3);">{{ lbl }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endif %}
+
+
+<!-- ════════════════════════════════════ TAB: CARTE ═════════════════════════ -->
+<div id="tab-carte" class="tab-pane space-y-4">
+
+    <div class="vis-card">
+        <div class="vis-card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <span>Tracé du projet — Spatialisation Lambert 93</span>
+            <a href="{{ url_for('pro_projets.carte_projet', projet_id=projet.id) }}"
+               style="font-size:.72rem;color:#7dd3fc;text-decoration:none;font-weight:600;padding:4px 12px;border:1px solid #1e3a5f;border-radius:6px;background:#0f172a;">
+                Ouvrir la carte complète →
+            </a>
+        </div>
+        <div id="admin-mini-map" style="height:440px;"></div>
+        <div id="admin-map-status" style="padding:8px 16px;font-size:.72rem;color:#64748b;border-top:1px solid #1e3a5f;"></div>
+    </div>
+
+</div>
+
+</main>
+
+<script>
+// ── Tab navigation ─────────────────────────────────────────────────────────
+function showTab(name, btn) {
+    document.querySelectorAll('.main-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const pane = document.getElementById('tab-' + name);
+    if (pane) pane.classList.add('active');
+    if (name === 'profil-long' && !window._chartInited) { initChart(); window._chartInited = true; }
+    if (name === 'carte'      && !window._mapInited)   { initMap();   window._mapInited   = true; }
+}
+
+// ── Inner tabs (sections) ──────────────────────────────────────────────────
+function switchInnerTab(name, btn) {
+    document.querySelectorAll('#inner-sec-tabs .inner-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.inner-pane').forEach(p => p.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const pane = document.getElementById('inner-' + name);
+    if (pane) pane.classList.add('active');
+}
+
+// ── Chart.js — Profil en long ──────────────────────────────────────────────
+{% if has_profil %}
+function initChart() {
+    const ctx = document.getElementById('chartProfilLong');
+    if (!ctx || ctx._chart) return;
+    const labels = {{ chart_labels | safe }};
+    const zData  = {{ chart_z | safe }};
+    let sl = labels, sd = zData;
+    if (labels.length > 300) {
+        const step = Math.ceil(labels.length / 300);
+        sl = labels.filter((_, i) => i % step === 0);
+        sd = zData.filter((_, i)  => i % step === 0);
+    }
+    const valid = sd.filter(v => v !== null);
+    const minZ  = Math.min(...valid);
+    const maxZ  = Math.max(...valid);
+    const pad   = (maxZ - minZ) * 0.15 || 1;
+    ctx._chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: sl,
+            datasets: [{
+                data: sd,
+                borderColor: '#00ffff', borderWidth: 1.5,
+                pointRadius: 0, pointHoverRadius: 4,
+                fill: { target: 'origin', above: 'rgba(0,255,255,0.05)' },
+                tension: 0.3,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: { label: c => `Z = ${c.parsed.y?.toFixed(3) ?? '—'} m` },
+                    backgroundColor: '#0f2236', borderColor: '#1e3a5f', borderWidth: 1,
+                    titleColor: '#94a3b8', bodyColor: '#00ffff',
+                }
+            },
+            scales: {
+                x: { ticks: { color:'#475569', font:{size:9}, maxRotation:45, autoSkip:true, maxTicksLimit:14 }, grid:{color:'#1e3a5f'} },
+                y: {
+                    min: minZ - pad, max: maxZ + pad,
+                    ticks: { color:'#475569', font:{size:9}, callback: v => v.toFixed(2) },
+                    grid: { color:'#1e3a5f' },
+                    title: { display:true, text:'Z axe (m)', color:'#475569', font:{size:9} }
+                }
+            }
+        }
+    });
+}
+{% else %}
+function initChart() {}
+{% endif %}
+
+// ── Leaflet mini-map ───────────────────────────────────────────────────────
+function initMap() {
+    proj4.defs('EPSG:2154',
+        '+proj=lcc +lat_0=46.5 +lon_0=3 +lat_1=44 +lat_2=49 ' +
+        '+x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+    const mapEl   = document.getElementById('admin-mini-map');
+    const statusEl = document.getElementById('admin-map-status');
+    if (!mapEl) return;
+    const miniMap = L.map('admin-mini-map', { zoomControl:true, attributionControl:false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(miniMap);
+    miniMap.setView([46.5, 2.5], 6);
+    fetch('/api/pro/projets/{{ projet.id }}/spatialisation')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data || !data.available || !data.pks || !data.pks.length) {
+                if (statusEl) statusEl.textContent = "Aucune donnée de spatialisation (onglet PK_Coordonnees absent dans l'Excel).";
+                return;
+            }
+            const coords = data.pks.map(pk => { const [lon,lat] = proj4('EPSG:2154','EPSG:4326',[pk.x,pk.y]); return [lat,lon]; });
+            const poly = L.polyline(coords, { color:'#00ffff', weight:3, opacity:.9 }).addTo(miniMap);
+            if (coords.length > 0) {
+                L.circleMarker(coords[0], { radius:7, fillColor:'#10b981', color:'#fff', weight:2, fillOpacity:1 })
+                    .bindPopup(`<b>Début</b><br>${data.pks[0].pk}`).addTo(miniMap);
+                L.circleMarker(coords[coords.length-1], { radius:7, fillColor:'#ef4444', color:'#fff', weight:2, fillOpacity:1 })
+                    .bindPopup(`<b>Fin</b><br>${data.pks[data.pks.length-1].pk}`).addTo(miniMap);
+            }
+            miniMap.fitBounds(poly.getBounds(), { padding:[20,20] });
+            if (statusEl) statusEl.textContent = `${data.pks.length} points PK chargés — Lambert 93 → WGS84`;
+        })
+        .catch(() => { if (statusEl) statusEl.textContent = 'Erreur de chargement carte.'; });
+}
+</script>
+
+</body>
+</html>

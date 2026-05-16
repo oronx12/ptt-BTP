@@ -58,6 +58,18 @@ def generate_presigned_url(r2_key: str, expires_in: int = 3600) -> str:
     )
 
 
+def upload_image(file_bytes: bytes, r2_key: str, content_type: str = "image/png") -> None:
+    """Upload une image (logo) vers R2."""
+    bucket = os.environ.get("R2_BUCKET", "ptt-btp-models")
+    client = _get_client()
+    client.put_object(
+        Bucket=bucket,
+        Key=r2_key,
+        Body=file_bytes,
+        ContentType=content_type,
+    )
+
+
 def download_excel(r2_key: str) -> bytes:
     """
     Télécharge un fichier Excel depuis R2 et retourne son contenu en bytes.

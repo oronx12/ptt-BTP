@@ -137,6 +137,7 @@ def projet_1():
         "cv_g":"100x100 (H=1.00m)", "cv_d":"80x80 (H=0.80m)",
         "pente_g":0.025, "pente_d":0.025, "dist_g":8.0, "dist_d":8.0,
         "h_canal_g":1.00, "h_canal_d":0.80,
+        "ep_bb":EP_BB, "ep_gb4":EP_GB4, "ep_gnt":EP_GNT, "ep_ff":EP_FOND,
     }
 
 # ═══════════════════════════════════════════════════════════════
@@ -195,6 +196,7 @@ def projet_2():
         "cv_g":"60x60 (H=0.60m)", "cv_d":"40x40 (H=0.40m)",
         "pente_g":0.020, "pente_d":0.030, "dist_g":3.5, "dist_d":3.5,
         "h_canal_g":0.60, "h_canal_d":0.40,
+        "ep_bb":EP_BB, "ep_gb4":None, "ep_gnt":EP_TRAV, "ep_ff":EP_FOND,
     }
 
 # ═══════════════════════════════════════════════════════════════
@@ -265,6 +267,7 @@ def projet_3():
         "cv_g":"120x120 (H=1.20m)", "cv_d":"120x120 (H=1.20m)",
         "pente_g":0.025, "pente_d":0.025, "dist_g":15.25, "dist_d":15.25,
         "h_canal_g":1.20, "h_canal_d":1.20,
+        "ep_bb":EP_BB, "ep_gb4":EP_GB4, "ep_gnt":EP_GNT, "ep_ff":EP_FOND,
     }
 
 # ═══════════════════════════════════════════════════════════════
@@ -317,6 +320,7 @@ def projet_4():
         "cv_g":"50x50 (H=0.50m)", "cv_d":"50x50 (H=0.50m)",
         "pente_g":0.030, "pente_d":0.040, "dist_g":4.0, "dist_d":4.0,
         "h_canal_g":0.50, "h_canal_d":0.50,
+        "ep_bb":EP_BB, "ep_gb4":None, "ep_gnt":EP_GNT, "ep_ff":EP_FOND,
     }
 
 # ═══════════════════════════════════════════════════════════════
@@ -498,6 +502,217 @@ def draw_profil(meta):
 # ═══════════════════════════════════════════════════════════════
 #  CONSTRUCTION DU CLASSEUR
 # ═══════════════════════════════════════════════════════════════
+def build_imprevus_sheet(ws, df_g, df_d, meta):
+    """
+    Crée l'onglet IMPREVUS avec 3 PK hors-plan exemples (interpolés).
+    Colonnes : PK + toutes les colonnes de df_g + colonnes uniques de df_d.
+    Style : en-tête amber #F59E0B, données fond #FFF8E1.
+    """
+    cols_g = [c for c in df_g.columns if c != "PK"]
+    cols_d = [c for c in df_d.columns if c != "PK" and c not in cols_g]
+    all_cols = ["PK"] + cols_g + cols_d
+    pas = meta["pas"]
+    pk_list = df_g["PK"].tolist()
+    pk_m_list = [int(p.split("+")[0]) * 1000 + int(p.split("+")[1]) for p in pk_list]
+
+    FILL_HDR = PatternFill("solid", fgColor="F59E0B")
+    FILL_DAT = PatternFill("solid", fgColor="FFF8E1")
+    thin_imp = Side(style="thin", color="FCD34D")
+    BORDER_IMP = Border(left=thin_imp, right=thin_imp, top=thin_imp, bottom=thin_imp)
+
+    # En-tête
+    for ci, col in enumerate(all_cols, 1):
+        c = ws.cell(1, ci, col)
+        c.fill = FILL_HDR
+        c.font = Font(color="FFFFFF", bold=True, size=8)
+        c.alignment = CENTER
+        c.border = BORDER_IMP
+    ws.row_dimensions[1].height = 40
+
+    # 3 PK hors-plan à mi-chemin décalés
+    for i in range(3):
+        pk_m = i * pas + pas // 2 + i * 3
+        if pk_m >= pk_m_list[-1]:
+            break
+        pk_str = f"{pk_m // 1000}+{pk_m % 1000:03d}"
+        idx_after = next((j for j, v in enumerate(pk_m_list) if v > pk_m), len(pk_m_list) - 1)
+        idx_before = max(0, idx_after - 1)
+        m0, m1 = pk_m_list[idx_before], pk_m_list[idx_after]
+        t = (pk_m - m0) / (m1 - m0) if m1 != m0 else 0.0
+
+        row_vals = {col: None for col in all_cols}
+        row_vals["PK"] = pk_str
+        for col in cols_g:
+            if col in df_g.columns and pd.api.types.is_numeric_dtype(df_g[col]):
+                v0 = df_g.iloc[idx_before][col]
+                v1 = df_g.iloc[idx_after][col]
+                if pd.notna(v0) and pd.notna(v1):
+                    row_vals[col] = round(float(v0) + t * (float(v1) - float(v0)), 3)
+        for col in cols_d:
+            if col in df_d.columns and pd.api.types.is_numeric_dtype(df_d[col]):
+                v0 = df_d.iloc[idx_before][col]
+                v1 = df_d.iloc[idx_after][col]
+                if pd.notna(v0) and pd.notna(v1):
+                    row_vals[col] = round(float(v0) + t * (float(v1) - float(v0)), 3)
+
+        ri = i + 2
+        for ci, col in enumerate(all_cols, 1):
+            c = ws.cell(ri, ci, row_vals[col])
+            c.fill = FILL_DAT
+            c.font = Font(size=9, bold=(ci == 1),
+                          color="1E3A5F" if ci == 1 else "92400E")
+            c.alignment = CENTER
+            c.border = BORDER_IMP
+        ws.row_dimensions[ri].height = 14
+
+    for i in range(1, len(all_cols) + 1):
+        ws.column_dimensions[get_column_letter(i)].width = 13
+    ws.freeze_panes = "B2"
+
+
+# ═══════════════════════════════════════════════════════════════
+#  PROFIL_LONG — Z_axe par PK
+# ═══════════════════════════════════════════════════════════════
+def build_profil_long_sheet(ws, df_g, meta):
+    """PROFIL_LONG : PK | Z_axe — profil en long, une ligne par PK."""
+    FILL_HDR = PatternFill("solid", fgColor="0F4C81")
+    FILL_DAT = PatternFill("solid", fgColor="EBF4FF")
+    FILL_ALT = PatternFill("solid", fgColor="DBEAFE")
+    thin_pl = Side(style="thin", color="93C5FD")
+    BORDER_PL = Border(left=thin_pl, right=thin_pl, top=thin_pl, bottom=thin_pl)
+    AL_C = Alignment(horizontal="center", vertical="center")
+
+    # En-tête
+    for ci, label in enumerate(["PK", "Z_axe (m NGF)"], 1):
+        c = ws.cell(1, ci, label)
+        c.fill = FILL_HDR
+        c.font = Font(color="FFFFFF", bold=True, size=9)
+        c.alignment = AL_C
+        c.border = BORDER_PL
+    ws.row_dimensions[1].height = 32
+
+    # Z_axe = colonne AXE_BB de df_g (cote surface finie à l'axe)
+    z_col = next((col for col in df_g.columns if col.upper().startswith("AXE_BB")), None)
+    pks    = df_g["PK"].tolist()
+    z_vals = df_g[z_col].tolist() if z_col else [None] * len(pks)
+
+    for i, (pk, z) in enumerate(zip(pks, z_vals)):
+        ri = i + 2
+        f  = FILL_ALT if i % 2 else FILL_DAT
+        for ci, val in enumerate([pk, round(float(z), 3) if z is not None else None], 1):
+            c = ws.cell(ri, ci, val)
+            c.fill = f
+            c.font = Font(size=9, bold=(ci == 1),
+                          color="1E3A5F" if ci == 1 else "111827")
+            c.alignment = AL_C
+            c.border = BORDER_PL
+        ws.row_dimensions[ri].height = 14
+
+    ws.column_dimensions["A"].width = 10
+    ws.column_dimensions["B"].width = 16
+    ws.freeze_panes = "B2"
+
+
+# ═══════════════════════════════════════════════════════════════
+#  SECTIONS — paramètres variables par tronçon
+# ═══════════════════════════════════════════════════════════════
+def build_sections_sheet(ws, meta):
+    """
+    SECTIONS : une ligne par tronçon homogène du projet.
+    Colonnes : Num | Nom_Section | PK_debut | PK_fin |
+               e_BB_m | e_GB4_m | e_GNT_m | e_FF_m |
+               Devers_G_pct | Devers_D_pct | Dist_G_m | Dist_D_m
+    L'app lit ce tableau pour calculer les côtes théoriques de terrassement.
+    Si un PK n'est couvert par aucune ligne, la dernière ligne valide s'applique.
+    """
+    pk_fin_str = f"{meta['pk_fin']//1000}+{meta['pk_fin']%1000:03d}"
+
+    FILL_HDR  = PatternFill("solid", fgColor="374151")
+    FILL_SUB  = PatternFill("solid", fgColor="4B5563")
+    FILL_SEC1 = PatternFill("solid", fgColor="F0F9FF")
+    FILL_TMPL = PatternFill("solid", fgColor="FFFBEB")
+    thin_s    = Side(style="thin", color="D1D5DB")
+    BORDER_S  = Border(left=thin_s, right=thin_s, top=thin_s, bottom=thin_s)
+    AL_C = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    AL_L = Alignment(horizontal="left",   vertical="center", indent=1)
+
+    HEADERS = [
+        "Num", "Nom_Section", "PK_debut", "PK_fin",
+        "e_BB_m", "e_GB4_m", "e_GNT_m", "e_FF_m",
+        "Devers_G_pct", "Devers_D_pct",
+        "Dist_G_m", "Dist_D_m",
+    ]
+    COL_W = [5, 22, 10, 10, 9, 9, 9, 9, 12, 12, 10, 10]
+    NC = len(HEADERS)
+
+    # Ligne 1 — bandeau explication
+    ws.merge_cells(f"A1:{get_column_letter(NC)}1")
+    c = ws.cell(1, 1,
+        "SECTIONS — Paramètres variables par tronçon  "
+        "|  Ajouter une ligne si épaisseurs / dévers / distances changent")
+    c.fill = FILL_HDR
+    c.font = Font(color="FFFFFF", bold=True, size=9)
+    c.alignment = AL_L
+    ws.row_dimensions[1].height = 18
+
+    # Ligne 2 — noms colonnes
+    for ci, (h, w) in enumerate(zip(HEADERS, COL_W), 1):
+        c = ws.cell(2, ci, h)
+        c.fill = FILL_SUB
+        c.font = Font(color="FFFFFF", bold=True, size=8)
+        c.alignment = AL_C
+        c.border = BORDER_S
+        ws.column_dimensions[get_column_letter(ci)].width = w
+    ws.row_dimensions[2].height = 36
+
+    # Ligne 3 — section principale (toute la longueur)
+    row1 = [
+        1, "Section principale", "0+000", pk_fin_str,
+        meta.get("ep_bb"),
+        meta.get("ep_gb4"),
+        meta.get("ep_gnt"),
+        meta.get("ep_ff"),
+        round(meta["pente_g"] * 100, 2),
+        round(meta["pente_d"] * 100, 2),
+        meta["dist_g"],
+        meta["dist_d"],
+    ]
+    for ci, val in enumerate(row1, 1):
+        c = ws.cell(3, ci, val)
+        c.fill = FILL_SEC1
+        c.font = Font(size=9, bold=(ci <= 2),
+                      color="1E3A5F" if ci <= 2 else "111827")
+        c.alignment = AL_C
+        c.border = BORDER_S
+    ws.row_dimensions[3].height = 16
+
+    # Lignes 4-5 — gabarits vides (pour ajout de sections)
+    for ri in [4, 5]:
+        num = ri - 2
+        ws.cell(ri, 1, num).fill = FILL_TMPL
+        ws.cell(ri, 1).font = Font(color="9CA3AF", size=9)
+        ws.cell(ri, 1).alignment = AL_C
+        ws.cell(ri, 1).border = BORDER_S
+        for ci in range(2, NC + 1):
+            c = ws.cell(ri, ci, "")
+            c.fill = FILL_TMPL
+            c.border = BORDER_S
+        ws.row_dimensions[ri].height = 14
+
+    # Ligne 6 — légende colonnes
+    ws.merge_cells(f"A6:{get_column_letter(NC)}6")
+    c = ws.cell(6, 1,
+        "Légende : e_BB/GB4/GNT/FF en mètres  |  Devers_G/D en %  |  "
+        "Dist_G/D = distance axe→bord en m  |  e_GB4 vide = couche absente")
+    c.fill = PatternFill("solid", fgColor="F9FAFB")
+    c.font = Font(color="6B7280", size=7, italic=True)
+    c.alignment = AL_L
+    ws.row_dimensions[6].height = 14
+
+    ws.freeze_panes = "A3"
+
+
+# ═══════════════════════════════════════════════════════════════
 def group_key(col):
     cu = col.upper()
     if cu == "PK":                     return "pk"
@@ -512,43 +727,55 @@ def group_key(col):
     if cu.startswith("D_"):            return "ass_d"
     return "axe"
 
+def write_cote_sheet(ws, df):
+    """Écrit un onglet Cote_Gauche ou Cote_Droit (réutilisable depuis gen_generale)."""
+    ncols = len(df.columns)
+    for ci, col in enumerate(df.columns, 1):
+        c = ws.cell(1, ci, col)
+        hdr, _ = PALETTE[group_key(col)]
+        c.fill = fill(hdr)
+        c.font = Font(color="FFFFFF", bold=True, size=8)
+        c.alignment = CENTER
+        c.border = BORDER
+    ws.row_dimensions[1].height = 40
+
+    for ri, row in df.iterrows():
+        er = ri + 2
+        for ci, (col, val) in enumerate(zip(df.columns, row), 1):
+            c = ws.cell(er, ci, val)
+            _, dat = PALETTE[group_key(col)]
+            c.fill = fill(dat)
+            c.font = Font(size=9, bold=(ci == 1),
+                          color="1E3A5F" if ci == 1 else "111827")
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.border = BORDER
+        ws.row_dimensions[er].height = 14
+
+    for i in range(1, ncols + 1):
+        ws.column_dimensions[get_column_letter(i)].width = 13
+    ws.freeze_panes = "B2"
+
+
 def build_wb(df_g, df_d, meta, path):
     wb = Workbook()
 
-    def write_sheet(ws, df):
-        ncols = len(df.columns)
-        # LIGNE 1 = vrais noms colonnes (reconnus par RECEPTA)
-        for ci, col in enumerate(df.columns, 1):
-            c = ws.cell(1, ci, col)
-            hdr, dat = PALETTE[group_key(col)]
-            c.fill = fill(hdr)
-            c.font = Font(color="FFFFFF", bold=True, size=8)
-            c.alignment = CENTER
-            c.border = BORDER
-        ws.row_dimensions[1].height = 40
-
-        # LIGNES 2+ = données
-        for ri, row in df.iterrows():
-            er = ri + 2
-            for ci, (col, val) in enumerate(zip(df.columns, row), 1):
-                c = ws.cell(er, ci, val)
-                _, dat = PALETTE[group_key(col)]
-                c.fill = fill(dat)
-                c.font = Font(size=9, bold=(ci==1),
-                              color="1E3A5F" if ci==1 else "111827")
-                c.alignment = Alignment(horizontal="center", vertical="center")
-                c.border = BORDER
-            ws.row_dimensions[er].height = 14
-
-        for i in range(1, ncols+1):
-            ws.column_dimensions[get_column_letter(i)].width = 13
-        ws.freeze_panes = "B2"
-
     ws_g = wb.active; ws_g.title = "Cote_Gauche"
-    write_sheet(ws_g, df_g)
+    write_cote_sheet(ws_g, df_g)
 
     ws_d = wb.create_sheet("Cote_Droit")
-    write_sheet(ws_d, df_d)
+    write_cote_sheet(ws_d, df_d)
+
+    # Onglet IMPREVUS (PK hors-plan exemples, optionnel)
+    ws_i = wb.create_sheet("IMPREVUS")
+    build_imprevus_sheet(ws_i, df_g, df_d, meta)
+
+    # Onglet PROFIL_LONG (Z_axe par PK — base pour calcul terrassement)
+    ws_pl = wb.create_sheet("PROFIL_LONG")
+    build_profil_long_sheet(ws_pl, df_g, meta)
+
+    # Onglet SECTIONS (épaisseurs, dévers, distances — variables par tronçon)
+    ws_sec = wb.create_sheet("SECTIONS")
+    build_sections_sheet(ws_sec, meta)
 
     # LÉGENDE avec profil
     ws_l = wb.create_sheet("LEGENDE")

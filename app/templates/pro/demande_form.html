@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouvelle demande de réception — RECEPTA PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *:before, *:after { box-sizing:border-box; margin:0; padding:0; }
+
+        :root {
+            --bg:      #0c0900;
+            --bg2:     #110c00;
+            --bg3:     #0e0a00;
+            --amber:   #f59e0b;
+            --amber2:  #fbbf24;
+            --navy:    #0d1b2e;
+            --cyan:    #00ffff;
+            --border:  #2e1a00;
+            --border2: #3d2200;
+            --text:    #e2e8f0;
+            --muted:   #78350f;
+        }
+
+        body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+        /* ── Header ── */
+        .hdr { background:var(--bg3); border-bottom:1px solid var(--border2); position:sticky; top:0; z-index:50; }
+        .hdr-in { max-width:900px; margin:0 auto; padding:0 16px; height:56px; display:flex; align-items:center; justify-content:space-between; }
+
+        /* ── Stepper ── */
+        .stepper { max-width:900px; margin:0 auto; padding:22px 16px 0; display:flex; align-items:center; gap:0; }
+        .step-item { display:flex; align-items:center; gap:10px; flex:1; }
+        .step-num {
+            width:30px; height:30px; border-radius:50%; display:flex; align-items:center;
+            justify-content:center; font-size:.8rem; font-weight:800; flex-shrink:0;
+            border:2px solid var(--border2); color:#4a2800; background:var(--bg2);
+            transition:all .3s;
+        }
+        .step-num.done   { background:#92400e; border-color:#d97706; color:#fff; }
+        .step-num.active { background:#d97706; border-color:#fbbf24; color:#fff; box-shadow:0 0 12px rgba(245,158,11,.35); }
+        .step-label { font-size:.78rem; font-weight:600; color:#4a2800; transition:color .3s; white-space:nowrap; }
+        .step-label.active { color:var(--amber2); }
+        .step-label.done   { color:#92400e; }
+        .step-sep { flex:1; height:2px; background:var(--border2); margin:0 8px; min-width:20px; }
+        .step-sep.done { background:#92400e; }
+
+        /* ── Page ── */
+        .page { max-width:900px; margin:0 auto; padding:20px 16px 60px; }
+
+        /* ── Cards ── */
+        .card { background:var(--bg2); border:1px solid var(--border); border-radius:14px; margin-bottom:16px; overflow:hidden; }
+        .card-head {
+            padding:14px 22px; border-bottom:1px solid var(--border);
+            display:flex; align-items:center; gap:12px;
+        }
+        .card-head.amber { background:#160d00; border-left:3px solid var(--amber); }
+        .card-head.blue  { background:#0d1220; border-left:3px solid #3b82f6; }
+        .card-head h2 { font-size:.95rem; font-weight:700; color:var(--text); }
+        .card-head.amber h2 { color:var(--amber2); }
+        .card-body { padding:22px; }
+
+        /* ── Inputs ── */
+        .lbl { display:block; font-size:.73rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; }
+        .inp {
+            width:100%; padding:10px 14px; border:1.5px solid var(--border2); border-radius:9px;
+            background:#0c0700; color:var(--text); font-size:.9rem; font-family:inherit; outline:none;
+            transition:border-color .2s;
+        }
+        .inp:focus { border-color:rgba(245,158,11,.6); box-shadow:0 0 0 3px rgba(245,158,11,.07); }
+        .inp::placeholder { color:#2d1a00; }
+        .inp[disabled] { opacity:.4; cursor:not-allowed; }
+
+        /* ── Mode radio ── */
+        .mode-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+        @media(max-width:640px) { .mode-grid { grid-template-columns:1fr 1fr; } }
+        .mode-card {
+            position:relative; display:flex; flex-direction:column; align-items:center;
+            gap:8px; padding:16px 10px; border:2px solid var(--border2); border-radius:12px;
+            cursor:pointer; transition:all .2s; background:#0c0700;
+        }
+        .mode-card:hover { border-color:#92400e; }
+        .mode-card.selected { border-color:var(--amber); background:#1a0d00; box-shadow:0 0 16px rgba(245,158,11,.12); }
+        .mode-card input { position:absolute; opacity:0; width:0; height:0; }
+        .mode-icon { font-size:1.6rem; line-height:1; }
+        .mode-title { font-size:.82rem; font-weight:700; color:#92400e; text-align:center; }
+        .mode-card.selected .mode-title { color:var(--amber2); }
+        .mode-sub { font-size:.7rem; color:#4a2800; text-align:center; line-height:1.3; }
+        .mode-check {
+            width:18px; height:18px; border-radius:50%; border:2px solid var(--border2);
+            display:flex; align-items:center; justify-content:center; margin-top:2px;
+            flex-shrink:0;
+        }
+        .mode-card.selected .mode-check { background:var(--amber); border-color:var(--amber2); }
+        .mode-card.selected .mode-check::after { content:''; width:7px; height:7px; background:#fff; border-radius:50%; display:block; }
+
+        /* ── Mode letter badges ── */
+        .mode-letter { width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; font-weight:900; color:#fff; letter-spacing:-1px; transition:box-shadow .2s; }
+        .mode-letter.ter  { background:linear-gradient(135deg,#78350f,#d97706); }
+        .mode-letter.asg  { background:linear-gradient(135deg,#3730a3,#818cf8); }
+        .mode-letter.asd  { background:linear-gradient(135deg,#9d174d,#f472b6); }
+        .mode-letter.asgd { background:linear-gradient(135deg,#3730a3 40%,#9d174d); }
+        .mode-card.selected .mode-letter { box-shadow:0 0 16px rgba(245,158,11,.25); }
+
+        /* ── PK list ── */
+        .pk-row { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:8px; cursor:pointer; transition:background .1s; border:1px solid transparent; }
+        .pk-row:hover { background:rgba(245,158,11,.08); border-color:rgba(245,158,11,.12); }
+        .pk-row input { width:17px; height:17px; accent-color:var(--amber); cursor:pointer; flex-shrink:0; }
+        .pk-row input:checked ~ label { color:var(--amber2); }
+
+        /* ── Element grid (parties) ── */
+        .elt-row { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:7px; cursor:pointer; transition:background .1s; }
+        .elt-row:hover { background:rgba(245,158,11,.06); }
+        .elt-row input { width:14px; height:14px; accent-color:var(--amber); cursor:pointer; }
+        .elt-lbl { font-size:.83rem; color:#d97706; cursor:pointer; line-height:1.3; }
+        .grp-header { font-size:.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; padding:8px 10px 4px; }
+
+        /* ── TER profil sections ── */
+        .profil-sec { margin-bottom:18px; }
+        .profil-sec-title { font-size:.78rem; font-weight:700; color:#92400e; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+        .profil-sides { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        @media(max-width:600px) { .profil-sides { grid-template-columns:1fr; } }
+        .profil-table-wrap { border-radius:10px; overflow:hidden; border:1px solid; }
+        .profil-table-wrap.side-g { border-color:#4338ca; }
+        .profil-table-wrap.side-d { border-color:#9d174d; }
+        .profil-table-wrap table { width:100%; border-collapse:collapse; font-size:.8rem; }
+        .profil-table-wrap thead th { padding:7px 10px; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
+        .profil-table-wrap.side-g thead { background:#1e1b4b; color:#a5b4fc; }
+        .profil-table-wrap.side-d thead { background:#4a0021; color:#fda4af; }
+        .profil-table-wrap tbody tr { border-top:1px solid rgba(255,255,255,.05); }
+        .profil-table-wrap.side-g tbody tr { background:#0e0c1f; }
+        .profil-table-wrap.side-d tbody tr { background:#1a0010; }
+        .profil-table-wrap tbody td { padding:6px 10px; vertical-align:middle; }
+        .profil-table-wrap.side-g tbody td { color:#c7d2fe; }
+        .profil-table-wrap.side-d tbody td { color:#fecdd3; }
+        .profil-pt-lbl { font-variant-numeric:tabular-nums; font-weight:600; font-size:.82rem; }
+        .profil-section-sep { display:flex; align-items:center; gap:10px; margin:20px 0 12px; }
+        .profil-section-sep::before, .profil-section-sep::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.06); }
+        .profil-section-sep span { font-size:.72rem; font-weight:700; color:#4a2800; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
+
+        /* ── Bouton calculer ── */
+        .btn-calc {
+            display:inline-flex; align-items:center; gap:9px;
+            padding:12px 26px; background:linear-gradient(135deg,#92400e,#d97706);
+            color:#fff; font-size:.92rem; font-weight:700; border-radius:10px; border:none;
+            cursor:pointer; transition:opacity .15s; margin-top:16px;
+        }
+        .btn-calc:hover { opacity:.9; }
+        .btn-calc:disabled { opacity:.45; cursor:not-allowed; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .spin { animation:spin 1s linear infinite; }
+
+        /* ── Tableau preview ── */
+        #preview-section { display:none; }
+        .preview-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
+        .preview-stats { display:flex; gap:12px; flex-wrap:wrap; }
+        .stat-chip { padding:4px 12px; border-radius:99px; font-size:.78rem; font-weight:700; }
+        .stat-chip.axe { background:rgba(59,130,246,.15); color:#93c5fd; border:1px solid rgba(59,130,246,.25); }
+        .stat-chip.ter { background:rgba(52,211,153,.12); color:#6ee7b7; border:1px solid rgba(52,211,153,.2); }
+        .stat-chip.asg { background:rgba(139,92,246,.12); color:#c4b5fd; border:1px solid rgba(139,92,246,.2); }
+        .stat-chip.asd { background:rgba(236,72,153,.12); color:#f9a8d4; border:1px solid rgba(236,72,153,.2); }
+
+        .preview-table-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--border2); }
+        table.preview { width:100%; border-collapse:collapse; font-size:.83rem; }
+        table.preview th {
+            padding:9px 14px; background:#160d00; color:#92400e;
+            font-size:.71rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px;
+            text-align:left; border-bottom:1px solid var(--border2); white-space:nowrap;
+        }
+        table.preview td {
+            padding:8px 14px; border-bottom:1px solid rgba(45,26,0,.5);
+            color:var(--text); vertical-align:middle;
+        }
+        table.preview tr:last-child td { border-bottom:none; }
+        table.preview tr:hover td { background:rgba(245,158,11,.04); }
+        table.preview tr.pk-separator td {
+            background:#160d00; color:#92400e; font-size:.72rem; font-weight:700;
+            text-transform:uppercase; letter-spacing:.5px; padding:6px 14px;
+            border-bottom:1px solid var(--border2);
+        }
+        .groupe-badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:99px; font-size:.7rem; font-weight:700; white-space:nowrap; }
+        .gb-axe { background:rgba(59,130,246,.15); color:#93c5fd; }
+        .gb-ter { background:rgba(52,211,153,.12); color:#6ee7b7; }
+        .gb-asg { background:rgba(139,92,246,.12); color:#c4b5fd; }
+        .gb-asd { background:rgba(236,72,153,.12); color:#f9a8d4; }
+        .gb-other { background:rgba(245,158,11,.12); color:#fcd34d; }
+        .cote-val { font-variant-numeric:tabular-nums; font-weight:600; color:var(--amber2); }
+        .row-select { width:15px; height:15px; accent-color:var(--amber); cursor:pointer; }
+
+        /* ── Params card (date/obs) ── */
+        .params-grid { display:grid; grid-template-columns:1fr 1fr 2fr; gap:14px; }
+        @media(max-width:600px) { .params-grid { grid-template-columns:1fr; } }
+
+        /* ── Flash ── */
+        .flash { padding:11px 16px; border-radius:10px; font-size:.87rem; font-weight:500; margin-bottom:16px; }
+        .flash.success { background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.2); color:#6ee7b7; }
+        .flash.danger  { background:rgba(220,38,38,.1);  border:1px solid rgba(220,38,38,.25); color:#fca5a5; }
+        .flash.warning { background:rgba(251,191,36,.08); border:1px solid rgba(251,191,36,.2); color:#fcd34d; }
+
+        /* ── Btn mini ── */
+        .bm { padding:4px 10px; background:#1a0d00; border:1px solid var(--border2); border-radius:6px; font-size:.72rem; font-weight:600; color:#92400e; cursor:pointer; transition:all .15s; }
+        .bm:hover { background:#2a1500; color:var(--amber2); }
+
+        /* ── Submit ── */
+        .btn-submit {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:13px 30px; background:#d97706; color:#fff;
+            font-size:.92rem; font-weight:700; border-radius:10px; border:none;
+            cursor:pointer; transition:background .15s;
+        }
+        .btn-submit:hover { background:#b45309; }
+
+        /* ── States ── */
+        .state-empty { padding:20px; text-align:center; color:#3d2200; font-style:italic; font-size:.87rem; }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="hdr">
+    <div class="hdr-in">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <a href="/pro/projets/" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:18px;height:18px;">
+                    <span style="background:#00ffff;border-radius:2px;display:block;"></span>
+                    <span style="background:#fbbf24;border-radius:2px;display:block;"></span>
+                    <span style="background:#00ffff;border-radius:2px;display:block;"></span>
+                    <span style="background:#00ffff;border-radius:2px;display:block;"></span>
+                </div>
+                <div style="display:flex;flex-direction:column;line-height:1.1;">
+                    <span style="color:#fbbf24;font-weight:800;letter-spacing:2px;font-size:14px;">RECEPTA</span>
+                    <span style="color:rgba(251,191,36,.35);font-size:8px;font-weight:600;letter-spacing:1.5px;">by OPTILAB</span>
+                </div>
+            </a>
+            <span style="color:#3d2000;">›</span>
+            <a href="{{ url_for('pro_demandes.liste_demandes') }}" style="color:var(--muted);font-size:.85rem;text-decoration:none;">Demandes</a>
+            <span style="color:#3d2000;">›</span>
+            <span style="color:var(--amber2);font-size:.85rem;font-weight:600;">Nouvelle demande</span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" style="color:var(--muted);font-size:.8rem;padding:6px 12px;border-radius:8px;text-decoration:none;">Déconnexion</a>
+    </div>
+</header>
+
+<!-- Stepper -->
+<div class="stepper">
+    <div class="step-item">
+        <div class="step-num active" id="sn1">1</div>
+        <span class="step-label active" id="sl1">Paramètres</span>
+    </div>
+    <div class="step-sep" id="sep1"></div>
+    <div class="step-item">
+        <div class="step-num" id="sn2">2</div>
+        <span class="step-label" id="sl2">Sélection PK</span>
+    </div>
+    <div class="step-sep" id="sep2"></div>
+    <div class="step-item">
+        <div class="step-num" id="sn3">3</div>
+        <span class="step-label" id="sl3">Prévisualisation</span>
+    </div>
+    <div class="step-sep" id="sep3"></div>
+    <div class="step-item">
+        <div class="step-num" id="sn4">4</div>
+        <span class="step-label" id="sl4">Confirmer</span>
+    </div>
+</div>
+
+<div class="page">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="flash {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('pro_demandes.nouvelle_demande') }}" id="demande-form">
+
+    <!-- ══════════════════ STEP 1 — Paramètres ══════════════════ -->
+    <div id="step1">
+
+        <!-- Projet -->
+        <div class="card">
+            <div class="card-head blue"><h2 style="color:#93c5fd;">Projet</h2></div>
+            <div class="card-body">
+                <label class="lbl">Projet *</label>
+                <select name="projet_id" id="projet-select" required class="inp" style="max-width:520px;">
+                    <option value="">— Choisir un projet —</option>
+                    {% for p in projets_et %}
+                    <option value="{{ p.id }}">{{ p.nom }}</option>
+                    {% endfor %}
+                </select>
+                <div id="projet-loading" style="display:none;margin-top:10px;font-size:.83rem;color:var(--muted);display:flex;align-items:center;gap:8px;">
+                    <svg class="spin" style="width:14px;height:14px;" fill="none" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="#92400e" stroke-width="4" opacity=".25"/>
+                        <path fill="#f59e0b" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z"/>
+                    </svg>
+                    Chargement…
+                </div>
+                <div id="projet-err" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.25);border-radius:8px;color:#fca5a5;font-size:.82rem;"></div>
+            </div>
+        </div>
+
+        <!-- Mode de réception -->
+        <div class="card">
+            <div class="card-head amber"><h2>Mode de réception</h2></div>
+            <div class="card-body">
+                <div class="mode-grid" id="mode-grid">
+                    <label class="mode-card" data-mode="terrassement" onclick="selectMode(this)">
+                        <input type="radio" name="_mode_ui" value="terrassement">
+                        <div class="mode-letter ter">T</div>
+                        <div class="mode-title">Terrassement</div>
+                        <div class="mode-sub">Profil en travers chaussée</div>
+                        <div class="mode-check"></div>
+                    </label>
+                    <label class="mode-card" data-mode="assainissement_g" onclick="selectMode(this)">
+                        <input type="radio" name="_mode_ui" value="assainissement_g">
+                        <div class="mode-letter asg">G</div>
+                        <div class="mode-title">Assainissement<br>Gauche</div>
+                        <div class="mode-sub">Canal + fil d'eau — côté G</div>
+                        <div class="mode-check"></div>
+                    </label>
+                    <label class="mode-card" data-mode="assainissement_d" onclick="selectMode(this)">
+                        <input type="radio" name="_mode_ui" value="assainissement_d">
+                        <div class="mode-letter asd">D</div>
+                        <div class="mode-title">Assainissement<br>Droit</div>
+                        <div class="mode-sub">Canal + fil d'eau — côté D</div>
+                        <div class="mode-check"></div>
+                    </label>
+                    <label class="mode-card selected" data-mode="assainissement" onclick="selectMode(this)">
+                        <input type="radio" name="_mode_ui" value="assainissement" checked>
+                        <div class="mode-letter asgd" style="font-size:1.1rem;">G+D</div>
+                        <div class="mode-title">Assainissement<br>G + D</div>
+                        <div class="mode-sub">Les deux canaux</div>
+                        <div class="mode-check"></div>
+                    </label>
+                </div>
+                <input type="hidden" name="mode" id="mode-hidden" value="assainissement">
+            </div>
+        </div>
+
+        <!-- Tolérance + Météo -->
+        <div class="card">
+            <div class="card-head amber"><h2>Paramètres de la réception</h2></div>
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:180px 1fr;gap:16px;">
+                    <div>
+                        <label class="lbl">Tolérance (mm)</label>
+                        <input type="number" name="tolerance" id="tolerance" step="0.1" min="0" value="2.0" class="inp" style="text-align:right;">
+                    </div>
+                    <div>
+                        <label class="lbl">Conditions météo</label>
+                        <input type="text" name="meteo" class="inp" placeholder="Ex : Ensoleillé, 25°C, vent faible">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div style="display:flex;justify-content:flex-end;padding-top:4px;">
+            <button type="button" id="btn-to-step2" onclick="goStep2()" disabled
+                    style="padding:11px 26px;background:rgba(245,158,11,.15);color:#78350f;font-size:.9rem;font-weight:700;border-radius:10px;border:1px solid var(--border2);cursor:not-allowed;transition:all .2s;">
+                Sélectionner les PK →
+            </button>
+        </div>
+    </div>
+
+    <!-- ══════════════════ STEP 2 — Sélection PK ══════════════════ -->
+    <div id="step2" style="display:none;">
+
+        <div class="card">
+            <div class="card-head amber"><h2>Points kilométriques à réceptionner</h2></div>
+            <div class="card-body">
+
+                <!-- Plage rapide -->
+                <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+                    <div>
+                        <label class="lbl">PK début</label>
+                        <select id="pk-range-start" class="inp" style="width:140px;padding:9px 12px;"></select>
+                    </div>
+                    <div>
+                        <label class="lbl">PK fin</label>
+                        <select id="pk-range-end" class="inp" style="width:140px;padding:9px 12px;"></select>
+                    </div>
+                    <button type="button" class="bm" onclick="applyRange()" style="padding:9px 14px;">Appliquer la plage</button>
+                    <button type="button" class="bm" onclick="selectAllPK(true)">Tout</button>
+                    <button type="button" class="bm" onclick="selectAllPK(false)">Aucun</button>
+                    <span id="pk-count" style="font-size:.82rem;color:var(--muted);margin-left:4px;"></span>
+                </div>
+
+                <!-- Grille PK -->
+                <div id="pk-checkboxes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:4px;max-height:260px;overflow-y:auto;padding:4px;background:#0c0700;border:1px solid var(--border2);border-radius:10px;"></div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div style="display:flex;justify-content:space-between;padding-top:4px;">
+            <button type="button" onclick="backStep1()" style="padding:11px 20px;background:rgba(255,255,255,.03);color:#78350f;font-size:.88rem;font-weight:600;border-radius:10px;border:1px solid var(--border2);cursor:pointer;">← Retour</button>
+            <button type="button" class="btn-calc" id="btn-calculer" onclick="goStep3Direct()">
+                <svg id="calc-icon" style="width:16px;height:16px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Sélectionner les parties →
+            </button>
+        </div>
+    </div>
+
+    <!-- ══════════════════ STEP 3 — Prévisualisation ══════════════════ -->
+    <div id="step3" style="display:none;">
+
+        <!-- Sections détectées (collapsible) -->
+        <div class="card" id="sections-card" style="display:none;">
+            <div class="card-head amber" style="cursor:pointer;" onclick="toggleSections()">
+                <h2>Sections couvertes par les PK sélectionnés</h2>
+                <span id="sections-chevron" style="margin-left:auto;color:#92400e;font-size:.9rem;">▾</span>
+            </div>
+            <div id="sections-body" class="card-body" style="padding:14px 22px;"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head amber"><h2>Parties de l'ouvrage</h2></div>
+            <div class="card-body">
+                <div id="parties-grid"></div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div style="display:flex;justify-content:space-between;padding-top:4px;">
+            <button type="button" onclick="backStep2()" style="padding:11px 20px;background:rgba(255,255,255,.03);color:#78350f;font-size:.88rem;font-weight:600;border-radius:10px;border:1px solid var(--border2);cursor:pointer;">← Retour</button>
+            <button type="button" class="btn-calc" onclick="goStep4()">
+                Confirmer &amp; renseigner la demande →
+            </button>
+        </div>
+    </div>
+
+    <!-- ══════════════════ STEP 4 — Confirmer ══════════════════ -->
+    <div id="step4" style="display:none;">
+
+        <!-- Récapitulatif -->
+        <div class="card">
+            <div class="card-head amber"><h2>Récapitulatif de la demande</h2></div>
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;">
+                    <div style="background:#0c0700;border:1px solid var(--border2);border-radius:9px;padding:12px;">
+                        <div class="lbl" style="margin-bottom:4px;">Mode</div>
+                        <div id="recap-mode" style="font-size:.95rem;font-weight:700;color:var(--amber2);"></div>
+                    </div>
+                    <div style="background:#0c0700;border:1px solid var(--border2);border-radius:9px;padding:12px;">
+                        <div class="lbl" style="margin-bottom:4px;">PK réceptionné</div>
+                        <div id="recap-pks" style="font-size:.9rem;font-weight:600;color:var(--text);"></div>
+                    </div>
+                    <div style="background:#0c0700;border:1px solid var(--border2);border-radius:9px;padding:12px;">
+                        <div class="lbl" style="margin-bottom:4px;">Éléments</div>
+                        <div id="recap-elements" style="font-size:.95rem;font-weight:700;color:var(--amber2);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date / Observations -->
+        <div class="card">
+            <div class="card-head amber"><h2>Informations complémentaires</h2></div>
+            <div class="card-body">
+                <div class="params-grid">
+                    <div>
+                        <label class="lbl">Date souhaitée</label>
+                        <input type="date" name="date_souhaitee" class="inp" style="color-scheme:dark;">
+                    </div>
+                    <div>
+                        <label class="lbl">Heure souhaitée</label>
+                        <input type="time" name="heure_souhaitee" class="inp" style="color-scheme:dark;">
+                    </div>
+                    <div>
+                        <label class="lbl">Observations pour la MDC</label>
+                        <textarea name="observations" rows="2" class="inp" placeholder="Informations complémentaires…" style="resize:none;"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Champs cachés -->
+        <input type="hidden" name="pk_debut"  id="hidden-pk-debut">
+        <input type="hidden" name="pk_fin"    id="hidden-pk-fin">
+        <input type="hidden" name="parties"   id="hidden-parties">
+        <input type="hidden" name="pks_list"  id="hidden-pks-list">
+
+        <!-- Actions -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:4px;">
+            <button type="button" onclick="backStep3()" style="padding:11px 20px;background:rgba(255,255,255,.03);color:#78350f;font-size:.88rem;font-weight:600;border-radius:10px;border:1px solid var(--border2);cursor:pointer;">← Retour</button>
+            <button type="submit" class="btn-submit">
+                <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+                </svg>
+                Envoyer la demande à la MDC
+            </button>
+        </div>
+    </div>
+
+    </form>
+</div>
+
+<script>
+// ── État global ───────────────────────────────────────────────────────────────
+let projetId     = null;
+let allPKs       = [];
+let selectedMode = 'assainissement';
+let selectedElts = new Set();  // Keys des éléments sélectionnés
+let cfgData      = null;       // Config complète du projet
+
+// ── Constantes mode → groupes ─────────────────────────────────────────────────
+const _GROUPE_FILTER_D = {
+    terrassement:    ['AXE','TER'],
+    assainissement_g:['ASG'],
+    assainissement_d:['ASD'],
+    assainissement:  ['ASG','ASD'],
+};
+const _GRP_LABELS_D = {
+    AXE:'Terrassement (AXE)', TER:'TER',
+    ASG:'Assainissement Gauche', ASD:'Assainissement Droit',
+};
+const _GRP_COLORS_D = { AXE:'#f59e0b', TER:'#34d399', ASG:'#818cf8', ASD:'#f472b6' };
+const _GRP_BY_MODE_D = {
+    assainissement_g:['ASG'], assainissement_d:['ASD'],
+    assainissement:  ['ASG','ASD'], terrassement:['AXE'],
+};
+
+// ── Mode selection ────────────────────────────────────────────────────────────
+function selectMode(lbl) {
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+    lbl.classList.add('selected');
+    selectedMode = lbl.dataset.mode;
+    document.getElementById('mode-hidden').value = selectedMode;
+}
+
+// ── Chargement projet ─────────────────────────────────────────────────────────
+document.getElementById('projet-select').addEventListener('change', async function () {
+    projetId = this.value || null;
+    const btnNext = document.getElementById('btn-to-step2');
+    const loadEl  = document.getElementById('projet-loading');
+    const errEl   = document.getElementById('projet-err');
+    allPKs = [];
+    errEl.style.display = 'none';
+
+    if (!projetId) {
+        btnNext.disabled = true;
+        btnNext.style.cursor = 'not-allowed';
+        btnNext.style.color  = '#78350f';
+        btnNext.style.background = 'rgba(245,158,11,.15)';
+        return;
+    }
+
+    loadEl.style.display = 'flex';
+    try {
+        const r   = await fetch(`/api/pro/projets/${projetId}/config`);
+        const cfg = await r.json();
+        if (!r.ok) throw new Error(cfg.error || `Erreur ${r.status}`);
+
+        allPKs  = cfg.pks || [];
+        cfgData = cfg;
+        if (cfg.tolerance) document.getElementById('tolerance').value = cfg.tolerance;
+
+        loadEl.style.display = 'none';
+        btnNext.disabled = false;
+        btnNext.style.cursor = 'pointer';
+        btnNext.style.color  = '#fff';
+        btnNext.style.background = 'linear-gradient(135deg,#92400e,#d97706)';
+    } catch(e) {
+        loadEl.style.display = 'none';
+        errEl.textContent = 'Erreur de chargement : ' + e.message;
+        errEl.style.display = '';
+    }
+});
+
+// ── Navigation step 1 → 2 ────────────────────────────────────────────────────
+function goStep2() {
+    if (!projetId || !allPKs.length) return;
+    buildPKList();
+    showStep(2);
+}
+
+function buildPKList() {
+    const container = document.getElementById('pk-checkboxes');
+    const startSel  = document.getElementById('pk-range-start');
+    const endSel    = document.getElementById('pk-range-end');
+    container.innerHTML = '';
+    startSel.innerHTML  = '';
+    endSel.innerHTML    = '';
+
+    allPKs.forEach((pk, i) => {
+        startSel.appendChild(new Option(pk, pk));
+        endSel.appendChild(new Option(pk, pk));
+        const d = document.createElement('label');
+        d.className = 'pk-row';
+        d.innerHTML = `<input type="checkbox" data-pk="${pk}">
+                       <label style="font-size:.88rem;font-weight:600;color:#d97706;cursor:pointer;font-variant-numeric:tabular-nums;">${pk}</label>`;
+        container.appendChild(d);
+    });
+    if (allPKs.length >= 2) {
+        startSel.value = allPKs[0];
+        endSel.value   = allPKs[allPKs.length - 1];
+    }
+    updatePKCount();
+    container.querySelectorAll('input').forEach(cb => cb.addEventListener('change', updatePKCount));
+}
+
+function applyRange() {
+    const s = document.getElementById('pk-range-start').value;
+    const e = document.getElementById('pk-range-end').value;
+    const iS = allPKs.indexOf(s), iE = allPKs.indexOf(e);
+    if (iS < 0 || iE < 0 || iS > iE) return;
+    document.querySelectorAll('#pk-checkboxes input').forEach((cb, i) => {
+        cb.checked = i >= iS && i <= iE;
+    });
+    updatePKCount();
+}
+
+function selectAllPK(v) {
+    document.querySelectorAll('#pk-checkboxes input').forEach(cb => cb.checked = v);
+    updatePKCount();
+}
+
+function updatePKCount() {
+    const n = document.querySelectorAll('#pk-checkboxes input:checked').length;
+    document.getElementById('pk-count').textContent = `${n} PK sélectionné${n>1?'s':''}`;
+}
+
+// ── Navigation step 2 → 3 ────────────────────────────────────────────────────
+function goStep3Direct() {
+    const pks = [...document.querySelectorAll('#pk-checkboxes input:checked')].map(cb => cb.dataset.pk);
+    if (!pks.length) { alert('Sélectionnez au moins un PK.'); return; }
+    buildSectionsPanel(pks);
+    buildPartiesGrid();
+    showStep(3);
+}
+
+// ── Sections détectées ────────────────────────────────────────────────────────
+let _sectionsPanelOpen = true;
+
+function buildSectionsPanel(selectedPKs) {
+    const card = document.getElementById('sections-card');
+    const body = document.getElementById('sections-body');
+    if (!cfgData || !cfgData.pk_m_map || !cfgData.sections_info) {
+        card.style.display = 'none';
+        return;
+    }
+    const pkMap    = cfgData.pk_m_map;
+    const secsInfo = cfgData.sections_info;
+    const groups   = _GRP_BY_MODE_D[selectedMode] || [];
+    body.innerHTML = '';
+    let found = false;
+
+    for (const grp of groups) {
+        const secs = secsInfo[grp] || [];
+        if (!secs.length) continue;
+        const grpDiv = document.createElement('div');
+        grpDiv.style.cssText = 'margin-bottom:12px;';
+        grpDiv.innerHTML = `<div style="font-size:.72rem;font-weight:700;color:${_GRP_COLORS_D[grp]||'#f59e0b'};text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;">${_GRP_LABELS_D[grp]||grp}</div>`;
+        secs.forEach((sec, i) => {
+            const pksIn = selectedPKs.filter(pk => {
+                const m = pkMap[pk]; if (m === undefined) return false;
+                if (m < sec.pk_debut_m) return false;
+                if (sec.pk_fin_m !== null && sec.pk_fin_m !== undefined && m > sec.pk_fin_m) return false;
+                return true;
+            });
+            if (!pksIn.length) return;
+            found = true;
+            const finLbl = sec.pk_fin_m !== null && sec.pk_fin_m !== undefined ? `${sec.pk_fin_m} m` : 'fin';
+            grpDiv.innerHTML += `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:#0c0700;border:1px solid var(--border2);border-radius:7px;margin-bottom:5px;">
+                <span style="font-size:.82rem;color:var(--amber2);font-weight:600;font-variant-numeric:tabular-nums;">Section ${i+1} — ${sec.pk_debut_m} m → ${finLbl}</span>
+                <span style="font-size:.77rem;color:#92400e;background:#1a0d00;padding:2px 8px;border-radius:99px;border:1px solid var(--border2);">${pksIn.length} PK</span>
+            </div>`;
+        });
+        body.appendChild(grpDiv);
+    }
+    card.style.display = found ? '' : 'none';
+}
+
+function toggleSections() {
+    _sectionsPanelOpen = !_sectionsPanelOpen;
+    document.getElementById('sections-body').style.display = _sectionsPanelOpen ? '' : 'none';
+    document.getElementById('sections-chevron').textContent = _sectionsPanelOpen ? '▾' : '▸';
+}
+
+// ── Parties de l'ouvrage ──────────────────────────────────────────────────────
+function _terKeysByProfileLabel(profileLabel) {
+    return (cfgData && cfgData.elements ? cfgData.elements : [])
+        .filter(e => e.groupe === 'TER' && e.key.startsWith(`TER_${profileLabel}__`))
+        .map(e => e.key);
+}
+
+function buildPartiesGrid() {
+    const grid = document.getElementById('parties-grid');
+    grid.innerHTML = '';
+    selectedElts.clear();
+
+    if (!cfgData) {
+        grid.innerHTML = '<p style="color:#4a2800;font-style:italic;padding:12px;">Config non chargée.</p>';
+        return;
+    }
+
+    const grpFiltre = _GROUPE_FILTER_D[selectedMode] || [];
+    const eltsCat   = (cfgData.elements || []).filter(e =>
+        grpFiltre.includes(e.groupe) && e.groupe !== 'TER'
+    );
+    const byCat = {};
+    eltsCat.forEach(e => { (byCat[e.groupe] = byCat[e.groupe] || []).push(e); });
+    const catGrps = Object.keys(byCat);
+
+    if (catGrps.length) {
+        const secA = document.createElement('div');
+        secA.innerHTML = `<div style="font-size:.8rem;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Parties de l'ouvrage</div>`;
+        const toolbarA = document.createElement('div');
+        toolbarA.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;';
+        toolbarA.innerHTML = `<button type="button" class="bm" onclick="selectAllElts(true)">Tout</button>
+                               <button type="button" class="bm" onclick="selectAllElts(false)">Aucun</button>
+                               <span id="elt-count" style="font-size:.8rem;color:var(--muted);"></span>`;
+        secA.appendChild(toolbarA);
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `display:grid;grid-template-columns:repeat(${Math.min(catGrps.length,3)},1fr);gap:0;border:1px solid var(--border2);border-radius:10px;overflow:hidden;`;
+        catGrps.forEach((grp, gi) => {
+            const col = document.createElement('div');
+            col.style.cssText = `border-right:${gi < catGrps.length-1 ? '1px solid var(--border2)' : 'none'};padding:8px 0 4px;`;
+            const hdr = document.createElement('div');
+            hdr.className = 'grp-header';
+            hdr.style.color = _GRP_COLORS_D[grp] || 'var(--amber)';
+            hdr.innerHTML = `${_GRP_LABELS_D[grp]||grp}
+                <span style="float:right;font-weight:normal;cursor:pointer;color:#92400e;" onclick="toggleGrp('${grp}',true)">Tout</span>
+                <span style="float:right;font-weight:normal;cursor:pointer;color:#4a2800;margin-right:6px;" onclick="toggleGrp('${grp}',false)">Aucun</span>`;
+            col.appendChild(hdr);
+            byCat[grp].forEach(elt => {
+                const row = document.createElement('label');
+                row.className = 'elt-row';
+                row.innerHTML = `<input type="checkbox" class="elt-cb" data-key="${elt.key}" data-grp="${grp}" checked onchange="onEltChange()">
+                                 <span class="elt-lbl">${elt.label}</span>`;
+                selectedElts.add(elt.key);
+                col.appendChild(row);
+            });
+            wrapper.appendChild(col);
+        });
+        secA.appendChild(wrapper);
+        grid.appendChild(secA);
+    } else {
+        const ph = document.createElement('div');
+        ph.id = 'elt-count';
+        ph.style.cssText = 'font-size:.8rem;color:var(--muted);margin-bottom:10px;';
+        grid.appendChild(ph);
+    }
+
+    // Section B : Points de mesure TER
+    const profSecs = cfgData.profil_sections || [];
+    const hasTer   = grpFiltre.includes('TER') && profSecs.length > 0;
+
+    if (hasTer) {
+        const sep = document.createElement('div');
+        sep.className = 'profil-section-sep';
+        sep.innerHTML = `<span>Points de mesure du profil</span>`;
+        grid.appendChild(sep);
+
+        profSecs.forEach((sec, si) => {
+            const secWrap = document.createElement('div');
+            secWrap.className = 'profil-sec';
+
+            const debLbl = sec.pk_debut_m !== null && sec.pk_debut_m !== undefined ? `${sec.pk_debut_m} m` : '?';
+            const finLbl = sec.pk_fin_m   !== null && sec.pk_fin_m   !== undefined ? `${sec.pk_fin_m} m`   : 'fin';
+            const title  = document.createElement('div');
+            title.className = 'profil-sec-title';
+            title.textContent = `Section ${si+1} — ${debLbl} → ${finLbl}`;
+            secWrap.appendChild(title);
+
+            const sides = document.createElement('div');
+            sides.className = 'profil-sides';
+            ['g','d'].forEach(side => {
+                const pts = sec[side] || [];
+                if (!pts.length) return;
+                const sideLabel = side === 'g' ? 'Côté Gauche' : 'Côté Droit';
+                const sideColor = side === 'g' ? 'side-g' : 'side-d';
+                const wrap = document.createElement('div');
+                wrap.className = `profil-table-wrap ${sideColor}`;
+                const table = document.createElement('table');
+                table.innerHTML = `<thead><tr>
+                    <th style="width:28px;"></th>
+                    <th>${sideLabel}</th>
+                    <th>Dist. axe</th>
+                    <th>Pente</th>
+                </tr></thead>`;
+                const tbody = document.createElement('tbody');
+                pts.forEach(pt => {
+                    _addProfilRow(tbody, si, side, pt.label, pt.dist_axe_m, pt.pente_pct, true);
+                });
+                table.appendChild(tbody);
+                wrap.appendChild(table);
+                sides.appendChild(wrap);
+            });
+            secWrap.appendChild(sides);
+            grid.appendChild(secWrap);
+        });
+    }
+
+    updateEltCount();
+}
+
+function _addProfilRow(tbody, si, side, label, dist, pente, checked) {
+    const tr = document.createElement('tr');
+    const distStr  = dist  !== null && dist  !== undefined ? Number(dist).toFixed(3)  : '';
+    const penteStr = pente !== null && pente !== undefined ? Number(pente).toFixed(2) : '';
+    tr.innerHTML = `
+        <td style="text-align:center;padding:4px 6px;">
+            <input type="checkbox" class="profil-pt-cb" data-label="${label}"
+                   data-si="${si}" data-side="${side}"
+                   ${checked ? 'checked' : ''}
+                   onchange="onProfilPtChange(this)">
+        </td>
+        <td><span class="profil-pt-lbl">${label}</span></td>
+        <td><span>${distStr ? distStr + ' m' : '—'}</span></td>
+        <td><span>${penteStr ? penteStr + ' %' : '—'}</span></td>`;
+    tbody.appendChild(tr);
+    if (checked && label) {
+        _terKeysByProfileLabel(label).forEach(k => selectedElts.add(k));
+    }
+}
+
+function onProfilPtChange(cb) {
+    const keys = _terKeysByProfileLabel(cb.dataset.label);
+    if (cb.checked) keys.forEach(k => selectedElts.add(k));
+    else            keys.forEach(k => selectedElts.delete(k));
+    updateEltCount();
+}
+
+function toggleGrp(grp, v) {
+    document.querySelectorAll(`.elt-cb[data-grp="${grp}"]`).forEach(cb => {
+        cb.checked = v;
+        v ? selectedElts.add(cb.dataset.key) : selectedElts.delete(cb.dataset.key);
+    });
+    updateEltCount();
+}
+
+function selectAllElts(v) {
+    document.querySelectorAll('.elt-cb').forEach(cb => {
+        cb.checked = v;
+        v ? selectedElts.add(cb.dataset.key) : selectedElts.delete(cb.dataset.key);
+    });
+    document.querySelectorAll('.profil-pt-cb').forEach(cb => {
+        cb.checked = v;
+        const keys = _terKeysByProfileLabel(cb.dataset.label);
+        if (v) keys.forEach(k => selectedElts.add(k));
+        else   keys.forEach(k => selectedElts.delete(k));
+    });
+    updateEltCount();
+}
+
+function onEltChange() {
+    selectedElts.clear();
+    document.querySelectorAll('.elt-cb:checked').forEach(cb => selectedElts.add(cb.dataset.key));
+    document.querySelectorAll('.profil-pt-cb:checked').forEach(cb => {
+        _terKeysByProfileLabel(cb.dataset.label).forEach(k => selectedElts.add(k));
+    });
+    updateEltCount();
+}
+
+function updateEltCount() {
+    const n = selectedElts.size;
+    const el = document.getElementById('elt-count');
+    if (el) el.textContent = `${n} élément${n>1?'s':''} sélectionné${n>1?'s':''}`;
+}
+
+// ── Step 4 — Confirmer ────────────────────────────────────────────────────────
+function goStep4() {
+    if (!selectedElts.size) { alert('Sélectionnez au moins un élément.'); return; }
+    const checkedPKs = [...document.querySelectorAll('#pk-checkboxes input:checked')].map(cb => cb.dataset.pk);
+    if (!checkedPKs.length) { alert('Aucun PK sélectionné.'); return; }
+
+    const modeLabels = {
+        assainissement_g: 'Assainissement Gauche',
+        assainissement_d: 'Assainissement Droit',
+        assainissement:   'Assainissement G + D',
+        terrassement:     'Terrassement',
+    };
+    document.getElementById('recap-mode').textContent = modeLabels[selectedMode] || selectedMode;
+    document.getElementById('recap-pks').textContent = checkedPKs.length > 1
+        ? `${checkedPKs[0]} → ${checkedPKs[checkedPKs.length-1]} (${checkedPKs.length} PK)`
+        : checkedPKs[0] || '—';
+    document.getElementById('recap-elements').textContent =
+        `${selectedElts.size} élément${selectedElts.size>1?'s':''}`;
+
+    showStep(4);
+}
+
+// ── Soumission ────────────────────────────────────────────────────────────────
+document.getElementById('demande-form').addEventListener('submit', function(e) {
+    const checkedPKs = [...document.querySelectorAll('#pk-checkboxes input:checked')].map(cb => cb.dataset.pk);
+    if (!checkedPKs.length) { e.preventDefault(); alert('Aucun PK sélectionné.'); return; }
+
+    const eltsToInclude = (cfgData && cfgData.elements ? cfgData.elements : [])
+        .filter(elt => selectedElts.has(elt.key));
+
+    const parties = [];
+    checkedPKs.forEach(pk => {
+        eltsToInclude.forEach(elt => {
+            parties.push({ key: elt.key, label: elt.label, groupe: elt.groupe, cote: null, pk });
+        });
+    });
+
+    if (!parties.length) { e.preventDefault(); alert('Sélectionnez au moins un élément.'); return; }
+
+    document.getElementById('hidden-pk-debut').value  = checkedPKs[0];
+    document.getElementById('hidden-pk-fin').value    = checkedPKs[checkedPKs.length - 1];
+    document.getElementById('hidden-pks-list').value  = JSON.stringify(checkedPKs);
+    document.getElementById('hidden-parties').value   = JSON.stringify(parties);
+});
+
+// ── Navigation générale ───────────────────────────────────────────────────────
+function showStep(n) {
+    [1,2,3,4].forEach(i => {
+        document.getElementById(`step${i}`).style.display = i === n ? '' : 'none';
+        const sn = document.getElementById(`sn${i}`);
+        const sl = document.getElementById(`sl${i}`);
+        if (i < n)  { sn.className = 'step-num done';   sl.className = 'step-label done';   }
+        if (i === n){ sn.className = 'step-num active'; sl.className = 'step-label active'; }
+        if (i > n)  { sn.className = 'step-num';        sl.className = 'step-label';        }
+        const sep = document.getElementById(`sep${i}`);
+        if (sep) sep.className = 'step-sep' + (i < n ? ' done' : '');
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function backStep1() { showStep(1); }
+function backStep2() { showStep(2); }
+function backStep3() { showStep(3); }
+</script>
+</body>
+</html>

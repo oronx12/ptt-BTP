@@ -83,6 +83,57 @@ MIGRATIONS = [
     ALTER TABLE projets
     ADD COLUMN IF NOT EXISTS plan VARCHAR(20) NOT NULL DEFAULT 'solo';
     """,
+
+    # ── 7. Table demandes_reception (V2) ─────────────────────────────────────
+    """
+    CREATE TABLE IF NOT EXISTS demandes_reception (
+        id               SERIAL PRIMARY KEY,
+        numero           VARCHAR(20) NOT NULL UNIQUE,
+        projet_id        INTEGER NOT NULL REFERENCES projets(id),
+        demandeur_id     INTEGER NOT NULL REFERENCES users(id),
+        pk_debut         VARCHAR(50) NOT NULL,
+        pk_fin           VARCHAR(50) NOT NULL,
+        parties          JSONB,
+        date_souhaitee   DATE,
+        heure_souhaitee  VARCHAR(10),
+        observations     TEXT,
+        statut           VARCHAR(20) NOT NULL DEFAULT 'en_attente',
+        motif_refus      TEXT,
+        accuse_at        TIMESTAMP WITHOUT TIME ZONE,
+        accepte_at       TIMESTAMP WITHOUT TIME ZONE,
+        cloture_at       TIMESTAMP WITHOUT TIME ZONE,
+        created_at       TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+        fiche_id         INTEGER REFERENCES fiches_reception(id)
+    );
+    """,
+
+    # ── 8. Colonnes supplémentaires demandes_reception (V3) ─────────────────
+    """
+    ALTER TABLE demandes_reception
+    ADD COLUMN IF NOT EXISTS mode            VARCHAR(20) DEFAULT 'assainissement';
+    """,
+    """
+    ALTER TABLE demandes_reception
+    ADD COLUMN IF NOT EXISTS tolerance       FLOAT       DEFAULT 2.0;
+    """,
+    """
+    ALTER TABLE demandes_reception
+    ADD COLUMN IF NOT EXISTS meteo           VARCHAR(200);
+    """,
+    """
+    ALTER TABLE demandes_reception
+    ADD COLUMN IF NOT EXISTS statut_reception VARCHAR(20);
+    """,
+    """
+    ALTER TABLE demandes_reception
+    ADD COLUMN IF NOT EXISTS pks_list        JSONB;
+    """,
+
+    # ── 9. Rendre client_id nullable sur projets (V3 : relation via ClientProjet) ──
+    """
+    ALTER TABLE projets
+    ALTER COLUMN client_id DROP NOT NULL;
+    """,
 ]
 
 

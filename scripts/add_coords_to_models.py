@@ -191,7 +191,7 @@ def write_pk_coords(wb, pk_labels, coords, nom_projet):
     # Sous-titre
     ws.merge_cells("A2:F2")
     set_cell(ws, 2, 1,
-             "Système de référence : Lambert 93 (EPSG:2154)  —  Données à renseigner avec les coordonnées réelles du levé",
+             "Système de référence : WGS84 UTM Zone 31N (EPSG:32631)  —  Données à renseigner avec les coordonnées réelles du levé",
              font=Font(name="Calibri", italic=True, color="475569", size=9),
              fill_=fill("F8FAFC"),
              align=Alignment(horizontal="center", vertical="center"))
@@ -199,8 +199,8 @@ def write_pk_coords(wb, pk_labels, coords, nom_projet):
 
     # En-têtes colonnes
     headers = ["PK", "X (m)", "Y (m)", "Z axe (m)", "Gisement (°)", "Dist. cumulée (m)"]
-    hints   = ["Point kilométrique", "Lambert 93 — Est", "Lambert 93 — Nord",
-               "Cote NGF de l'axe chaussée", "Direction route (0°=N, 90°=E)", "Distance depuis l'origine"]
+    hints   = ["Point kilométrique", "UTM 31N — Easting E (m)", "UTM 31N — Northing N (m)",
+               "Cote NGF de l'axe chaussée", "Gisement depuis Nord (0°=N, 90°=E)", "Distance depuis l'origine"]
     col_widths = [12, 16, 16, 14, 16, 18]
 
     for ci, (h, hint, w) in enumerate(zip(headers, hints, col_widths), start=1):

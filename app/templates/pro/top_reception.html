@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Réception — {{ projet.nom }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *:before, *:after { box-sizing:border-box; margin:0; padding:0; }
+        :root {
+            --bg:#0c0900; --bg2:#110c00; --bg3:#0e0a00;
+            --amber:#f59e0b; --amber2:#fbbf24;
+            --cyan:#00ffff;
+            --border:#2e1a00; --border2:#3d2200;
+            --text:#e2e8f0; --muted:#78350f;
+        }
+        body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+        /* Header */
+        .hdr { background:var(--bg3); border-bottom:1px solid var(--border2); position:sticky; top:0; z-index:50; }
+        .hdr-in { max-width:100%; margin:0 auto; padding:0 20px; height:56px; display:flex; align-items:center; justify-content:space-between; }
+
+        /* Phase stepper */
+        .phase-bar { max-width:100%; margin:0 auto; padding:20px 20px 0; display:flex; align-items:center; }
+        .ph-item { display:flex; align-items:center; gap:10px; flex:1; }
+        .ph-num { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.82rem; font-weight:800; flex-shrink:0; border:2px solid var(--border2); color:#4a2800; background:var(--bg2); transition:all .3s; }
+        .ph-num.done   { background:#92400e; border-color:#d97706; color:#fff; }
+        .ph-num.active { background:#d97706; border-color:#fbbf24; color:#fff; box-shadow:0 0 12px rgba(245,158,11,.4); }
+        .ph-label { font-size:.8rem; font-weight:700; color:#4a2800; transition:color .3s; white-space:nowrap; }
+        .ph-label.active { color:var(--amber2); }
+        .ph-label.done   { color:#92400e; }
+        .ph-sep { flex:1; height:2px; background:var(--border2); margin:0 8px; min-width:24px; }
+        .ph-sep.done { background:#92400e; }
+
+        /* Page & Cards */
+        .page { max-width:100%; margin:0; padding:20px 20px 80px; }
+        .card { background:var(--bg2); border:1px solid var(--border); border-radius:14px; margin-bottom:14px; overflow:hidden; }
+        .card-head { padding:13px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+        .card-head.amber { background:#160d00; border-left:3px solid var(--amber); }
+        .card-head.blue  { background:#0d1220; border-left:3px solid #3b82f6; }
+        .card-head.cyan  { background:#001a1a; border-left:3px solid var(--cyan); }
+        .card-head h2 { font-size:.93rem; font-weight:700; color:var(--text); }
+        .card-head.amber h2 { color:var(--amber2); }
+        .card-head.cyan h2  { color:var(--cyan); }
+        .card-body { padding:20px; }
+
+        /* Inputs */
+        .lbl { display:block; font-size:.71rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:5px; }
+        .inp { width:100%; padding:9px 13px; border:1.5px solid var(--border2); border-radius:9px; background:#0c0700; color:var(--text); font-size:.88rem; font-family:inherit; outline:none; transition:border-color .2s; }
+        .inp:focus { border-color:rgba(245,158,11,.6); box-shadow:0 0 0 3px rgba(245,158,11,.07); }
+        .inp::placeholder { color:#2d1a00; }
+        .row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+        @media(max-width:600px) { .row2,.row3 { grid-template-columns:1fr; } }
+
+        /* Mode cards */
+        .mode-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+        @media(max-width:640px) { .mode-grid { grid-template-columns:1fr 1fr; } }
+        .mode-card { position:relative; display:flex; flex-direction:column; align-items:center; gap:8px; padding:18px 12px 14px; border:2px solid var(--border2); border-radius:14px; cursor:pointer; transition:all .2s; background:#0c0700; }
+        .mode-card:hover:not(.disabled) { border-color:#92400e; background:#120900; }
+        .mode-card.selected { border-color:var(--amber); background:#1a0d00; box-shadow:0 0 18px rgba(245,158,11,.14); }
+        .mode-card.disabled { opacity:.3; cursor:not-allowed; }
+        .mode-card input { position:absolute; opacity:0; width:0; height:0; }
+        /* Letter badge replacing emoji */
+        .mode-letter { width:52px; height:52px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; font-weight:900; color:#fff; letter-spacing:-1px; transition:box-shadow .2s; }
+        .mode-letter.ter  { background:linear-gradient(135deg,#78350f,#d97706); }
+        .mode-letter.asg  { background:linear-gradient(135deg,#3730a3,#818cf8); }
+        .mode-letter.asd  { background:linear-gradient(135deg,#9d174d,#f472b6); }
+        .mode-letter.asgd { background:linear-gradient(135deg,#3730a3 40%,#9d174d); }
+        .mode-card.selected .mode-letter { box-shadow:0 0 16px rgba(245,158,11,.25); }
+        .mode-title { font-size:.82rem; font-weight:700; color:#92400e; text-align:center; line-height:1.3; }
+        .mode-card.selected .mode-title { color:var(--amber2); }
+        .mode-sub { font-size:.68rem; color:#4a2800; text-align:center; line-height:1.3; }
+        .mode-check { width:17px; height:17px; border-radius:50%; border:2px solid var(--border2); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .mode-card.selected .mode-check { background:var(--amber); border-color:var(--amber2); }
+        .mode-card.selected .mode-check::after { content:''; width:6px; height:6px; background:#fff; border-radius:50%; display:block; }
+
+        /* PK checkboxes */
+        .pk-grid-wrap { background:#0c0700; border:1px solid var(--border2); border-radius:10px; overflow:hidden; }
+        .pk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:4px; max-height:320px; overflow-y:auto; padding:10px; }
+        .pk-row { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:8px; cursor:pointer; transition:background .1s; border:1px solid transparent; }
+        .pk-row:hover { background:rgba(245,158,11,.08); border-color:rgba(245,158,11,.12); }
+        .pk-row input { width:17px; height:17px; accent-color:var(--amber); cursor:pointer; flex-shrink:0; }
+        .pk-row label { font-size:.93rem; font-weight:600; color:#d97706; cursor:pointer; font-variant-numeric:tabular-nums; }
+        .pk-row input:checked ~ label { color:var(--amber2); }
+
+        /* Sub-stepper (phases 2 sub-steps) */
+        .sub-stepper { display:flex; align-items:center; gap:0; margin-bottom:20px; background:var(--bg3); border:1px solid var(--border2); border-radius:12px; padding:10px 16px; }
+        .sub-step { display:flex; align-items:center; gap:8px; }
+        .ss-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:800; flex-shrink:0; border:1.5px solid var(--border2); color:#4a2800; background:var(--bg2); transition:all .25s; }
+        .ss-dot.done   { background:#92400e; border-color:#d97706; color:#fff; }
+        .ss-dot.active { background:#d97706; border-color:#fbbf24; color:#fff; }
+        .ss-lbl { font-size:.73rem; font-weight:700; color:#4a2800; transition:color .25s; white-space:nowrap; }
+        .ss-lbl.active { color:var(--amber2); }
+        .ss-lbl.done   { color:#92400e; }
+        .ss-sep { flex:1; height:1.5px; background:var(--border2); margin:0 6px; min-width:16px; }
+        .ss-sep.done { background:#92400e; }
+
+        /* Sections coverage */
+        .sec-group { margin-bottom:14px; }
+        .sec-group-title { font-size:.78rem; font-weight:700; color:#92400e; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+        .sec-item { display:flex; align-items:center; justify-content:space-between; padding:9px 14px; background:#0c0700; border:1px solid var(--border2); border-radius:8px; margin-bottom:6px; }
+        .sec-range { font-size:.83rem; color:var(--amber2); font-weight:600; font-variant-numeric:tabular-nums; }
+        .sec-count { font-size:.78rem; color:#92400e; background:#1a0d00; padding:2px 8px; border-radius:99px; border:1px solid var(--border2); }
+
+        /* Element checkboxes */
+        .elt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:3px; }
+        .elt-row { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:7px; cursor:pointer; transition:background .1s; }
+        .elt-row:hover { background:rgba(245,158,11,.06); }
+        .elt-row input { width:14px; height:14px; accent-color:var(--amber); cursor:pointer; }
+        .elt-row .elt-lbl { font-size:.83rem; color:#d97706; cursor:pointer; line-height:1.3; }
+        .grp-header { font-size:.72rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; padding:8px 10px 4px; }
+
+        /* Buttons */
+        .btn-primary { display:inline-flex; align-items:center; gap:8px; padding:11px 24px; background:linear-gradient(135deg,#92400e,#d97706); color:#fff; font-size:.9rem; font-weight:700; border-radius:10px; border:none; cursor:pointer; transition:opacity .15s; }
+        .btn-primary:hover { opacity:.9; }
+        .btn-primary:disabled { opacity:.4; cursor:not-allowed; }
+        .btn-sec { padding:11px 20px; background:rgba(255,255,255,.03); color:#78350f; font-size:.87rem; font-weight:600; border-radius:10px; border:1px solid var(--border2); cursor:pointer; transition:all .15s; }
+        .btn-sec:hover { background:rgba(245,158,11,.06); color:#92400e; }
+        .bm { padding:5px 11px; background:#1a0d00; border:1px solid var(--border2); border-radius:6px; font-size:.72rem; font-weight:600; color:#92400e; cursor:pointer; transition:all .15s; }
+        .bm:hover { background:#2a1500; color:var(--amber2); }
+        .btn-cyan { display:inline-flex; align-items:center; gap:8px; padding:11px 24px; background:linear-gradient(135deg,#006666,#00aaaa); color:#fff; font-size:.9rem; font-weight:700; border-radius:10px; border:none; cursor:pointer; transition:opacity .15s; }
+        .btn-cyan:hover { opacity:.9; }
+        .btn-cyan:disabled { opacity:.4; cursor:not-allowed; }
+
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .spin { animation:spin 1s linear infinite; }
+
+        /* Reception table */
+        .rec-table-wrap { overflow-x:auto; border-radius:10px; border:1px solid var(--border2); }
+        table.rec { width:100%; border-collapse:collapse; font-size:.82rem; }
+        table.rec th { padding:9px 12px; background:#160d00; color:#92400e; font-size:.69rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; text-align:left; border-bottom:1px solid var(--border2); white-space:nowrap; }
+        table.rec td { padding:7px 12px; border-bottom:1px solid rgba(45,26,0,.4); color:var(--text); vertical-align:middle; }
+        table.rec tr:last-child td { border-bottom:none; }
+        table.rec tr.sep-pk td { background:#160d00; color:#92400e; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; padding:5px 12px; border-bottom:1px solid var(--border2); }
+        table.rec tr.ok    td { background:rgba(52,211,153,.04); }
+        table.rec tr.nok   td { background:rgba(239,68,68,.05); }
+        table.rec tr.interp td { background:rgba(100,116,139,.06); opacity:.75; }
+        .inp-rec { width:100px; padding:5px 8px; border:1.5px solid var(--border2); border-radius:7px; background:#0c0700; color:var(--text); font-size:.83rem; font-variant-numeric:tabular-nums; text-align:right; outline:none; transition:border-color .15s; font-family:inherit; }
+        .inp-rec:focus { border-color:rgba(245,158,11,.5); }
+        /* Cote théorique = référence violet-bleu (distincte de la cote pratique cyan) */
+        .cote-th { font-variant-numeric:tabular-nums; font-weight:600; color:#a5b4fc; }
+        .ecart-ok   { color:#4ade80; font-variant-numeric:tabular-nums; font-weight:700; }
+        .ecart-nok  { color:#f87171; font-variant-numeric:tabular-nums; font-weight:700; }
+
+        /* Tables profil TER (Parties step) */
+        .profil-sec { margin-bottom:18px; }
+        .profil-sec-title { font-size:.78rem; font-weight:700; color:#92400e; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; }
+        .profil-sides { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        @media(max-width:600px) { .profil-sides { grid-template-columns:1fr; } }
+        .profil-table-wrap { border-radius:10px; overflow:hidden; border:1px solid; }
+        .profil-table-wrap.side-g { border-color:#4338ca; }
+        .profil-table-wrap.side-d { border-color:#9d174d; }
+        .profil-table-wrap table { width:100%; border-collapse:collapse; font-size:.8rem; }
+        .profil-table-wrap thead th { padding:7px 10px; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
+        .profil-table-wrap.side-g thead { background:#1e1b4b; color:#a5b4fc; }
+        .profil-table-wrap.side-d thead { background:#4a0021; color:#fda4af; }
+        .profil-table-wrap tbody tr { border-top:1px solid rgba(255,255,255,.05); }
+        .profil-table-wrap.side-g tbody tr { background:#0e0c1f; }
+        .profil-table-wrap.side-d tbody tr { background:#1a0010; }
+        .profil-table-wrap.side-g tbody tr:hover { background:#14114b; }
+        .profil-table-wrap.side-d tbody tr:hover { background:#2a0018; }
+        .profil-table-wrap tbody td { padding:6px 10px; vertical-align:middle; }
+        .profil-table-wrap.side-g tbody td { color:#c7d2fe; }
+        .profil-table-wrap.side-d tbody td { color:#fecdd3; }
+        .profil-pt-lbl { font-variant-numeric:tabular-nums; font-weight:600; font-size:.82rem; }
+        .profil-pt-dist { font-variant-numeric:tabular-nums; font-size:.8rem; }
+        .profil-pt-pente { font-variant-numeric:tabular-nums; font-size:.8rem; opacity:.75; }
+        .profil-add-row { display:inline-flex; align-items:center; gap:6px; margin-top:6px; padding:5px 12px; background:rgba(255,255,255,.03); border:1px dashed rgba(255,255,255,.1); border-radius:6px; font-size:.75rem; cursor:pointer; transition:all .15s; color:#4a2800; }
+        .side-g .profil-add-row { color:#6366f1; border-color:#3730a3; }
+        .side-g .profil-add-row:hover { background:rgba(99,102,241,.08); }
+        .side-d .profil-add-row { color:#ec4899; border-color:#9d174d; }
+        .side-d .profil-add-row:hover { background:rgba(236,72,153,.08); }
+        .profil-section-sep { display:flex; align-items:center; gap:10px; margin:20px 0 12px; }
+        .profil-section-sep::before, .profil-section-sep::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.06); }
+        .profil-section-sep span { font-size:.72rem; font-weight:700; color:#4a2800; text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
+
+        /* Validation cycle */
+        .val-btn { padding:3px 8px; border-radius:6px; border:1px solid var(--border2); background:#0c0700; cursor:pointer; font-size:.72rem; font-weight:700; transition:all .15s; white-space:nowrap; }
+        .val-btn[data-state="ok"]  { background:rgba(52,211,153,.1); border-color:rgba(52,211,153,.3); color:#4ade80; }
+        .val-btn[data-state="ar"]  { background:rgba(251,191,36,.1); border-color:rgba(251,191,36,.3); color:#fbbf24; }
+        .val-btn[data-state="nv"]  { background:rgba(239,68,68,.1);  border-color:rgba(239,68,68,.3);  color:#f87171; }
+
+        /* Obs toggle + sub-row */
+        .obs-toggle { padding:3px 8px; border-radius:6px; border:1px solid var(--border2); background:#0c0700; cursor:pointer; font-size:.72rem; color:#92400e; transition:all .15s; }
+        .obs-toggle.active { border-color:rgba(245,158,11,.4); color:var(--amber2); background:rgba(245,158,11,.07); }
+        .obs-row td { background:#100900 !important; border-bottom:1px solid var(--border2) !important; padding:10px 12px !important; }
+        .obs-inner { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
+        .photo-thumb { width:54px; height:54px; object-fit:cover; border-radius:6px; border:1px solid var(--border2); cursor:pointer; }
+        .photo-add { width:54px; height:54px; border-radius:6px; border:1px dashed var(--border2); display:flex; align-items:center; justify-content:center; cursor:pointer; background:#0c0700; font-size:1.3rem; transition:border-color .15s; flex-shrink:0; }
+        .photo-add:hover { border-color:#92400e; }
+        .photo-list { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+        /* Interpolation separator */
+        .interp-sep-row td { background:#0a0600 !important; border-bottom:none !important; padding:0 !important; text-align:center; }
+        .interp-btn { padding:1px 12px; font-size:.7rem; color:#4a2800; border:1px dashed #2e1a00; border-radius:99px; background:transparent; cursor:pointer; transition:all .15s; }
+        .interp-btn:hover { color:#92400e; border-color:#92400e; background:rgba(245,158,11,.04); }
+        .interp-added td { background:rgba(100,116,139,.06) !important; opacity:.8; }
+
+        /* Email modal */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; display:flex; align-items:center; justify-content:center; padding:16px; }
+        .modal-box { background:#110c00; border:1px solid var(--border2); border-radius:16px; padding:24px; width:100%; max-width:480px; }
+        .modal-title { font-size:1rem; font-weight:800; color:var(--amber2); margin-bottom:16px; }
+        .modal-close { float:right; background:none; border:none; color:#4a2800; font-size:1.1rem; cursor:pointer; }
+
+        /* Bilan bar */
+        .bilan-bar { background:var(--bg3); border:1px solid var(--border2); border-radius:10px; padding:12px 18px; display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-top:12px; }
+        .bilan-bar .bl { font-size:.82rem; }
+        .bilan-bar .bl strong { font-size:.95rem; }
+        .bilan-progress { flex:1; max-width:200px; height:8px; background:#1a0d00; border-radius:99px; overflow:hidden; min-width:80px; }
+        .bilan-fill { height:100%; border-radius:99px; transition:width .4s, background .4s; }
+
+        /* Station de nivellement */
+        .stn-card { background:var(--bg2); border:1px solid var(--border2); border-radius:14px; margin-bottom:18px; overflow:hidden; }
+        .stn-hdr { padding:11px 20px; background:#0f0900; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+        .stn-hdr-title { font-size:.9rem; font-weight:800; color:var(--amber2); display:flex; align-items:center; gap:10px; }
+        .stn-params { display:grid; grid-template-columns:1fr 1fr auto; gap:14px; padding:16px 20px 14px; align-items:end; border-bottom:1px solid var(--border2); background:#0c0700; }
+        @media(max-width:700px) { .stn-params { grid-template-columns:1fr 1fr; } }
+        .stn-params .p-group { display:flex; flex-direction:column; gap:6px; }
+        .stn-cb-wrap { display:flex; align-items:center; gap:8px; }
+        .cb-display { flex:1; padding:8px 13px; border:1.5px solid var(--border2); border-radius:9px; background:#160d00; color:var(--cyan); font-size:.93rem; font-weight:700; font-variant-numeric:tabular-nums; min-width:120px; text-align:right; }
+        .cb-display.ready { border-color:rgba(0,255,255,.4); box-shadow:0 0 8px rgba(0,255,255,.08); }
+        .btn-valider-cb { padding:8px 14px; background:linear-gradient(135deg,#006666,#00aaaa); color:#fff; border:none; border-radius:8px; font-size:.8rem; font-weight:700; cursor:pointer; white-space:nowrap; transition:opacity .15s; flex-shrink:0; }
+        .btn-valider-cb:hover { opacity:.85; }
+
+        /* Rec table wider */
+        .rec-table-wrap { overflow-x:auto; }
+        table.rec th, table.rec td { padding:6px 10px; }
+        .lar-disp { font-variant-numeric:tabular-nums; color:#92400e; font-size:.8rem; }
+        .prat-cell { font-variant-numeric:tabular-nums; font-weight:700; color:#67e8f9; }
+        .prat-cell.stale { color:#4a2800; }
+
+        /* Validation button */
+        .btn-val { padding:3px 9px; border-radius:6px; border:1px solid var(--border2); background:#0c0700; cursor:pointer; font-size:.73rem; font-weight:700; transition:all .15s; white-space:nowrap; }
+        .btn-val.vld  { background:rgba(52,211,153,.1); border-color:rgba(52,211,153,.3); color:#4ade80; }
+        .btn-val.nv   { background:rgba(239,68,68,.1);  border-color:rgba(239,68,68,.3);  color:#f87171; }
+        .btn-val.ar   { background:rgba(251,191,36,.1); border-color:rgba(251,191,36,.3); color:#fbbf24; }
+
+        /* Add station button */
+        .btn-add-stn { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; background:rgba(245,158,11,.06); color:#92400e; font-size:.85rem; font-weight:700; border:1px dashed #3d2200; border-radius:10px; cursor:pointer; transition:all .15s; }
+        .btn-add-stn:hover { background:rgba(245,158,11,.1); color:var(--amber2); border-color:#92400e; }
+
+        /* Signatures */
+        .sig-wrap { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        @media(max-width:600px) { .sig-wrap { grid-template-columns:1fr; } }
+        .sig-box { background:#0c0700; border:1px solid var(--border2); border-radius:10px; overflow:hidden; }
+        .sig-title { padding:10px 14px; font-size:.78rem; font-weight:700; color:#92400e; background:var(--bg3); border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; }
+        canvas.sig-canvas { width:100%; height:140px; display:block; touch-action:none; background:#080500; cursor:crosshair; }
+
+        /* Flash */
+        .flash { padding:10px 16px; border-radius:10px; font-size:.86rem; font-weight:500; margin-bottom:14px; }
+        .flash.danger  { background:rgba(220,38,38,.1);  border:1px solid rgba(220,38,38,.25); color:#fca5a5; }
+        .flash.warning { background:rgba(251,191,36,.08); border:1px solid rgba(251,191,36,.2); color:#fcd34d; }
+        .flash.success { background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.2); color:#6ee7b7; }
+
+        /* Nav row */
+        .nav-row { display:flex; align-items:center; justify-content:space-between; padding-top:8px; flex-wrap:wrap; gap:8px; }
+
+        /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
+
+        /* Sticky first column in table for horizontal scroll */
+        @media (max-width:1100px) {
+            table.rec th:first-child,
+            table.rec td:first-child { position:sticky; left:0; z-index:2; background:var(--bg2); }
+            table.rec tr.sep-pk  td:first-child { background:#160d00; }
+            table.rec tr.ok      td:first-child { background:#0a160f; }
+            table.rec tr.nok     td:first-child { background:#180a0a; }
+            table.rec tr.interp-added td:first-child { background:rgba(15,15,20,1); }
+            table.rec th:first-child { background:#160d00; }
+        }
+
+        /* Tablet landscape (≤1024px) */
+        @media (max-width:1024px) {
+            .inp-rec { width:82px; }
+        }
+
+        /* Tablet portrait (≤768px) */
+        @media (max-width:768px) {
+            .hdr-trail { display:none; }
+            .phase-bar { padding:14px 14px 0; gap:0; }
+            .ph-label { font-size:.7rem; }
+            .ph-sep { min-width:8px; margin:0 4px; }
+            .page { padding:16px 14px 100px; }
+            .hdr-in { padding:0 14px; height:52px; }
+
+            /* Touch targets */
+            .inp, .inp-rec { min-height:44px; }
+            .inp-rec { padding:8px 8px; width:86px; }
+            .btn-val { padding:7px 10px; min-height:38px; font-size:.75rem; }
+            .obs-toggle { padding:7px 10px; min-height:38px; }
+            .btn-primary, .btn-cyan, .btn-sec { padding:13px 20px; min-height:46px; font-size:.88rem; }
+            .btn-add-stn { padding:12px 18px; min-height:44px; }
+            .btn-valider-cb { min-height:44px; padding:10px 16px; }
+            .pk-row { padding:6px 10px; }
+            .pk-row input { width:18px; height:18px; }
+            .elt-row { padding:8px 10px; }
+            .elt-row input { width:18px; height:18px; }
+
+            /* Station params: stack button below */
+            .stn-params { grid-template-columns:1fr 1fr; }
+        }
+
+        /* Phone (≤520px) */
+        @media (max-width:520px) {
+            /* Phase bar: numbers only */
+            .ph-label { display:none; }
+            .ph-sep { min-width:6px; margin:0 2px; }
+
+            /* Single column everywhere */
+            .stn-params { grid-template-columns:1fr !important; }
+            .row3 { grid-template-columns:1fr !important; }
+            .sig-wrap { grid-template-columns:1fr; }
+
+            /* Cards */
+            .card-body { padding:12px; }
+            .card-head { padding:10px 12px; }
+            .page { padding:12px 10px 100px; }
+            .hdr-in { padding:0 10px; }
+
+            /* Nav buttons — full width */
+            .nav-row { flex-direction:column-reverse; }
+            .nav-row .btn-primary,
+            .nav-row .btn-cyan,
+            .nav-row .btn-sec { width:100%; justify-content:center; }
+
+            /* Mode grid — 2 cols */
+            .mode-grid { grid-template-columns:1fr 1fr; }
+
+            /* Bilan — stack */
+            .bilan-bar { flex-direction:column; align-items:flex-start; gap:8px; }
+            .bilan-progress { max-width:100%; width:100%; }
+
+            /* Modal — bottom sheet on phone */
+            .modal-overlay { align-items:flex-end; padding:0; }
+            .modal-box { max-width:100%; border-radius:16px 16px 0 0; padding:20px 16px 28px; }
+
+            /* Sub-stepper labels — hidden */
+            .ss-lbl { display:none; }
+            .sub-stepper { padding:8px 12px; }
+
+            /* Smaller table font */
+            table.rec { font-size:.76rem; }
+            table.rec th, table.rec td { padding:5px 7px; }
+            .inp-rec { width:72px; font-size:.76rem; }
+        }
+
+        /* Touch device utilities */
+        @media (hover:none) {
+            /* Prevent double-tap zoom on buttons */
+            button, a, label { touch-action:manipulation; }
+            /* Larger tap zone for small buttons */
+            .btn-val::before,
+            .obs-toggle::before { content:''; position:absolute; inset:-8px; }
+            .btn-val, .obs-toggle { position:relative; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+    <div class="hdr-in">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+            <a href="/pro/projets/" style="display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:18px;height:18px;">
+                    <span style="background:#00ffff;border-radius:2px;display:block;"></span>
+                    <span style="background:#fbbf24;border-radius:2px;display:block;"></span>
+                    <span style="background:#00ffff;border-radius:2px;display:block;"></span>
+                    <span style="background:#00ffff;border-radius:2px;display:block;"></span>
+                </div>
+                <div style="display:flex;flex-direction:column;line-height:1.1;">
+                    <span style="color:#fbbf24;font-weight:800;letter-spacing:2px;font-size:14px;">RECEPTA</span>
+                    <span style="color:rgba(251,191,36,.35);font-size:8px;font-weight:600;letter-spacing:1.5px;">by OPTILAB</span>
+                </div>
+            </a>
+            <div class="hdr-trail" style="display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;">
+                <span style="color:#3d2000;flex-shrink:0;">›</span>
+                <span style="color:#92400e;font-size:.83rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">{{ projet.nom }}</span>
+                <span style="color:#3d2000;flex-shrink:0;">›</span>
+                <span style="color:var(--cyan);font-size:.85rem;font-weight:700;white-space:nowrap;flex-shrink:0;">Top Réception</span>
+            </div>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" style="color:var(--muted);font-size:.8rem;padding:6px 12px;border-radius:8px;text-decoration:none;">Déconnexion</a>
+    </div>
+</header>
+
+<!-- Phase stepper -->
+<div class="phase-bar">
+    <div class="ph-item">
+        <div class="ph-num active" id="phn1">1</div>
+        <span class="ph-label active" id="phl1">Acteurs</span>
+    </div>
+    <div class="ph-sep" id="phs1"></div>
+    <div class="ph-item">
+        <div class="ph-num" id="phn2">2</div>
+        <span class="ph-label" id="phl2">Paramétrage</span>
+    </div>
+    <div class="ph-sep" id="phs2"></div>
+    <div class="ph-item">
+        <div class="ph-num" id="phn3">3</div>
+        <span class="ph-label" id="phl3">Réception</span>
+    </div>
+</div>
+
+<div class="page">
+
+    <!-- ═══════════════════ PHASE 1 — Acteurs ═══════════════════ -->
+    <div id="phase1">
+        <div class="card">
+            <div class="card-head cyan"><h2>Mission de Contrôle</h2></div>
+            <div class="card-body">
+                <div class="row2" style="margin-bottom:12px;">
+                    <div>
+                        <label class="lbl">Nom du contrôleur *</label>
+                        <input type="text" id="ctrl-nom" class="inp" placeholder="Prénom Nom">
+                    </div>
+                    <div>
+                        <label class="lbl">Société / Bureau de contrôle</label>
+                        <input type="text" id="ctrl-societe" class="inp" placeholder="Ex : Bureau Véritas">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head amber"><h2>Entreprise</h2></div>
+            <div class="card-body">
+                <div class="row2">
+                    <div>
+                        <label class="lbl">Représentant sur site</label>
+                        <input type="text" id="et-nom" class="inp" placeholder="Prénom Nom">
+                    </div>
+                    <div>
+                        <label class="lbl">Société / Entreprise *</label>
+                        <input type="text" id="et-societe" class="inp" placeholder="Ex : COLAS">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head amber"><h2>Conditions</h2></div>
+            <div class="card-body">
+                <div class="row3">
+                    <div>
+                        <label class="lbl">Date de réception</label>
+                        <input type="date" id="date-rec" class="inp" style="color-scheme:dark;">
+                    </div>
+                    <div>
+                        <label class="lbl">Conditions météo</label>
+                        <input type="text" id="meteo" class="inp" placeholder="Ex : Ensoleillé, 25°C">
+                    </div>
+                    <div>
+                        <label class="lbl">Tolérance (cm)</label>
+                        <input type="number" id="tolerance" class="inp" value="2.0" step="0.1" min="0" style="text-align:right;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-row" style="justify-content:flex-end;">
+            <button class="btn-primary" onclick="goPhase2()">
+                Paramétrage
+                <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════ PHASE 2 — Paramétrage ═══════════════════ -->
+    <div id="phase2" style="display:none;">
+
+        <!-- Sub-stepper -->
+        <div class="sub-stepper">
+            <div class="sub-step"><div class="ss-dot active" id="ss1">1</div><span class="ss-lbl active" id="ssl1">Type</span></div>
+            <div class="ss-sep" id="ssep1"></div>
+            <div class="sub-step"><div class="ss-dot" id="ss2">2</div><span class="ss-lbl" id="ssl2">PK</span></div>
+            <div class="ss-sep" id="ssep2"></div>
+            <div class="sub-step"><div class="ss-dot" id="ss3">3</div><span class="ss-lbl" id="ssl3">Sections</span></div>
+            <div class="ss-sep" id="ssep3"></div>
+            <div class="sub-step"><div class="ss-dot" id="ss4">4</div><span class="ss-lbl" id="ssl4">Parties</span></div>
+        </div>
+
+        <!-- Loading config -->
+        <div id="cfg-loading" style="display:flex;align-items:center;gap:10px;padding:16px;font-size:.85rem;color:var(--muted);">
+            <svg class="spin" style="width:16px;height:16px;" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="#92400e" stroke-width="4" opacity=".25"/>
+                <path fill="#f59e0b" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z"/>
+            </svg>
+            Chargement de la configuration Excel…
+        </div>
+        <div id="cfg-err" style="display:none;" class="flash danger"></div>
+
+        <!-- Sub-phase 2.1 — Type -->
+        <div id="sp1" style="display:none;">
+            <div class="card">
+                <div class="card-head amber"><h2>Type de réception</h2></div>
+                <div class="card-body">
+                    <div class="mode-grid" id="mode-grid">
+                        <label class="mode-card" data-mode="terrassement" onclick="selectMode(this)">
+                            <input type="radio" name="_mode" value="terrassement">
+                            <div class="mode-letter ter">T</div>
+                            <div class="mode-title">Terrassement</div>
+                            <div class="mode-sub">Profil en travers chaussée</div>
+                            <div class="mode-check"></div>
+                        </label>
+                        <label class="mode-card" data-mode="assainissement_g" onclick="selectMode(this)">
+                            <input type="radio" name="_mode" value="assainissement_g">
+                            <div class="mode-letter asg">G</div>
+                            <div class="mode-title">Assainissement<br>Gauche</div>
+                            <div class="mode-sub">Canal + fil d'eau — côté G</div>
+                            <div class="mode-check"></div>
+                        </label>
+                        <label class="mode-card" data-mode="assainissement_d" onclick="selectMode(this)">
+                            <input type="radio" name="_mode" value="assainissement_d">
+                            <div class="mode-letter asd">D</div>
+                            <div class="mode-title">Assainissement<br>Droit</div>
+                            <div class="mode-sub">Canal + fil d'eau — côté D</div>
+                            <div class="mode-check"></div>
+                        </label>
+                        <label class="mode-card" data-mode="assainissement" onclick="selectMode(this)">
+                            <input type="radio" name="_mode" value="assainissement">
+                            <div class="mode-letter asgd" style="font-size:1.1rem;">G+D</div>
+                            <div class="mode-title">Assainissement<br>G + D</div>
+                            <div class="mode-sub">Les deux canaux</div>
+                            <div class="mode-check"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-row">
+                <button class="btn-sec" onclick="goPhase1()">← Acteurs</button>
+                <button class="btn-primary" id="btn-sp1-next" onclick="goSp2()" disabled>Choisir les PK →</button>
+            </div>
+        </div>
+
+        <!-- Sub-phase 2.2 — PK -->
+        <div id="sp2" style="display:none;">
+            <div class="card">
+                <div class="card-head amber"><h2>Points kilométriques à réceptionner</h2></div>
+                <div class="card-body">
+                    <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+                        <div>
+                            <label class="lbl">De</label>
+                            <select id="pk-range-s" class="inp" style="width:130px;padding:8px 12px;"></select>
+                        </div>
+                        <div>
+                            <label class="lbl">À</label>
+                            <select id="pk-range-e" class="inp" style="width:130px;padding:8px 12px;"></select>
+                        </div>
+                        <button class="bm" onclick="applyRange()">Appliquer la plage</button>
+                        <button class="bm" onclick="selectAllPK(true)">Tout</button>
+                        <button class="bm" onclick="selectAllPK(false)">Aucun</button>
+                        <span id="pk-count" style="font-size:.81rem;color:var(--muted);"></span>
+                    </div>
+                    <div class="pk-grid-wrap"><div id="pk-checkboxes" class="pk-grid"></div></div>
+                </div>
+            </div>
+            <div class="nav-row">
+                <button class="btn-sec" onclick="goSp1()">← Type</button>
+                <button class="btn-primary" onclick="goSp3()">Détecter les sections →</button>
+            </div>
+        </div>
+
+        <!-- Sub-phase 2.3 — Sections -->
+        <div id="sp3" style="display:none;">
+            <div class="card">
+                <div class="card-head amber"><h2>Sections détectées</h2></div>
+                <div class="card-body">
+                    <p style="font-size:.83rem;color:#92400e;margin-bottom:14px;">
+                        Les PK sélectionnés couvrent les sections suivantes. Chaque section peut avoir des paramètres différents (épaisseurs, offsets).
+                    </p>
+                    <div id="sections-display"></div>
+                </div>
+            </div>
+            <div class="nav-row">
+                <button class="btn-sec" onclick="goSp2()">← PK</button>
+                <button class="btn-primary" onclick="goSp4()">Sélectionner les parties →</button>
+            </div>
+        </div>
+
+        <!-- Sub-phase 2.4 — Parties -->
+        <div id="sp4" style="display:none;">
+            <div class="card">
+                <div class="card-head amber"><h2>Parties de l'ouvrage à réceptionner</h2></div>
+                <div class="card-body">
+                    <div id="parties-grid"></div>
+                </div>
+            </div>
+            <div class="nav-row">
+                <button class="btn-sec" onclick="goSp3()">← Sections</button>
+                <button class="btn-cyan" id="btn-commencer" onclick="commencerReception()">
+                    <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    Commencer la réception
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════ PHASE 3 — Réception ═══════════════════ -->
+    <div id="phase3" style="display:none;">
+
+        <!-- Chargement côtes -->
+        <div id="rec-loading" style="display:none;text-align:center;padding:30px;font-size:.85rem;color:var(--muted);">
+            <svg class="spin" style="width:22px;height:22px;margin-bottom:8px;" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="#92400e" stroke-width="4" opacity=".25"/>
+                <path fill="#f59e0b" d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z"/>
+            </svg>
+            <p>Calcul des côtes théoriques…</p>
+        </div>
+
+        <!-- Info barre -->
+        <div id="rec-info" style="display:none;padding:10px 18px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;margin-bottom:14px;align-items:center;gap:16px;flex-wrap:wrap;font-size:.82rem;">
+            <span style="color:#92400e;">Projet :</span><strong id="ri-projet" style="color:var(--amber2);"></strong>
+            <span style="color:#92400e;">PK :</span><span id="ri-pks" style="color:var(--text);"></span>
+            <span style="color:#92400e;">Tolérance :</span><span id="ri-tol" style="color:#fcd34d;font-weight:700;"></span> cm
+            <span style="color:#92400e;">Mode :</span><span id="ri-mode" style="color:#c4b5fd;font-weight:700;"></span>
+        </div>
+
+        <!-- Stations de nivellement -->
+        <div id="stations-container"></div>
+        <div id="add-stn-wrap" style="display:none;margin-bottom:14px;">
+            <button class="btn-add-stn" onclick="addStation()">
+                <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                Ajouter une station de nivellement
+            </button>
+        </div>
+
+        <!-- Bilan -->
+        <div id="bilan-wrap" style="display:none;" class="bilan-bar">
+            <div class="bl"><strong id="bl-total">0</strong> <span style="color:#92400e;">points</span></div>
+            <div class="bl"><strong class="ecart-ok" id="bl-ok">0</strong> <span style="color:#92400e;">conformes</span></div>
+            <div class="bl"><strong class="ecart-nok" id="bl-nok">0</strong> <span style="color:#92400e;">non conformes</span></div>
+            <div class="bl"><strong id="bl-pct" style="color:var(--text);">—</strong> <span style="color:#92400e;">% conformité</span></div>
+            <div class="bilan-progress"><div class="bilan-fill" id="bl-bar" style="width:0%;background:#4ade80;"></div></div>
+            <span id="bl-nd" style="font-size:.78rem;color:#4a2800;margin-left:auto;font-style:italic;"></span>
+        </div>
+
+        <!-- Observations générales -->
+        <div class="card" id="obs-card" style="display:none;margin-top:14px;">
+            <div class="card-head amber"><h2>Observations générales</h2></div>
+            <div class="card-body">
+                <textarea id="obs-generales" rows="3" class="inp" placeholder="Observations sur la réception, réserves, commentaires…" style="resize:vertical;"></textarea>
+            </div>
+        </div>
+
+        <!-- Signatures -->
+        <div class="card" id="sig-card" style="display:none;margin-top:14px;">
+            <div class="card-head amber"><h2>Signatures</h2></div>
+            <div class="card-body">
+                <div class="sig-wrap">
+                    <div class="sig-box">
+                        <div class="sig-title">
+                            <span>Contrôleur MDC</span>
+                            <button class="bm" onclick="clearCanvas('sig-ctrl')">Effacer</button>
+                        </div>
+                        <canvas id="sig-ctrl" class="sig-canvas" width="600" height="140"></canvas>
+                        <div style="padding:8px 14px;font-size:.75rem;color:#4a2800;">
+                            <span id="sig-ctrl-name"></span>
+                        </div>
+                    </div>
+                    <div class="sig-box">
+                        <div class="sig-title">
+                            <span>Représentant Entreprise</span>
+                            <button class="bm" onclick="clearCanvas('sig-et')">Effacer</button>
+                        </div>
+                        <canvas id="sig-et" class="sig-canvas" width="600" height="140"></canvas>
+                        <div style="padding:8px 14px;font-size:.75rem;color:#4a2800;">
+                            <span id="sig-et-name"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions export -->
+        <div id="export-card" style="display:none;margin-top:14px;flex-wrap:wrap;align-items:center;gap:10px;">
+            <button class="btn-primary" onclick="genererPDF(false)" id="btn-pdf">
+                <svg style="width:15px;height:15px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                Télécharger le PDF
+            </button>
+            <button class="btn-sec" onclick="genererPDF(true)" id="btn-preview">
+                Aperçu impression
+            </button>
+            <button class="btn-sec" onclick="openEmailModal()" id="btn-email" style="display:flex;align-items:center;gap:6px;">
+                <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                Envoyer par email
+            </button>
+            <button class="btn-sec" onclick="goPhase2()" style="margin-left:auto;">
+                ← Modifier le paramétrage
+            </button>
+        </div>
+    </div>
+
+</div><!-- .page -->
+
+<!-- ── Modal interpolation ─────────────────────────────────────────────────── -->
+<div id="interp-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeInterpModal()">✕</button>
+        <div class="modal-title">Ajouter un point interpolé</div>
+        <p style="font-size:.83rem;color:#92400e;margin-bottom:16px;">
+            Saisissez la valeur du PK interpolé à insérer dans le tableau de réception.
+            Ce point sera exclu du bilan de conformité.
+        </p>
+        <label class="lbl">Valeur du PK interpolé</label>
+        <input type="text" id="interp-pk-val" class="inp" placeholder="Ex : 2+320" style="margin-bottom:16px;">
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn-sec" onclick="closeInterpModal()">Annuler</button>
+            <button class="btn-primary" onclick="confirmInterp()">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Modal email ─────────────────────────────────────────────────────────── -->
+<div id="email-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeEmailModal()">✕</button>
+        <div class="modal-title">Envoyer la fiche par email</div>
+        <p style="font-size:.83rem;color:#92400e;margin-bottom:16px;">
+            Un PDF de la fiche de réception sera généré et envoyé aux destinataires.
+        </p>
+        <label class="lbl">Destinataire 1 (obligatoire)</label>
+        <input type="email" id="email-to1" class="inp" placeholder="controleur@exemple.com" style="margin-bottom:10px;">
+        <label class="lbl">Destinataire 2 (optionnel)</label>
+        <input type="email" id="email-to2" class="inp" placeholder="entreprise@exemple.com" style="margin-bottom:16px;">
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button class="btn-sec" onclick="closeEmailModal()">Annuler</button>
+            <button class="btn-primary" onclick="sendEmail()" id="btn-send-email">Envoyer</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── État global ───────────────────────────────────────────────────────────────
+const PROJET_ID  = {{ projet.id }};
+const PROJET_NOM = {{ projet.nom | tojson }};
+
+let cfg         = null;   // config chargée depuis /api/pro/projets/<id>/config
+let selectedMode = null;
+let allPKs      = [];
+let selectedElts = new Set();  // clés des éléments sélectionnés
+let receptionRows = [];        // [{pk, key, label, groupe, z_ref, theorique, rowIdx}]
+let currentPhase  = 1;
+let currentSp     = 1;
+
+// ── Phase navigation ──────────────────────────────────────────────────────────
+function setPhase(n) {
+    [1,2,3].forEach(i => {
+        document.getElementById(`phase${i}`).style.display = i === n ? '' : 'none';
+        const num = document.getElementById(`phn${i}`);
+        const lbl = document.getElementById(`phl${i}`);
+        const sep = document.getElementById(`phs${i}`);
+        if (i < n)  { num.className = 'ph-num done';   lbl.className = 'ph-label done'; }
+        if (i === n){ num.className = 'ph-num active'; lbl.className = 'ph-label active'; }
+        if (i > n)  { num.className = 'ph-num';        lbl.className = 'ph-label'; }
+        if (sep) sep.className = 'ph-sep' + (i < n ? ' done' : '');
+    });
+    currentPhase = n;
+    window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function setSp(n) {
+    [1,2,3,4].forEach(i => {
+        const el = document.getElementById(`sp${i}`);
+        if (el) el.style.display = i === n ? '' : 'none';
+        const dot = document.getElementById(`ss${i}`);
+        const lbl = document.getElementById(`ssl${i}`);
+        const sep = document.getElementById(`ssep${i}`);
+        if (!dot) return;
+        if (i < n)  { dot.className = 'ss-dot done';   lbl.className = 'ss-lbl done'; }
+        if (i === n){ dot.className = 'ss-dot active'; lbl.className = 'ss-lbl active'; }
+        if (i > n)  { dot.className = 'ss-dot';        lbl.className = 'ss-lbl'; }
+        if (sep) sep.className = 'ss-sep' + (i < n ? ' done' : '');
+    });
+    currentSp = n;
+    window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function goPhase1() { setPhase(1); }
+
+async function goPhase2() {
+    const nom = document.getElementById('ctrl-nom').value.trim();
+    if (!nom) { alert('Veuillez saisir le nom du contrôleur.'); return; }
+    setPhase(2);
+    if (!cfg) await loadConfig();
+}
+
+function goPhase3() { setPhase(3); }
+function goSp1() { setSp(1); }
+function goSp2() {
+    if (!selectedMode) { alert('Sélectionnez un type de réception.'); return; }
+    buildPKList();
+    setSp(2);
+}
+function goSp3() {
+    const pks = getSelectedPKs();
+    if (!pks.length) { alert('Sélectionnez au moins un PK.'); return; }
+    buildSectionsDisplay(pks);
+    setSp(3);
+}
+function goSp4() {
+    buildPartiesGrid();
+    setSp(4);
+}
+
+// ── Chargement config Excel ───────────────────────────────────────────────────
+async function loadConfig() {
+    document.getElementById('cfg-loading').style.display = 'flex';
+    document.getElementById('cfg-err').style.display = 'none';
+    try {
+        const r = await fetch(`/api/pro/projets/${PROJET_ID}/config`);
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || `Erreur ${r.status}`);
+        cfg = data;
+        allPKs = cfg.pks || [];
+        if (cfg.tolerance) document.getElementById('tolerance').value = cfg.tolerance;
+
+        // Activer/désactiver les modes disponibles
+        applyModeAvailability();
+
+        document.getElementById('cfg-loading').style.display = 'none';
+        setSp(1);
+        document.getElementById('sp1').style.display = '';
+    } catch(e) {
+        document.getElementById('cfg-loading').style.display = 'none';
+        document.getElementById('cfg-err').textContent = 'Erreur de chargement : ' + e.message;
+        document.getElementById('cfg-err').style.display = '';
+    }
+}
+
+function applyModeAvailability() {
+    const has = { terrassement: cfg.has_ter, assainissement_g: cfg.has_ass_g, assainissement_d: cfg.has_ass_d, assainissement: cfg.has_ass_g || cfg.has_ass_d };
+    document.querySelectorAll('.mode-card').forEach(card => {
+        const mode = card.dataset.mode;
+        if (!has[mode]) {
+            card.classList.add('disabled');
+            card.querySelector('input').disabled = true;
+        }
+    });
+    // Sélectionner automatiquement le premier disponible
+    if (!selectedMode) {
+        const available = Object.keys(has).find(k => has[k]);
+        if (available) {
+            const card = document.querySelector(`.mode-card[data-mode="${available}"]`);
+            if (card) selectMode(card);
+        }
+    }
+}
+
+// ── Sélection mode ────────────────────────────────────────────────────────────
+function selectMode(card) {
+    if (card.classList.contains('disabled')) return;
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedMode = card.dataset.mode;
+    document.getElementById('btn-sp1-next').disabled = false;
+}
+
+// ── PK selection ──────────────────────────────────────────────────────────────
+function buildPKList() {
+    const cont = document.getElementById('pk-checkboxes');
+    const ss = document.getElementById('pk-range-s');
+    const se = document.getElementById('pk-range-e');
+    cont.innerHTML = ss.innerHTML = se.innerHTML = '';
+    allPKs.forEach((pk, i) => {
+        ss.appendChild(new Option(pk, pk));
+        se.appendChild(new Option(pk, pk));
+        const d = document.createElement('label');
+        d.className = 'pk-row';
+        d.innerHTML = `<input type="checkbox" data-pk="${pk}">
+                       <label>${pk}</label>`;
+        cont.appendChild(d);
+    });
+    if (allPKs.length >= 2) {
+        ss.value = allPKs[0];
+        se.value = allPKs[allPKs.length-1];
+    }
+    cont.querySelectorAll('input').forEach(cb => cb.addEventListener('change', updatePKCount));
+    updatePKCount();
+}
+function getSelectedPKs() {
+    return [...document.querySelectorAll('#pk-checkboxes input:checked')].map(cb => cb.dataset.pk);
+}
+function applyRange() {
+    const s = document.getElementById('pk-range-s').value;
+    const e = document.getElementById('pk-range-e').value;
+    const iS = allPKs.indexOf(s), iE = allPKs.indexOf(e);
+    if (iS < 0 || iE < 0 || iS > iE) return;
+    document.querySelectorAll('#pk-checkboxes input').forEach((cb, i) => { cb.checked = (i >= iS && i <= iE); });
+    updatePKCount();
+}
+function selectAllPK(v) {
+    document.querySelectorAll('#pk-checkboxes input').forEach(cb => { cb.checked = v; });
+    updatePKCount();
+}
+function updatePKCount() {
+    const n = document.querySelectorAll('#pk-checkboxes input:checked').length;
+    document.getElementById('pk-count').textContent = `${n} PK sélectionné${n>1?'s':''}`;
+}
+
+// ── Sections détectées ────────────────────────────────────────────────────────
+const _GRPS_BY_MODE = {
+    terrassement:    ['AXE'],
+    assainissement_g:['ASG'],
+    assainissement_d:['ASD'],
+    assainissement:  ['ASG', 'ASD'],
+};
+const _GRP_LABELS = { AXE:'Terrassement (AXE)', TER:'Terrassement (TER)', ASG:'Assainissement Gauche', ASD:'Assainissement Droit' };
+const _GRP_COLORS = { AXE:'#f59e0b', TER:'#34d399', ASG:'#818cf8', ASD:'#f472b6' };
+
+function buildSectionsDisplay(selectedPKs) {
+    const pkMap  = cfg.pk_m_map     || {};
+    const secsInfo = cfg.sections_info || {};
+    const groups = _GRPS_BY_MODE[selectedMode] || [];
+    const wrap   = document.getElementById('sections-display');
+    wrap.innerHTML = '';
+
+    let total = 0;
+    for (const grp of groups) {
+        const secs = secsInfo[grp] || [];
+        if (!secs.length) {
+            const div = document.createElement('div');
+            div.className = 'sec-group';
+            div.innerHTML = `<div class="sec-group-title" style="color:${_GRP_COLORS[grp]||'#f59e0b'}">${_GRP_LABELS[grp]||grp}</div>
+                             <p style="font-size:.82rem;color:#4a2800;font-style:italic;">Aucune section définie pour ce groupe.</p>`;
+            wrap.appendChild(div);
+            continue;
+        }
+        const div = document.createElement('div');
+        div.className = 'sec-group';
+        div.innerHTML = `<div class="sec-group-title" style="color:${_GRP_COLORS[grp]||'#f59e0b'}">${_GRP_LABELS[grp]||grp}</div>`;
+        let hasAnySec = false;
+        secs.forEach((sec, i) => {
+            const pksInSec = selectedPKs.filter(pk => {
+                const m = pkMap[pk];
+                if (m === undefined || m === null) return false;
+                if (m < sec.pk_debut_m) return false;
+                if (sec.pk_fin_m !== null && sec.pk_fin_m !== undefined && m > sec.pk_fin_m) return false;
+                return true;
+            });
+            if (!pksInSec.length) return;
+            hasAnySec = true;
+            total += pksInSec.length;
+            const finLabel = sec.pk_fin_m !== null && sec.pk_fin_m !== undefined ? `${sec.pk_fin_m} m` : 'fin';
+            const item = document.createElement('div');
+            item.className = 'sec-item';
+            item.innerHTML = `<span class="sec-range">Section ${i+1} — ${sec.pk_debut_m} m → ${finLabel}</span>
+                              <span class="sec-count">${pksInSec.length} PK</span>`;
+            div.appendChild(item);
+        });
+        if (!hasAnySec) {
+            div.innerHTML += `<p style="font-size:.82rem;color:#4a2800;font-style:italic;">Aucun PK sélectionné ne tombe dans les sections ${_GRP_LABELS[grp]||grp}.</p>`;
+        }
+        wrap.appendChild(div);
+    }
+    if (!total) {
+        wrap.innerHTML = `<p style="font-size:.83rem;color:#4a2800;font-style:italic;">Aucune section trouvée pour les PK sélectionnés.</p>`;
+    }
+}
+
+// ── Parties de l'ouvrage ──────────────────────────────────────────────────────
+const _GROUPE_FILTER = {
+    terrassement:    ['AXE','TER'],
+    assainissement_g:['ASG'],
+    assainissement_d:['ASD'],
+    assainissement:  ['ASG','ASD'],
+};
+
+// Retourne tous les keys TER de cfg.elements dont le label de profil correspond à profileLabel
+function _terKeysByProfileLabel(profileLabel) {
+    // TER elements ont des keys de la forme TER_{profileLabel}__{couche}
+    return (cfg.elements || [])
+        .filter(e => e.groupe === 'TER' && e.key.startsWith(`TER_${profileLabel}__`))
+        .map(e => e.key);
+}
+
+function buildPartiesGrid() {
+    const grid = document.getElementById('parties-grid');
+    grid.innerHTML = '';
+    selectedElts.clear();
+
+    // ── SECTION A : Catégories d'éléments (AXE / ASG / ASD, pas TER) ─────────
+    const grpFiltre = _GROUPE_FILTER[selectedMode] || [];
+    const eltsCat = (cfg.elements || []).filter(e =>
+        grpFiltre.includes(e.groupe) && e.groupe !== 'TER'
+    );
+    const byCat = {};
+    eltsCat.forEach(e => { (byCat[e.groupe] = byCat[e.groupe] || []).push(e); });
+    const catGrps = Object.keys(byCat);
+
+    if (catGrps.length) {
+        const secA = document.createElement('div');
+        secA.innerHTML = `<div style="font-size:.8rem;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Parties de l'ouvrage</div>`;
+        const toolbarA = document.createElement('div');
+        toolbarA.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;';
+        toolbarA.innerHTML = `<button class="bm" onclick="selectAllElts(true)">Tout</button>
+                               <button class="bm" onclick="selectAllElts(false)">Aucun</button>
+                               <span id="elt-count" style="font-size:.8rem;color:var(--muted);"></span>`;
+        secA.appendChild(toolbarA);
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `display:grid;grid-template-columns:repeat(${Math.min(catGrps.length,3)},1fr);gap:0;border:1px solid var(--border2);border-radius:10px;overflow:hidden;`;
+        catGrps.forEach((grp, gi) => {
+            const col = document.createElement('div');
+            col.style.cssText = `border-right:${gi < catGrps.length-1 ? '1px solid var(--border2)' : 'none'};padding:8px 0 4px;`;
+            const hdr = document.createElement('div');
+            hdr.className = 'grp-header';
+            hdr.style.color = _GRP_COLORS[grp] || 'var(--amber)';
+            hdr.innerHTML = `${_GRP_LABELS[grp]||grp}
+                <span style="float:right;font-weight:normal;cursor:pointer;color:#92400e;" onclick="toggleGrp('${grp}',true)">Tout</span>
+                <span style="float:right;font-weight:normal;cursor:pointer;color:#4a2800;margin-right:6px;" onclick="toggleGrp('${grp}',false)">Aucun</span>`;
+            col.appendChild(hdr);
+            byCat[grp].forEach(elt => {
+                const row = document.createElement('label');
+                row.className = 'elt-row';
+                row.innerHTML = `<input type="checkbox" class="elt-cb" data-key="${elt.key}" data-grp="${grp}" checked onchange="onEltChange()">
+                                 <span class="elt-lbl">${elt.label}</span>`;
+                // Pre-check
+                selectedElts.add(elt.key);
+                col.appendChild(row);
+            });
+            wrapper.appendChild(col);
+        });
+        secA.appendChild(wrapper);
+        grid.appendChild(secA);
+    } else {
+        // Pas de catégories disponibles (mode sans AXE/ASG/ASD visible)
+        const ph = document.createElement('div');
+        ph.id = 'elt-count';
+        ph.style.cssText = 'font-size:.8rem;color:var(--muted);margin-bottom:10px;';
+        grid.appendChild(ph);
+    }
+
+    // ── SECTION B : Points de mesure du profil TER ───────────────────────────
+    const profSecs = cfg.profil_sections || [];
+    const hasTer   = grpFiltre.includes('TER') && profSecs.length > 0;
+
+    if (hasTer) {
+        const sep = document.createElement('div');
+        sep.className = 'profil-section-sep';
+        sep.innerHTML = `<span>Points de mesure du profil</span>`;
+        grid.appendChild(sep);
+
+        profSecs.forEach((sec, si) => {
+            const secWrap = document.createElement('div');
+            secWrap.className = 'profil-sec';
+
+            const debLbl = sec.pk_debut_m !== null && sec.pk_debut_m !== undefined ? `${sec.pk_debut_m} m` : '?';
+            const finLbl = sec.pk_fin_m   !== null && sec.pk_fin_m   !== undefined ? `${sec.pk_fin_m} m`   : 'fin';
+            const title  = document.createElement('div');
+            title.className = 'profil-sec-title';
+            title.textContent = `Section ${si+1} — ${debLbl} → ${finLbl}`;
+            secWrap.appendChild(title);
+
+            const sides = document.createElement('div');
+            sides.className = 'profil-sides';
+
+            ['g','d'].forEach(side => {
+                const pts = sec[side] || [];
+                if (!pts.length) return;
+                const color = side === 'g' ? 'asg' : 'asd';
+                const sideLabel = side === 'g' ? 'Côté Gauche' : 'Côté Droit';
+                const sideColor = side === 'g' ? 'side-g' : 'side-d';
+
+                const wrap = document.createElement('div');
+                wrap.className = `profil-table-wrap ${sideColor}`;
+
+                const table = document.createElement('table');
+                table.innerHTML = `<thead><tr>
+                    <th style="width:28px;"></th>
+                    <th>${sideLabel}</th>
+                    <th>Dist. axe</th>
+                    <th>Pente</th>
+                </tr></thead>`;
+                const tbody = document.createElement('tbody');
+                tbody.id = `profil-tbody-${si}-${side}`;
+
+                pts.forEach((pt, pi) => {
+                    _addProfilRow(tbody, si, side, pt.label, pt.dist_axe_m, pt.pente_pct, true);
+                });
+                table.appendChild(tbody);
+                wrap.appendChild(table);
+
+                const addBtn = document.createElement('button');
+                addBtn.className = 'profil-add-row';
+                addBtn.innerHTML = `+ Ajouter un point`;
+                addBtn.onclick = () => _addProfilRow(
+                    document.getElementById(`profil-tbody-${si}-${side}`), si, side, '', null, null, true
+                );
+                wrap.appendChild(addBtn);
+                sides.appendChild(wrap);
+            });
+            secWrap.appendChild(sides);
+            grid.appendChild(secWrap);
+        });
+    }
+
+    updateEltCount();
+}
+
+// Ajoute une ligne dans une table profil et met à jour selectedElts
+function _addProfilRow(tbody, si, side, label, dist, pente, checked) {
+    const ri = `p${si}${side}${tbody.rows.length}`;
+    const tr = document.createElement('tr');
+    const distStr  = dist  !== null && dist  !== undefined ? dist.toFixed(3)  : '';
+    const penteStr = pente !== null && pente !== undefined ? pente.toFixed(2) : '';
+    tr.innerHTML = `
+        <td style="text-align:center;padding:4px 6px;">
+            <input type="checkbox" class="profil-pt-cb" data-label="${label}"
+                   data-si="${si}" data-side="${side}"
+                   ${checked ? 'checked' : ''}
+                   onchange="onProfilPtChange(this)">
+        </td>
+        <td><span class="profil-pt-lbl" contenteditable="false">${label}</span></td>
+        <td><span class="profil-pt-dist">${distStr ? distStr + ' m' : '—'}</span></td>
+        <td><span class="profil-pt-pente">${penteStr ? penteStr + ' %' : '—'}</span></td>`;
+    tbody.appendChild(tr);
+    // Sync selectedElts
+    if (checked && label) {
+        _terKeysByProfileLabel(label).forEach(k => selectedElts.add(k));
+    }
+}
+
+function onProfilPtChange(cb) {
+    const label = cb.dataset.label;
+    const keys  = _terKeysByProfileLabel(label);
+    if (cb.checked) keys.forEach(k => selectedElts.add(k));
+    else            keys.forEach(k => selectedElts.delete(k));
+    updateEltCount();
+}
+
+function toggleGrp(grp, v) {
+    document.querySelectorAll(`.elt-cb[data-grp="${grp}"]`).forEach(cb => {
+        cb.checked = v;
+        v ? selectedElts.add(cb.dataset.key) : selectedElts.delete(cb.dataset.key);
+    });
+    updateEltCount();
+}
+function selectAllElts(v) {
+    document.querySelectorAll('.elt-cb').forEach(cb => {
+        cb.checked = v;
+        v ? selectedElts.add(cb.dataset.key) : selectedElts.delete(cb.dataset.key);
+    });
+    // Sync profil points
+    document.querySelectorAll('.profil-pt-cb').forEach(cb => {
+        cb.checked = v;
+        const keys = _terKeysByProfileLabel(cb.dataset.label);
+        if (v) keys.forEach(k => selectedElts.add(k));
+        else   keys.forEach(k => selectedElts.delete(k));
+    });
+    updateEltCount();
+}
+function onEltChange() {
+    selectedElts.clear();
+    document.querySelectorAll('.elt-cb:checked').forEach(cb => selectedElts.add(cb.dataset.key));
+    document.querySelectorAll('.profil-pt-cb:checked').forEach(cb => {
+        _terKeysByProfileLabel(cb.dataset.label).forEach(k => selectedElts.add(k));
+    });
+    updateEltCount();
+}
+function updateEltCount() {
+    const n = selectedElts.size;
+    const el = document.getElementById('elt-count');
+    if (el) el.textContent = `${n} élément${n>1?'s':''} sélectionné${n>1?'s':''}`;
+}
+
+// ── Commencer la réception ─────────────────────────────────────────────────────
+async function commencerReception() {
+    const pks = getSelectedPKs();
+    if (!pks.length)      { alert('Sélectionnez au moins un PK.'); return; }
+    if (!selectedElts.size){ alert('Sélectionnez au moins un élément.'); return; }
+
+    setPhase(3);
+    document.getElementById('rec-loading').style.display = '';
+    document.getElementById('rec-info').style.display = 'none';
+    document.getElementById('stations-container').innerHTML = '';
+    document.getElementById('add-stn-wrap').style.display = 'none';
+    document.getElementById('obs-card').style.display = 'none';
+    document.getElementById('sig-card').style.display = 'none';
+    document.getElementById('export-card').style.display = 'none';
+    document.getElementById('bilan-wrap').style.display = 'none';
+
+    try {
+        const r = await fetch(`/api/pro/projets/${PROJET_ID}/cotes`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ pks }),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || `Erreur ${r.status}`);
+        buildReceptionTable(pks, data.cotes_by_pk || {});
+    } catch(e) {
+        document.getElementById('rec-loading').style.display = 'none';
+        alert('Erreur de calcul des côtes : ' + e.message);
+        setPhase(2); setSp(4);
+    }
+}
+
+// ── Construction table de réception ───────────────────────────────────────────
+const _MODE_LABELS = {
+    terrassement:'Terrassement', assainissement_g:'Assainissement Gauche',
+    assainissement_d:'Assainissement Droit', assainissement:'Assainissement G+D',
+};
+
+// ── Stations de nivellement ────────────────────────────────────────────────────
+let stationCount = 0;
+let _cotesByPkGlobal = {};
+let _pksGlobal = [];
+
+function buildReceptionTable(pks, cotesByPk) {
+    _pksGlobal  = pks;
+    _cotesByPkGlobal = cotesByPk;
+    receptionRows = [];
+    stationCount = 0;
+    document.getElementById('stations-container').innerHTML = '';
+    addStation();   // première station
+
+    // Info barre
+    document.getElementById('ri-projet').textContent = PROJET_NOM;
+    document.getElementById('ri-pks').textContent = `${_pksGlobal[0]} → ${_pksGlobal[_pksGlobal.length-1]} (${_pksGlobal.length} PK)`;
+    document.getElementById('ri-tol').textContent  = document.getElementById('tolerance').value;
+    document.getElementById('ri-mode').textContent = _MODE_LABELS[selectedMode] || selectedMode;
+
+    // Noms dans signatures
+    document.getElementById('sig-ctrl-name').textContent = document.getElementById('ctrl-nom').value;
+    document.getElementById('sig-et-name').textContent   = (document.getElementById('et-nom').value || '') + ' — ' + (document.getElementById('et-societe').value || '');
+
+    document.getElementById('rec-loading').style.display  = 'none';
+    document.getElementById('rec-info').style.display     = 'flex';
+    document.getElementById('add-stn-wrap').style.display = '';
+    document.getElementById('obs-card').style.display     = '';
+    document.getElementById('sig-card').style.display     = '';
+    document.getElementById('export-card').style.display  = 'flex';
+    document.getElementById('bilan-wrap').style.display   = 'flex';
+
+    initSignatures();
+    majBilan();
+}
+
+// ── Ajouter une station de nivellement ───────────────────────────────────────
+function addStation() {
+    stationCount++;
+    const sn = stationCount;
+    const container = document.getElementById('stations-container');
+    const allowedGrps = _GROUPE_FILTER[selectedMode] || null;
+    const pks = _pksGlobal;
+    const cotesByPk = _cotesByPkGlobal;
+
+    // Carte station
+    const card = document.createElement('div');
+    card.className = 'stn-card';
+    card.id = `stn-card-${sn}`;
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = 'stn-hdr';
+    hdr.innerHTML = `
+        <div class="stn-hdr-title">
+            <span style="background:rgba(245,158,11,.15);color:var(--amber2);border-radius:99px;padding:2px 10px;font-size:.78rem;">${sn}</span>
+            Station de nivellement n°${sn}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+            ${sn > 1 ? `<button class="bm" onclick="removeStation(${sn})" style="color:#ef4444;border-color:rgba(239,68,68,.3);">Supprimer</button>` : ''}
+        </div>`;
+    card.appendChild(hdr);
+
+    // Params (cote repere + LAR → cote bleue)
+    const params = document.createElement('div');
+    params.className = 'stn-params';
+    params.innerHTML = `
+        <div class="p-group">
+            <label class="lbl">Cote du repère (m NGF)</label>
+            <input type="number" step="0.001" class="inp cote-rep-inp" id="cote-rep-${sn}" placeholder="Ex : 102.340"
+                   oninput="validerCoteBleue(${sn})">
+        </div>
+        <div class="p-group">
+            <label class="lbl">Lecture Arrière L.A.R (m)</label>
+            <input type="number" step="0.001" class="inp lar-inp" id="lar-stn-${sn}" placeholder="Ex : 1.245"
+                   oninput="validerCoteBleue(${sn})">
+        </div>
+        <div class="p-group">
+            <label class="lbl">Cote bleue / H.I. (m) <span style="font-weight:400;color:#4a2800;">= repère + L.A.R</span></label>
+            <div class="stn-cb-wrap">
+                <div class="cb-display" id="cb-stn-${sn}">—</div>
+                <button class="btn-valider-cb" onclick="validerCoteBleue(${sn})">✓ Valider</button>
+            </div>
+        </div>`;
+    card.appendChild(params);
+
+    // Table
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'rec-table-wrap';
+    tableWrap.style.padding = '0';
+    const table = document.createElement('table');
+    table.className = 'rec';
+    table.innerHTML = `<thead>
+        <tr>
+            <th>PK</th>
+            <th>Élément</th>
+            <th style="text-align:center;" title="Lecture Arrière (repère station)">L.A.R</th>
+            <th style="text-align:center;" title="Lecture Avant Visée — saisir sur terrain">L.A.V</th>
+            <th style="text-align:right;" title="Cote pratique = Cote bleue − LAV">Cote pratique</th>
+            <th style="text-align:right;">Théorique</th>
+            <th style="text-align:right;">Écart+</th>
+            <th style="text-align:right;">Écart−</th>
+            <th style="text-align:center;">Statut</th>
+            <th style="text-align:center;">Valid.</th>
+            <th style="text-align:center;">Obs</th>
+        </tr>
+    </thead>`;
+    const tbody = document.createElement('tbody');
+    tbody.id = `tbody-stn-${sn}`;
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    card.appendChild(tableWrap);
+    container.appendChild(card);
+
+    // Remplir les lignes
+    let rowIdx = receptionRows.length;
+    pks.forEach((pk, pkIdx) => {
+        const elts = (cotesByPk[pk] || []).filter(e =>
+            (!allowedGrps || allowedGrps.includes(e.groupe)) && selectedElts.has(e.key)
+        );
+        if (!elts.length) return;
+
+        // Séparateur PK
+        const sep = document.createElement('tr');
+        sep.className = 'sep-pk';
+        sep.dataset.pk = pk;
+        sep.innerHTML = `<td colspan="11">PK ${pk}</td>`;
+        tbody.appendChild(sep);
+
+        elts.forEach(e => {
+            const ri = rowIdx++;
+            receptionRows.push({ pk, key: e.key, label: e.label, groupe: e.groupe, theorique: e.cote, rowIdx: ri, sn });
+
+            const tr = document.createElement('tr');
+            tr.id = `rec-row-${ri}`;
+            tr.dataset.theorique = (e.cote !== null && e.cote !== undefined) ? e.cote : 'NaN';
+            tr.dataset.sn = sn;
+            tr.innerHTML = `
+                <td style="color:#92400e;font-variant-numeric:tabular-nums;">${pk}</td>
+                <td style="font-size:.8rem;">${e.label}</td>
+                <td style="text-align:center;" class="lar-disp" id="lar-disp-${ri}">—</td>
+                <td style="text-align:center;">
+                    <input type="number" step="0.001" class="inp-rec lav-inp" style="width:88px;"
+                           placeholder="ex: 1.234" id="lav-${ri}" data-sn="${sn}"
+                           oninput="onLAV(${ri},${sn})">
+                </td>
+                <td style="text-align:right;" id="prat-${ri}"><span class="prat-cell stale">—</span></td>
+                <td style="text-align:right;" class="cote-th">${e.cote !== null && e.cote !== undefined ? Number(e.cote).toFixed(3) : '—'}</td>
+                <td style="text-align:right;" id="ep-${ri}">—</td>
+                <td style="text-align:right;" id="em-${ri}">—</td>
+                <td style="text-align:center;" id="st-${ri}"><span style="color:#4a2800;font-size:.75rem;">—</span></td>
+                <td style="text-align:center;">
+                    <button class="btn-val" data-state="" id="val-${ri}" onclick="cycleVal(${ri})" title="Cliquer pour changer">—</button>
+                </td>
+                <td style="text-align:center;">
+                    <button class="obs-toggle" id="obs-btn-${ri}" onclick="toggleObs(${ri})">📝</button>
+                </td>`;
+            tbody.appendChild(tr);
+
+            // Obs sub-row
+            const obsRow = document.createElement('tr');
+            obsRow.id = `obs-row-${ri}`;
+            obsRow.className = 'obs-row';
+            obsRow.style.display = 'none';
+            obsRow.innerHTML = `<td colspan="11"><div class="obs-inner">
+                <div style="flex:1;min-width:200px;">
+                    <textarea class="inp" rows="2" id="note-${ri}" placeholder="Note / observation…" style="font-size:.8rem;resize:vertical;"></textarea>
+                </div>
+                <div><div class="photo-list" id="photos-${ri}">
+                    <label class="photo-add">📷<input type="file" accept="image/*" capture="environment" style="display:none;" onchange="addPhoto(${ri},this)"></label>
+                </div></div>
+            </div></td>`;
+            tbody.appendChild(obsRow);
+        });
+
+        // Bouton interpolation entre PK
+        if (pkIdx < pks.length - 1) {
+            const interpRow = document.createElement('tr');
+            interpRow.className = 'interp-sep-row';
+            interpRow.dataset.afterPk = pk;
+            interpRow.dataset.sn = sn;
+            interpRow.innerHTML = `<td colspan="11"><button class="interp-btn" onclick="openInterpModal('${pk}',${sn})">＋ Interpolé après PK ${pk}</button></td>`;
+            tbody.appendChild(interpRow);
+        }
+    });
+
+    majBilan();
+}
+
+function removeStation(sn) {
+    const card = document.getElementById(`stn-card-${sn}`);
+    if (!card) return;
+    // Retirer les receptionRows de cette station
+    receptionRows = receptionRows.filter(r => r.sn !== sn);
+    card.remove();
+    majBilan();
+}
+
+// ── Calcul cote bleue d'une station ──────────────────────────────────────────
+function updateCoteBleue(sn) {
+    const rep = parseFloat(document.getElementById(`cote-rep-${sn}`)?.value);
+    const lar = parseFloat(document.getElementById(`lar-stn-${sn}`)?.value);
+    const cbEl = document.getElementById(`cb-stn-${sn}`);
+    if (!cbEl) return;
+    if (!isNaN(rep) && !isNaN(lar)) {
+        const cb = (rep + lar).toFixed(3);
+        cbEl.textContent = cb;
+        cbEl.classList.add('ready');
+    } else {
+        cbEl.textContent = '—';
+        cbEl.classList.remove('ready');
+    }
+}
+
+function validerCoteBleue(sn) {
+    updateCoteBleue(sn);
+    // Propager la cote bleue à toutes les lignes de cette station
+    const lar = parseFloat(document.getElementById(`lar-stn-${sn}`)?.value);
+    document.querySelectorAll(`.lav-inp[data-sn="${sn}"]`).forEach(inp => {
+        const ri = parseInt(inp.id.replace('lav-', ''));
+        // Mettre à jour l'affichage LAR de la ligne
+        const larDisp = document.getElementById(`lar-disp-${ri}`);
+        if (larDisp) larDisp.textContent = !isNaN(lar) ? lar.toFixed(3) : '—';
+        // Recalculer la cote pratique si LAV est renseignée
+        onLAV(ri, sn);
+    });
+}
+
+// ── Saisie LAV par ligne ──────────────────────────────────────────────────────
+function onLAV(ri, sn) {
+    const lavEl = document.getElementById(`lav-${ri}`);
+    const lav   = parseFloat(lavEl?.value);
+    const cbEl  = document.getElementById(`cb-stn-${sn}`);
+    const cb    = parseFloat(cbEl?.textContent);
+    const pratEl= document.getElementById(`prat-${ri}`);
+    if (!pratEl) return;
+
+    if (!isNaN(lav) && !isNaN(cb)) {
+        const prat = cb - lav;
+        pratEl.innerHTML = `<span class="prat-cell">${prat.toFixed(3)}</span>`;
+        // Recalcule l'écart
+        const tr = document.getElementById(`rec-row-${ri}`);
+        if (tr) {
+            const th = parseFloat(tr.dataset.theorique);
+            _computeEcart(ri, prat, th);
+        }
+    } else {
+        pratEl.innerHTML = '<span class="prat-cell stale">—</span>';
+        const tr = document.getElementById(`rec-row-${ri}`);
+        if (tr) tr.className = '';
+        const epEl = document.getElementById(`ep-${ri}`);
+        const emEl = document.getElementById(`em-${ri}`);
+        const stEl = document.getElementById(`st-${ri}`);
+        if (epEl) epEl.innerHTML = '—';
+        if (emEl) emEl.innerHTML = '—';
+        if (stEl) stEl.innerHTML = '<span style="color:#4a2800;font-size:.75rem;">—</span>';
+    }
+    majBilan();
+}
+
+// ── Calcul écart pour une ligne ───────────────────────────────────────────────
+function _computeEcart(ri, cotePrat, coteTheo) {
+    const tol  = parseFloat(document.getElementById('tolerance').value) || 2.0;
+    const tr   = document.getElementById(`rec-row-${ri}`);
+    const epEl = document.getElementById(`ep-${ri}`);
+    const emEl = document.getElementById(`em-${ri}`);
+    const stEl = document.getElementById(`st-${ri}`);
+    if (!tr || !epEl || !emEl || !stEl) return;
+
+    if (isNaN(cotePrat) || isNaN(coteTheo)) {
+        tr.className = tr.classList.contains('interp-added') ? 'interp-added' : '';
+        epEl.innerHTML = emEl.innerHTML = '—';
+        epEl.className = emEl.className = '';
+        stEl.innerHTML = '<span style="color:#4a2800;font-size:.75rem;">—</span>';
+        return;
+    }
+    const diff = cotePrat - coteTheo;
+    const ep   = Math.max(0, diff);
+    const em   = Math.max(0, -diff);
+    const ok   = Math.abs(diff) <= tol;
+    const isInterp = tr.classList.contains('interp-added');
+
+    tr.className = isInterp ? 'interp-added' : (ok ? 'ok' : 'nok');
+    epEl.textContent = ep > 0 ? `+${ep.toFixed(3)}` : '—';
+    emEl.textContent = em > 0 ? `-${em.toFixed(3)}` : '—';
+    epEl.className   = ep > 0 ? (ok ? 'ecart-ok' : 'ecart-nok') : '';
+    emEl.className   = em > 0 ? (ok ? 'ecart-ok' : 'ecart-nok') : '';
+    stEl.innerHTML   = ok
+        ? '<span style="background:rgba(52,211,153,.12);color:#4ade80;border:1px solid rgba(52,211,153,.2);padding:2px 8px;border-radius:99px;font-size:.73rem;font-weight:700;">✓ OK</span>'
+        : `<span style="background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.25);padding:2px 8px;border-radius:99px;font-size:.73rem;font-weight:700;">${diff > 0 ? '▲ excédent' : '▼ déficit'}</span>`;
+}
+
+// ── Bilan (agrège toutes les stations) ───────────────────────────────────────
+function majBilan() {
+    const trs = document.querySelectorAll('#stations-container tr');
+    let total = 0, ok = 0, nok = 0, nd = 0;
+    trs.forEach(tr => {
+        if (tr.classList.contains('sep-pk') || tr.classList.contains('obs-row') || tr.classList.contains('interp-sep-row')) return;
+        if (tr.classList.contains('interp-added')) return;
+        if (!tr.id || !tr.id.startsWith('rec-row-')) return;
+        if (tr.classList.contains('ok'))  { total++; ok++; }
+        else if (tr.classList.contains('nok')) { total++; nok++; }
+        else nd++;
+    });
+    const pct = total > 0 ? Math.round(ok / total * 100) : null;
+    document.getElementById('bl-total').textContent = total;
+    document.getElementById('bl-ok').textContent    = ok;
+    document.getElementById('bl-nok').textContent   = nok;
+    document.getElementById('bl-pct').textContent   = pct !== null ? `${pct}%` : '—';
+    document.getElementById('bl-nd').textContent    = nd > 0 ? `${nd} non mesuré${nd>1?'s':''}` : '';
+    const bar = document.getElementById('bl-bar');
+    bar.style.width = `${pct || 0}%`;
+    bar.style.background = pct === null ? '#6b7280' : (pct >= 80 ? '#4ade80' : pct >= 50 ? '#fbbf24' : '#f87171');
+}
+
+// ── Validation cycle ──────────────────────────────────────────────────────────
+const _VAL_STATES = [
+    { key:'',    cls:'',    label:'—',          title:'Appuyer pour valider' },
+    { key:'vld', cls:'vld', label:'✓ Validé',   title:'Cliquer : → Non validé' },
+    { key:'nv',  cls:'nv',  label:'✗ Non valid.',title:'Cliquer : → À reprendre' },
+    { key:'ar',  cls:'ar',  label:'⚠ À reprendre',title:'Cliquer : → Effacer' },
+];
+function cycleVal(ri) {
+    const btn = document.getElementById(`val-${ri}`);
+    if (!btn) return;
+    const curKey = btn.dataset.state || '';
+    const curIdx = _VAL_STATES.findIndex(s => s.key === curKey);
+    const next   = _VAL_STATES[(curIdx + 1) % _VAL_STATES.length];
+    _VAL_STATES.forEach(s => { if (s.cls) btn.classList.remove(s.cls); });
+    if (next.cls) btn.classList.add(next.cls);
+    btn.dataset.state = next.key;
+    btn.textContent   = next.label;
+    btn.title         = next.title;
+}
+
+// ── Obs toggle ────────────────────────────────────────────────────────────────
+function toggleObs(ri) {
+    const row = document.getElementById(`obs-row-${ri}`);
+    const btn = document.getElementById(`obs-btn-${ri}`);
+    if (!row) return;
+    const open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : 'table-row';
+    btn.classList.toggle('active', !open);
+}
+
+// ── Photos ────────────────────────────────────────────────────────────────────
+function addPhoto(ri, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const list = document.getElementById(`photos-${ri}`);
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'photo-thumb';
+        img.title = 'Cliquer pour supprimer';
+        img.onclick = () => img.remove();
+        img.dataset.b64 = e.target.result;
+        list.insertBefore(img, list.querySelector('.photo-add'));
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+}
+function getPhotosForRow(ri) {
+    return [...document.querySelectorAll(`#photos-${ri} .photo-thumb`)].map(img => img.dataset.b64);
+}
+
+// ── Interpolation ─────────────────────────────────────────────────────────────
+let interpModalAfterPk = null;
+let interpModalSn = null;
+function openInterpModal(afterPk, sn) {
+    interpModalAfterPk = afterPk;
+    interpModalSn = sn;
+    document.getElementById('interp-pk-val').value = '';
+    document.getElementById('interp-modal').style.display = 'flex';
+}
+function closeInterpModal() {
+    document.getElementById('interp-modal').style.display = 'none';
+}
+function confirmInterp() {
+    const pkVal = document.getElementById('interp-pk-val').value.trim();
+    if (!pkVal) { alert('Saisissez une valeur de PK.'); return; }
+    closeInterpModal();
+
+    const sn = interpModalSn || 1;
+    const tbody = document.getElementById(`tbody-stn-${sn}`);
+    if (!tbody) return;
+
+    // Trouver la ligne repère : interp-sep-row avec data-after-pk matching, ou sep-pk en fallback
+    const insertAfter =
+        [...tbody.querySelectorAll('tr.interp-sep-row')]
+            .find(r => r.dataset.afterPk === String(interpModalAfterPk))
+        || [...tbody.querySelectorAll('tr.sep-pk')]
+            .find(r => r.dataset.pk === String(interpModalAfterPk));
+    if (!insertAfter) {
+        alert(`Impossible de trouver le PK ${interpModalAfterPk} dans la station.`);
+        return;
+    }
+
+    const ri = (Date.now() % 100000) | 0;
+    const cbVal = parseFloat(document.getElementById(`cb-stn-${sn}`)?.textContent) || NaN;
+    const larVal= parseFloat(document.getElementById(`lar-stn-${sn}`)?.value) || NaN;
+
+    const sepTr = document.createElement('tr');
+    sepTr.className = 'sep-pk';
+    sepTr.dataset.pk = pkVal;
+    sepTr.innerHTML = `<td colspan="11">PK ${pkVal} <em style="color:#4a2800;font-size:.7rem;">(interpolé)</em></td>`;
+
+    const tr = document.createElement('tr');
+    tr.id = `rec-row-${ri}`;
+    tr.className = 'interp-added';
+    tr.dataset.theorique = 'NaN';
+    tr.dataset.sn = sn;
+    tr.innerHTML = `
+        <td style="color:#4a2800;">${pkVal}</td>
+        <td style="color:#64748b;font-style:italic;">Interpolé</td>
+        <td class="lar-disp" id="lar-disp-${ri}">${!isNaN(larVal) ? larVal.toFixed(3) : '—'}</td>
+        <td><input type="number" step="0.001" class="inp-rec lav-inp" style="width:88px;" placeholder="1.234"
+                   id="lav-${ri}" data-sn="${sn}" oninput="onLAV(${ri},${sn})"></td>
+        <td id="prat-${ri}"><span class="prat-cell stale">—</span></td>
+        <td class="cote-th">—</td>
+        <td id="ep-${ri}">—</td><td id="em-${ri}">—</td>
+        <td id="st-${ri}"><span style="color:#4a2800;font-size:.75rem;">—</span></td>
+        <td><button class="btn-val" data-state="" id="val-${ri}" onclick="cycleVal(${ri})">—</button></td>
+        <td><button class="obs-toggle" id="obs-btn-${ri}" onclick="toggleObs(${ri})">📝</button></td>`;
+
+    const obsRow = document.createElement('tr');
+    obsRow.id = `obs-row-${ri}`;
+    obsRow.className = 'obs-row';
+    obsRow.style.display = 'none';
+    obsRow.innerHTML = `<td colspan="11"><div class="obs-inner">
+        <div style="flex:1;min-width:200px;"><textarea class="inp" rows="2" id="note-${ri}" placeholder="Note…" style="font-size:.8rem;resize:vertical;"></textarea></div>
+        <div><div class="photo-list" id="photos-${ri}"><label class="photo-add">📷<input type="file" accept="image/*" capture="environment" style="display:none;" onchange="addPhoto(${ri},this)"></label></div></div>
+    </div></td>`;
+
+    insertAfter.insertAdjacentElement('afterend', obsRow);
+    insertAfter.insertAdjacentElement('afterend', tr);
+    insertAfter.insertAdjacentElement('afterend', sepTr);
+}
+
+// ── Email ─────────────────────────────────────────────────────────────────────
+function openEmailModal() {
+    document.getElementById('email-modal').style.display = 'flex';
+}
+function closeEmailModal() {
+    document.getElementById('email-modal').style.display = 'none';
+}
+async function sendEmail() {
+    const to1 = document.getElementById('email-to1').value.trim();
+    const to2 = document.getElementById('email-to2').value.trim();
+    if (!to1) { alert('Saisissez au moins une adresse email.'); return; }
+
+    const btn = document.getElementById('btn-send-email');
+    btn.disabled = true;
+    btn.textContent = 'Envoi…';
+
+    try {
+        // Construire les mêmes données que genererPDF
+        const pdfData = await _buildPdfData();
+        const recipients = [to1, to2].filter(Boolean);
+        const r = await fetch('/api/send-fiche-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...pdfData, recipients }),
+        });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `Erreur ${r.status}`);
+        closeEmailModal();
+        alert('Email envoyé avec succès.');
+    } catch(e) {
+        alert('Erreur envoi email : ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Envoyer';
+    }
+}
+
+// ── Signatures ────────────────────────────────────────────────────────────────
+const _sigState = {};
+function initSignatures() {
+    ['ctrl','et'].forEach(id => {
+        const canvas = document.getElementById(`sig-${id}`);
+        if (!canvas || _sigState[id]) return;
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+        let lx = 0, ly = 0;
+        function getPos(e) {
+            const r = canvas.getBoundingClientRect();
+            const sc = canvas.width / r.width;
+            if (e.touches) return { x:(e.touches[0].clientX - r.left)*sc, y:(e.touches[0].clientY - r.top)*sc };
+            return { x:(e.clientX - r.left)*sc, y:(e.clientY - r.top)*sc };
+        }
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth   = 2;
+        ctx.lineCap     = 'round';
+        canvas.addEventListener('mousedown',  e => { drawing=true; const p=getPos(e); lx=p.x; ly=p.y; });
+        canvas.addEventListener('mousemove',  e => { if(!drawing) return; const p=getPos(e); ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke(); lx=p.x; ly=p.y; });
+        canvas.addEventListener('mouseup',    () => { drawing=false; });
+        canvas.addEventListener('mouseleave', () => { drawing=false; });
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing=true; const p=getPos(e); lx=p.x; ly=p.y; }, {passive:false});
+        canvas.addEventListener('touchmove',  e => { e.preventDefault(); if(!drawing) return; const p=getPos(e); ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y); ctx.stroke(); lx=p.x; ly=p.y; }, {passive:false});
+        canvas.addEventListener('touchend',   () => { drawing=false; });
+        _sigState[id] = true;
+    });
+}
+function clearCanvas(id) {
+    const c = document.getElementById(id);
+    c.getContext('2d').clearRect(0, 0, c.width, c.height);
+}
+function getSigBase64(id) {
+    const c = document.getElementById(id);
+    return c ? c.toDataURL('image/png') : '';
+}
+
+// ── Construction des données PDF ──────────────────────────────────────────────
+async function _buildPdfData() {
+    const tol = parseFloat(document.getElementById('tolerance').value) || 2.0;
+    const today = new Date().toLocaleDateString('fr-FR');
+    const dateRec = document.getElementById('date-rec').value || today;
+
+    // Collect rows grouped by PK (preserving station context)
+    const stationMap = {};
+
+    // Helper: map validation state key → human label
+    const _valLabel = { vld: 'Validé', nv: 'Non validé', ar: 'À reprendre', '': '' };
+
+    receptionRows.forEach(row => {
+        if (!stationMap[row.pk]) stationMap[row.pk] = { label: `PK ${row.pk}`, rows: [] };
+        const ri  = row.rowIdx;
+        const sn  = row.sn;
+
+        // LAV: input value
+        const lavStr = document.getElementById(`lav-${ri}`)?.value.trim() || '';
+        // Cote bleue for this station (text content of cb-stn-{sn})
+        const cbText = document.getElementById(`cb-stn-${sn}`)?.textContent.trim() || '';
+        // LAR for this station (shared by all rows in the station)
+        const larStr = document.getElementById(`lar-stn-${sn}`)?.value.trim() || '';
+        // Cote pratique: auto-displayed in prat-{ri} (read text of inner span)
+        const pratEl  = document.getElementById(`prat-${ri}`);
+        const pratStr = pratEl ? (pratEl.querySelector('.prat-cell')?.textContent.trim() || pratEl.textContent.trim() || '') : '';
+        // Validation
+        const valBtn   = document.getElementById(`val-${ri}`);
+        const valState = valBtn ? (valBtn.dataset.state || '') : '';
+        // Notes / photos
+        const note   = document.getElementById(`note-${ri}`)?.value.trim() || '';
+        const photos = getPhotosForRow(ri);
+
+        const th      = row.theorique;
+        const pratNum = parseFloat(pratStr);
+        let ecart = null, ecartStatus = 'unknown';
+        if (!isNaN(pratNum) && th !== null && !isNaN(Number(th))) {
+            const d = pratNum - Number(th);
+            ecart = d >= 0 ? `+${d.toFixed(3)}` : d.toFixed(3);
+            ecartStatus = Math.abs(d) <= tol ? 'ok' : (d > 0 ? 'positif' : 'negatif');
+        }
+
+        stationMap[row.pk].rows.push({
+            pk:             row.pk,
+            element_label:  row.label,
+            cote_label:     'NGF',
+            lar:            larStr,
+            lav:            lavStr,
+            cote_bleue:     cbText,
+            cote_mesuree:   pratStr,
+            cote_theorique: (th !== null && !isNaN(Number(th))) ? Number(th).toFixed(3) : '',
+            ecart:          ecart || '—',
+            ecart_status:   ecartStatus,
+            validation:     _valLabel[valState] || '',
+            observation:    note,
+            photos:         photos,
+            is_interpolated:false,
+        });
+    });
+
+    // Collect interpolated rows from all station tbodies
+    document.querySelectorAll('#stations-container tr.interp-added').forEach(tr => {
+        const ri    = tr.id.replace('rec-row-', '');
+        const sn    = tr.dataset.sn || '';
+        const pkVal = tr.querySelector('td:first-child')?.textContent?.trim() || '?';
+        const lavStr = document.getElementById(`lav-${ri}`)?.value.trim() || '';
+        const larStr = document.getElementById(`lar-stn-${sn}`)?.value.trim() || '';
+        const pratEl = document.getElementById(`prat-${ri}`);
+        const pratStr = pratEl ? (pratEl.querySelector('.prat-cell')?.textContent.trim() || '') : '';
+        const note   = document.getElementById(`note-${ri}`)?.value.trim() || '';
+        if (!stationMap[pkVal]) stationMap[pkVal] = { label: `PK ${pkVal} (interpolé)`, rows: [] };
+        stationMap[pkVal].rows.push({
+            pk: pkVal, element_label: 'Interpolé', cote_label: 'NGF',
+            lar: larStr, lav: lavStr, cote_bleue: '',
+            cote_mesuree: pratStr, cote_theorique: '',
+            ecart: '—', ecart_status: 'unknown', validation: '',
+            observation: note, photos: getPhotosForRow(ri), is_interpolated: true,
+        });
+    });
+
+    const pks = [...new Set(receptionRows.map(r => r.pk))];
+    const stations = pks.filter(pk => stationMap[pk]).map(pk => stationMap[pk]);
+    const allRows = stations.flatMap(s => s.rows.filter(r => !r.is_interpolated));
+    const total    = allRows.length;
+    const conformes= allRows.filter(r => r.ecart_status === 'ok').length;
+    const nonConf  = total - conformes;
+    const pct      = total > 0 ? Math.round(conformes / total * 100) : 0;
+
+    return {
+        projet:              PROJET_NOM,
+        date:                dateRec,
+        operateur:           document.getElementById('ctrl-nom').value.trim(),
+        section:             pks.length > 1 ? `${pks[0]} → ${pks[pks.length-1]}` : (pks[0] || ''),
+        meteo:               document.getElementById('meteo').value.trim(),
+        tolerance:           tol,
+        mode:                selectedMode.startsWith('assainissement') ? 'assainissement' : 'terrassement',
+        controleur_nom:      document.getElementById('ctrl-nom').value.trim(),
+        controleur_fonction: document.getElementById('ctrl-societe').value.trim(),
+        controleur_date:     dateRec,
+        entreprise_nom:      document.getElementById('et-nom').value.trim(),
+        entreprise_societe:  document.getElementById('et-societe').value.trim(),
+        entreprise_date:     dateRec,
+        signature_controleur:getSigBase64('sig-ctrl'),
+        signature_entreprise:getSigBase64('sig-et'),
+        observations_generales:document.getElementById('obs-generales').value.trim(),
+        stations,
+        total_points:        total,
+        points_conformes:    conformes,
+        points_non_conformes:nonConf,
+        conformes_percent:   pct,
+    };
+}
+
+// ── Génération PDF ────────────────────────────────────────────────────────────
+async function genererPDF(preview) {
+    const endpoint = preview ? '/api/preview-pdf' : '/api/generate-pdf';
+    const btn = document.getElementById(preview ? 'btn-preview' : 'btn-pdf');
+    btn.disabled = true;
+    try {
+        const data = await _buildPdfData();
+        const dateRec = data.date;
+        const r = await fetch(endpoint, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(data),
+        });
+        if (!r.ok) throw new Error((await r.json().catch(()=>({}))).error || `Erreur ${r.status}`);
+        if (preview) {
+            const html = await r.text();
+            const win = window.open('','_blank');
+            win.document.write(html);
+            win.document.close();
+            win.onload = () => win.print();
+        } else {
+            const blob = await r.blob();
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href = url;
+            a.download = `TopReception_${PROJET_NOM.replace(/\s+/g,'_')}_${dateRec.replace(/\//g,'')}.pdf`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    } catch(e) {
+        alert('Erreur de génération PDF : ' + e.message);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// ── Init date par défaut ──────────────────────────────────────────────────────
+document.getElementById('date-rec').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>

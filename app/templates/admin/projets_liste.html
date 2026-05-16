@@ -76,9 +76,10 @@
                     <div class="min-w-0">
                         <div class="font-semibold text-slate-800 truncate">{{ p.nom }}</div>
                         <div class="text-xs text-slate-400 truncate mt-0.5">
-                            {{ p.client.nom }} —
+                            {% set mdc = p.client_links.filter_by(role='mdc').first() %}
+                            {{ mdc.client.nom if mdc else '—' }} —
                             {% if p.pk_debut and p.pk_fin %}PK {{ p.pk_debut }} → {{ p.pk_fin }}{% else %}PK non définis{% endif %}
-                            — {{ p.membres.count() }} membre(s)
+                            — {{ p.client_links.count() }} client(s)
                         </div>
                     </div>
                 </div>

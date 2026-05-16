@@ -2,94 +2,174 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>{% if user %}Modifier l'utilisateur{% else %}Nouvel utilisateur{% endif %} — OPTILAB</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if user %}Modifier l'utilisateur{% else %}Nouvel utilisateur{% endif %} — RECEPTA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f0f4f8; }
-        .card { background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,.1); padding:2rem; width:100%; max-width:440px; }
-        h2 { color:#1e3a5f; margin:0 0 .4rem; }
-        .subtitle { color:#64748b; font-size:.85rem; margin:0 0 1.5rem; }
-        .form-group { margin-bottom:1rem; }
-        label { display:block; font-size:.85rem; font-weight:600; color:#374151; margin-bottom:.35rem; }
-        .label-hint { font-weight:400; color:#94a3b8; margin-left:.4rem; }
-        input, select { width:100%; padding:.65rem .9rem; border:1.5px solid #d1d5db; border-radius:8px; font-size:.95rem; box-sizing:border-box; }
-        input:focus, select:focus { outline:none; border-color:#3b82f6; }
-        .flash { padding:.7rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:.9rem; }
-        .flash.danger { background:#fef2f2; color:#dc2626; }
-        .actions { display:flex; gap:.75rem; margin-top:1.5rem; }
-        .btn { padding:.65rem 1.2rem; border-radius:8px; border:none; font-size:.95rem; font-weight:600; cursor:pointer; }
-        .btn-primary { background:#1e3a5f; color:#fff; }
-        .btn-secondary { background:#f1f5f9; color:#475569; text-decoration:none; display:inline-flex; align-items:center; }
+        body { font-family:'Inter',sans-serif; }
+        .dk-input {
+            width:100%; background:#0b1727; border:1.5px solid #1e3a5f; color:#e2e8f0;
+            border-radius:10px; padding:10px 14px; font-size:.87rem; outline:none;
+            transition:border-color .2s; font-family:inherit;
+        }
+        .dk-input:focus { border-color:#00ffff; box-shadow:0 0 0 3px rgba(0,255,255,.08); }
+        .dk-input::placeholder { color:#334155; }
+        select.dk-input option { background:#0d1b2e; color:#e2e8f0; }
     </style>
 </head>
-<body>
-<div class="card">
-    <h2>{% if user %}Modifier l'utilisateur{% else %}Nouvel utilisateur{% endif %}</h2>
-    {% if user %}<p class="subtitle">{{ user.email }}</p>{% endif %}
+<body class="bg-[#07101c] min-h-screen">
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <div class="flash {{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endwith %}
+<!-- Header -->
+<header style="background:linear-gradient(135deg,#0f2744,#1e3a5f);border-bottom:1px solid rgba(0,255,255,.1);position:sticky;top:0;z-index:50;">
+    <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+        <a href="{{ url_for('admin.dashboard') }}" class="flex items-center gap-2 hover:opacity-80 transition" style="text-decoration:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:16px;height:16px;">
+                <span style="background:#00ffff;border-radius:2px;display:block;"></span>
+                <span style="background:#fbbf24;border-radius:2px;display:block;"></span>
+                <span style="background:#00ffff;border-radius:2px;display:block;"></span>
+                <span style="background:#00ffff;border-radius:2px;display:block;"></span>
+            </div>
+            <div style="display:flex;flex-direction:column;line-height:1.1;">
+                <span style="color:white;font-size:13px;font-weight:800;letter-spacing:2px;">RECEPTA</span>
+                <span style="color:rgba(255,255,255,.3);font-size:8px;font-weight:600;letter-spacing:1.5px;">by OPTILAB</span>
+            </div>
+        </a>
+        <div class="flex items-center gap-2 text-xs">
+            <span style="color:rgba(255,255,255,.2);">›</span>
+            <span style="color:rgba(255,255,255,.4);">Administration</span>
+            <span style="color:rgba(255,255,255,.2);">›</span>
+            <span style="color:#00ffff;font-weight:600;">{% if user %}Modifier un utilisateur{% else %}Nouvel utilisateur{% endif %}</span>
+        </div>
+    </div>
+</header>
 
-    <form method="POST">
-        <div class="form-group">
-            <label for="nom">Nom complet *</label>
-            <input type="text" id="nom" name="nom" required
-                   placeholder="Jean Dupont"
-                   value="{{ user.nom if user else '' }}">
+<!-- Main -->
+<div class="max-w-xl mx-auto px-4 py-10">
+
+    <!-- Card -->
+    <div style="background:#0d1b2e;border:1px solid #1e3a5f;border-radius:16px;overflow:hidden;">
+
+        <!-- Card header with avatar -->
+        <div style="padding:20px 28px;border-bottom:1px solid #1e3a5f;background:linear-gradient(90deg,#0f2744,#0d1b2e);display:flex;align-items:center;gap:16px;">
+            <div id="avatar-preview"
+                 style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1e3a5f,#2563eb);display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:white;flex-shrink:0;overflow:hidden;border:2px solid rgba(0,255,255,.2);">
+                {% if user and user.photo_url %}
+                    <img src="{{ user.photo_url }}" alt="Photo" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                    <span style="display:none;">{{ (user.nom[0]|upper) if user else '?' }}</span>
+                {% else %}
+                    <span id="avatar-initials">{{ (user.nom[0]|upper) if user else '?' }}</span>
+                {% endif %}
+            </div>
+            <div>
+                <h2 style="color:white;font-size:1rem;font-weight:700;margin:0 0 4px;">
+                    {% if user %}Modifier {{ user.nom }}{% else %}Nouvel utilisateur{% endif %}
+                </h2>
+                <p style="color:#475569;font-size:.82rem;margin:0;">
+                    {% if user %}{{ user.email }}{% else %}Remplissez les informations ci-dessous{% endif %}
+                </p>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="email">Email *</label>
-            <input type="email" id="email" name="email" required
-                   placeholder="jean.dupont@chantier.fr"
-                   value="{{ user.email if user else '' }}">
-        </div>
-        <div class="form-group">
-            <label for="password">
-                Mot de passe
-                {% if user %}<span class="label-hint">(laisser vide = inchangé)</span>{% else %}*{% endif %}
-            </label>
-            <input type="password" id="password" name="password"
-                   {% if not user %}required{% endif %}
-                   placeholder="{% if user %}Nouveau mot de passe…{% else %}Min. 8 caractères{% endif %}">
-        </div>
-        <div class="form-group">
-            <label for="role">Rôle *</label>
-            <select id="role" name="role">
-                <option value="client" {% if user and user.role == 'client' %}selected{% endif %}>Client (technicien BTP)</option>
-                <option value="admin"  {% if user and user.role == 'admin'  %}selected{% endif %}>Admin</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="profil">Profil fonctionnel *</label>
-            <select id="profil" name="profil">
-                <option value="solo" {% if not user or user.profil == 'solo' %}selected{% endif %}>SOLO — accès V1 classique</option>
-                <option value="pro"  {% if user and user.profil == 'pro'  %}selected{% endif %}>PRO — accès projets collaboratifs V2</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="client_id">Associer à un client</label>
-            <select id="client_id" name="client_id">
-                <option value="">— Aucun (admin uniquement) —</option>
-                {% for c in clients %}
-                    <option value="{{ c.id }}"
-                        {% if user and user.client_id == c.id %}selected{% endif %}>
-                        {{ c.nom }}{% if c.projet_label %} — {{ c.projet_label }}{% endif %}
-                        {% if not c.actif %} (inactif){% endif %}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="actions">
-            <button type="submit" class="btn btn-primary">
-                {% if user %}Enregistrer{% else %}Créer l'utilisateur{% endif %}
-            </button>
-            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">Annuler</a>
-        </div>
-    </form>
+
+        <!-- Flashes -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+            <div style="margin:16px 28px 0;padding:10px 14px;border-radius:10px;font-size:.85rem;font-weight:500;
+                {% if category == 'danger' %}background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);color:#fca5a5;
+                {% else %}background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);color:#fcd34d;{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endwith %}
+
+        <!-- Form -->
+        <form method="POST" style="padding:28px;display:flex;flex-direction:column;gap:18px;">
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div>
+                    <label style="display:block;font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Nom complet *</label>
+                    <input type="text" name="nom" required placeholder="Jean Dupont"
+                           value="{{ user.nom if user else '' }}"
+                           oninput="updateInitials(this.value)"
+                           class="dk-input">
+                </div>
+                <div>
+                    <label style="display:block;font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Email *</label>
+                    <input type="email" name="email" required placeholder="jean@exemple.fr"
+                           value="{{ user.email if user else '' }}"
+                           class="dk-input">
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div>
+                    <label style="display:block;font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">
+                        Mot de passe {% if user %}<span style="font-weight:400;text-transform:none;color:#334155;">(vide = inchangé)</span>{% else %}*{% endif %}
+                    </label>
+                    <input type="password" name="password"
+                           {% if not user %}required{% endif %}
+                           placeholder="{% if user %}Nouveau mot de passe…{% else %}Min. 8 caractères{% endif %}"
+                           class="dk-input">
+                </div>
+                <div>
+                    <label style="display:block;font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Rôle *</label>
+                    <select name="role" class="dk-input">
+                        <option value="client" {% if user and user.role == 'client' %}selected{% endif %}>Acteur PRO (MDC / ET)</option>
+                        <option value="admin"  {% if user and user.role == 'admin'  %}selected{% endif %}>Administrateur</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Photo URL -->
+            <div>
+                <label style="display:block;font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">
+                    Photo / Avatar <span style="font-weight:400;text-transform:none;color:#334155;">(URL — optionnel)</span>
+                </label>
+                <input type="url" name="photo_url" id="photo_url_input"
+                       placeholder="https://exemple.com/photo.jpg"
+                       value="{{ user.photo_url if user and user.photo_url else '' }}"
+                       oninput="updatePhotoPreview(this.value)"
+                       class="dk-input">
+                <p style="font-size:.75rem;color:#334155;margin-top:5px;">Copiez l'URL d'une photo depuis LinkedIn, Gravatar ou tout hébergeur d'images.</p>
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex;gap:12px;padding-top:8px;border-top:1px solid #1e3a5f;margin-top:4px;">
+                <button type="submit" style="flex:1;padding:12px;background:linear-gradient(135deg,#1e3a5f,#2563eb);color:#fff;font-size:.9rem;font-weight:700;border-radius:10px;border:none;cursor:pointer;transition:opacity .15s;">
+                    {% if user %}Enregistrer les modifications{% else %}Créer l'utilisateur{% endif %}
+                </button>
+                <a href="{{ url_for('admin.dashboard') }}" style="padding:12px 20px;background:rgba(255,255,255,.04);color:#94a3b8;font-size:.9rem;font-weight:600;border-radius:10px;border:1px solid #1e3a5f;text-decoration:none;">
+                    Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <p style="text-align:center;margin-top:16px;font-size:.8rem;">
+        <a href="{{ url_for('admin.dashboard') }}" style="color:#334155;text-decoration:none;">← Retour au tableau de bord</a>
+    </p>
 </div>
+
+<script>
+function updateInitials(nom) {
+    const el = document.getElementById('avatar-initials');
+    if (el) el.textContent = nom ? nom[0].toUpperCase() : '?';
+}
+function updatePhotoPreview(url) {
+    const preview = document.getElementById('avatar-preview');
+    if (!url) {
+        const nom = document.querySelector('[name="nom"]').value;
+        preview.innerHTML = `<span id="avatar-initials">${nom ? nom[0].toUpperCase() : '?'}</span>`;
+        return;
+    }
+    const img = new Image();
+    img.onload = () => { preview.innerHTML = `<img src="${url}" alt="Photo" style="width:100%;height:100%;object-fit:cover;">`; };
+    img.onerror = () => {
+        const nom = document.querySelector('[name="nom"]').value;
+        preview.innerHTML = `<span id="avatar-initials">${nom ? nom[0].toUpperCase() : '?'}</span>`;
+    };
+    img.src = url;
+}
+</script>
 </body>
 </html>

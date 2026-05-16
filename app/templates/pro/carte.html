@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Carte — {{ projet.nom }}</title>
+
+    <!-- Leaflet.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- proj4.js — Lambert 93 → WGS84 -->
+    <script src="https://unpkg.com/proj4@2.9.0/dist/proj4.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0;
+               height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* ── Header ── */
+        header {
+            background: #1e293b; border-bottom: 1px solid #334155;
+            padding: 0 16px; height: 48px; display: flex; align-items: center;
+            justify-content: space-between; flex-shrink: 0; z-index: 2000; position: relative;
+        }
+        .logo-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px; width:14px; height:14px; }
+        .logo-grid span { border-radius:2px; }
+
+        /* ── Carte plein écran ── */
+        #map-wrap { flex: 1; position: relative; }
+        #map { width: 100%; height: 100%; z-index: 1; }
+
+        /* ── Panneau flottant ── */
+        .ctrl-panel {
+            position: absolute; top: 12px; right: 12px; z-index: 1000;
+            background: rgba(15,23,42,.93);
+            backdrop-filter: blur(10px);
+            border: 1px solid #334155;
+            border-radius: 14px;
+            width: 238px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.55);
+            overflow: hidden;
+            transition: max-height .3s ease;
+        }
+        .ctrl-panel.collapsed { max-height: 46px; }
+        .ctrl-panel-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 14px; cursor: pointer; user-select: none;
+            border-bottom: 1px solid #1e293b;
+        }
+        .ctrl-panel-header:hover { background: rgba(255,255,255,.03); }
+        .ctrl-panel-title { font-size: .8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; }
+        .ctrl-chevron { color: #475569; font-size: 12px; transition: transform .2s; }
+        .ctrl-panel.collapsed .ctrl-chevron { transform: rotate(-90deg); }
+        .ctrl-body { overflow-y: auto; max-height: 70vh; }
+
+        /* ── Sections ── */
+        .ctrl-section { padding: 12px 14px; border-bottom: 1px solid #1e293b; }
+        .ctrl-section:last-child { border-bottom: none; }
+        .ctrl-section-title { font-size: .68rem; font-weight: 700; color: #475569;
+                               text-transform: uppercase; letter-spacing: .5px; margin-bottom: 9px; }
+
+        /* ── Fond de carte ── */
+        .basemap-btns { display: flex; gap: 6px; }
+        .basemap-btn {
+            flex: 1; padding: 7px 4px; border-radius: 8px; border: 1.5px solid #334155;
+            background: #0f172a; color: #94a3b8; font-size: .72rem; font-weight: 600;
+            cursor: pointer; text-align: center; transition: all .15s;
+        }
+        .basemap-btn.active { border-color: #00ffff; color: #00ffff; background: #00ffff11; }
+        .basemap-btn:hover:not(.active) { border-color: #475569; color: #e2e8f0; }
+        .basemap-icon { font-size: 14px; display: block; margin-bottom: 2px; }
+
+        /* ── Couches / légende ── */
+        .layer-item {
+            display: flex; align-items: center; gap: 9px;
+            padding: 5px 0; user-select: none;
+        }
+        .layer-swatch {
+            width: 22px; height: 4px; border-radius: 2px; flex-shrink: 0;
+            transition: opacity .15s;
+        }
+        .layer-swatch.poly { height: 10px; border-radius: 3px; border: 1px solid rgba(255,255,255,.1); }
+
+        /* Swatch cliquable avec color picker intégré */
+        .color-swatch-btn {
+            position: relative; width: 22px; height: 14px; border-radius: 4px;
+            flex-shrink: 0; cursor: pointer; border: 1px solid rgba(255,255,255,.12);
+            display: block; transition: border-color .15s, transform .1s;
+        }
+        .color-swatch-btn:hover { border-color: rgba(255,255,255,.4); transform: scale(1.15); }
+        .color-swatch-btn input[type="color"] {
+            opacity: 0; position: absolute; inset: 0; width: 100%; height: 100%;
+            cursor: pointer; border: none; padding: 0;
+        }
+
+        .layer-label {
+            font-size: .78rem; color: #94a3b8; flex: 1; line-height: 1.3;
+            transition: color .15s; cursor: pointer;
+        }
+        .layer-label:hover, .layer-label.active { color: #e2e8f0; }
+        .eye-btn {
+            width: 22px; height: 22px; border-radius: 6px; border: none;
+            background: transparent; color: #475569; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            transition: color .15s, background .15s;
+        }
+        .eye-btn:hover { color: #e2e8f0; background: #334155; }
+        .eye-btn.hidden-layer { color: #1e293b; }
+
+        /* Séparateur de groupe dans la légende */
+        .layer-group-sep {
+            font-size: .65rem; font-weight: 700; color: #334155;
+            text-transform: uppercase; letter-spacing: .5px;
+            padding: 6px 0 3px; margin-top: 4px;
+            border-top: 1px solid #1e293b;
+        }
+        .layer-group-sep:first-child { border-top: none; margin-top: 0; }
+
+        /* ── Bouton Localiser ── */
+        .locate-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 9px 12px; border-radius: 10px; border: 1px solid #334155;
+            background: #0f172a; color: #cbd5e1; font-size: .82rem; font-weight: 600;
+            cursor: pointer; transition: all .15s;
+        }
+        .locate-btn:hover { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+        .locate-btn:disabled { opacity: .5; cursor: default; }
+
+        /* ── Loading overlay ── */
+        #loading-overlay {
+            position: absolute; inset: 0; z-index: 900;
+            background: rgba(15,23,42,.80); backdrop-filter: blur(6px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+        }
+        .recepta-loader { display:grid; grid-template-columns:1fr 1fr; gap:7px; width:38px; height:38px; }
+        .rd {
+            border-radius: 5px;
+            animation: rd-pulse 2.1s ease-in-out infinite;
+            transform-origin: center;
+        }
+        @keyframes rd-pulse {
+            0%, 15%, 85%, 100% { opacity: 0; transform: scale(0); }
+            30%, 70%            { opacity: 1; transform: scale(1); }
+        }
+        .loading-label { font-size: .82rem; font-weight: 800; color: #00ffff; letter-spacing: 2px; }
+        .loading-sub   { font-size: .65rem; font-weight: 600; color: #475569; letter-spacing: 1.5px; text-transform: uppercase; margin-top: -4px; }
+
+        /* ── Toast ── */
+        #toast {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 2000; padding: 9px 18px; border-radius: 10px;
+            font-size: .82rem; font-weight: 600; white-space: nowrap;
+            pointer-events: none; opacity: 0; transition: opacity .3s;
+        }
+        #toast.ok  { background: #064e3b; color: #6ee7b7; border: 1px solid #10b981; }
+        #toast.err { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+        #toast.show { opacity: 1; }
+
+        /* ── Labels PK Leaflet ── */
+        .pk-label-tooltip {
+            background: #0f172a !important; border: 1px solid rgba(0,255,255,.35) !important;
+            color: #00ffff !important; font-family: monospace !important;
+            font-size: 10px !important; padding: 1px 5px !important;
+            border-radius: 4px !important; white-space: nowrap !important;
+            box-shadow: none !important;
+        }
+        .pk-label-tooltip::before { display: none !important; }
+
+        /* ── Popup ── */
+        .leaflet-popup-content-wrapper {
+            background: #1e293b !important; color: #e2e8f0 !important;
+            border: 1px solid #334155 !important; border-radius: 10px !important;
+        }
+        .leaflet-popup-tip { background: #1e293b !important; }
+
+        /* ── Indicateur données ── */
+        .data-badge {
+            position: absolute; bottom: 14px; right: 14px; z-index: 999;
+            background: rgba(15,23,42,.88); border: 1px solid #334155;
+            border-radius: 8px; padding: 5px 10px;
+            font-size: .72rem; color: #64748b; display: none;
+        }
+        .data-badge span { color: #00ffff; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+<header>
+    <div style="display:flex;align-items:center;gap:10px;">
+        <a href="/pro/projets/" style="display:flex;align-items:center;gap:7px;text-decoration:none;">
+            <div class="logo-grid">
+                <span style="background:#00ffff;"></span>
+                <span style="background:#fbbf24;"></span>
+                <span style="background:#00ffff;"></span>
+                <span style="background:#00ffff;"></span>
+            </div>
+            <div style="display:flex;flex-direction:column;line-height:1.1;">
+                <span style="color:#00ffff;font-weight:800;letter-spacing:2px;font-size:12px;">RECEPTA</span>
+                <span style="color:#475569;font-size:8px;font-weight:600;letter-spacing:1.5px;">by OPTILAB</span>
+            </div>
+        </a>
+        <span style="color:#334155;">›</span>
+        <a href="{{ url_for('pro_projets.liste_projets') }}" style="color:#475569;font-size:.78rem;text-decoration:none;">Projets</a>
+        <span style="color:#334155;">›</span>
+        <span style="color:#94a3b8;font-size:.78rem;font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ projet.nom }}</span>
+        <span style="color:#334155;">›</span>
+        <span style="background:#064e3b;color:#6ee7b7;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.5px;">CARTE</span>
+    </div>
+    <a href="{{ url_for('auth.logout') }}" style="color:#475569;font-size:.73rem;padding:4px 10px;border-radius:7px;text-decoration:none;">Déconnexion</a>
+</header>
+
+<!-- ── CARTE + PANNEAU ────────────────────────────────────────────────── -->
+<div id="map-wrap">
+    <div id="map"></div>
+
+    <!-- Panneau de contrôle flottant -->
+    <div class="ctrl-panel" id="ctrl-panel">
+        <div class="ctrl-panel-header" onclick="togglePanel()">
+            <span class="ctrl-panel-title">Contrôles</span>
+            <span class="ctrl-chevron">▾</span>
+        </div>
+        <div class="ctrl-body" id="ctrl-body">
+
+            <!-- ── Fond de carte ── -->
+            <div class="ctrl-section">
+                <div class="ctrl-section-title">Fond de carte</div>
+                <div class="basemap-btns">
+                    <button class="basemap-btn active" id="bm-plan" onclick="setBasemap('plan')">
+                        <span class="basemap-icon">🗺</span>Plan
+                    </button>
+                    <button class="basemap-btn" id="bm-satellite" onclick="setBasemap('satellite')">
+                        <span class="basemap-icon">🛰</span>Satellite
+                    </button>
+                    <button class="basemap-btn" id="bm-topo" onclick="setBasemap('topo')">
+                        <span class="basemap-icon">⛰</span>Topo
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── Légende dynamique ── -->
+            <div class="ctrl-section">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
+                    <span class="ctrl-section-title" style="margin-bottom:0;">Légende</span>
+                    <span style="font-size:.65rem;color:#334155;font-style:italic;" id="legend-hint">Cliquer sur la couleur pour la modifier</span>
+                </div>
+                <div id="layers-list">
+                    <div style="color:#475569;font-size:.78rem;font-style:italic;">Chargement…</div>
+                </div>
+                <div id="rcp-count" style="margin-top:8px;font-size:.7rem;color:#475569;font-style:italic;"></div>
+            </div>
+
+            <!-- ── Localisation ── -->
+            <div class="ctrl-section">
+                <button class="locate-btn" id="btn-locate" onclick="localiserMaPosition()">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3"/><path stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                    </svg>
+                    Me localiser
+                </button>
+            </div>
+
+            <!-- ── Rapport ── -->
+            <div class="ctrl-section">
+                <a href="/pro/projets/{{ projet.id }}/rapport" target="_blank"
+                   style="display:flex;align-items:center;justify-content:center;gap:8px;
+                          width:100%;padding:9px 12px;border-radius:10px;
+                          border:1px solid #1e3a5f;background:#0f172a;
+                          color:#7dd3fc;font-size:.82rem;font-weight:600;
+                          text-decoration:none;transition:all .15s;"
+                   onmouseover="this.style.background='#0c2340';this.style.borderColor='#3b82f6';"
+                   onmouseout="this.style.background='#0f172a';this.style.borderColor='#1e3a5f';">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Rapport des réceptions
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Indicateur données chargées -->
+    <div class="data-badge" id="data-badge">
+        <span id="badge-pks">—</span> PK ·
+        <span id="badge-elems">—</span> éléments
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
+        <div class="recepta-loader">
+            <div class="rd" style="background:#00ffff;animation-delay:0s;"></div>
+            <div class="rd" style="background:#fbbf24;animation-delay:.15s;"></div>
+            <div class="rd" style="background:#00ffff;animation-delay:.3s;"></div>
+            <div class="rd" style="background:#00ffff;animation-delay:.45s;"></div>
+        </div>
+        <div class="loading-label">RECEPTA</div>
+        <div class="loading-sub">by OPTILAB</div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+</div>
+
+<script>
+// ── Données projet ────────────────────────────────────────────────────────────
+const PROJET_ID  = {{ projet.id }};
+const PROJET_NOM = {{ projet.nom | tojson }};
+
+// ── Projection UTM Zone 31N (EPSG:32631) → WGS84 ─────────────────────────────
+proj4.defs('EPSG:32631',
+    '+proj=utm +zone=31 +datum=WGS84 +units=m +no_defs'
+);
+function toWGS84(x, y) {
+    const [lon, lat] = proj4('EPSG:32631', 'EPSG:4326', [x, y]);
+    return { lat, lng: lon };
+}
+
+// Offset perpendiculaire depuis l'axe — dist > 0 = droite, dist < 0 = gauche
+// Formule : ΔE = dist×cos(cap), ΔN = −dist×sin(cap)  (cap = azimut depuis Nord, sens horaire)
+function calcOffset(pk, dist) {
+    const g = (pk.cap || 0) * Math.PI / 180;
+    return toWGS84(pk.x + dist * Math.cos(g), pk.y - dist * Math.sin(g));
+}
+
+// ── Init carte ────────────────────────────────────────────────────────────────
+const basemapDefs = {
+    plan: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19 }),
+    satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '© Esri World Imagery', maxZoom: 19 }),
+    topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://opentopomap.org">OpenTopoMap</a>', maxZoom: 17 }),
+};
+
+const map = L.map('map', { zoomControl: false });
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+map.setView([46.5, 2.5], 6);
+basemapDefs.plan.addTo(map);
+let currentBasemap = 'plan';
+
+function setBasemap(key) {
+    map.removeLayer(basemapDefs[currentBasemap]);
+    basemapDefs[key].addTo(map);
+    currentBasemap = key;
+    document.querySelectorAll('.basemap-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('bm-' + key).classList.add('active');
+}
+
+// ── Gestion des couches ───────────────────────────────────────────────────────
+/*
+  layerRegistry : { id → { label, color, dash, layers:[], visible:bool } }
+  Couches fixes : 'axe', 'emprise', 'pks'
+  Couches dynamiques par élément offset : 'elem_<nom>'
+*/
+const layerRegistry = {};
+
+function registerLayer(id, label, color, dash, isPoly) {
+    layerRegistry[id] = { label, color, dash: dash || null, isPoly: isPoly || false, layers: [], visible: true };
+}
+
+function addToLayer(id, leafletLayer) {
+    if (!layerRegistry[id]) return;
+    layerRegistry[id].layers.push(leafletLayer);
+    leafletLayer.addTo(map);
+}
+
+function toggleLayer(id) {
+    const reg = layerRegistry[id];
+    if (!reg) return;
+    reg.visible = !reg.visible;
+    reg.layers.forEach(l => reg.visible ? l.addTo(map) : map.removeLayer(l));
+    refreshLayersList();
+}
+
+function setLayerVisible(id, visible) {
+    const reg = layerRegistry[id];
+    if (!reg) return;
+    reg.visible = visible;
+    reg.layers.forEach(l => visible ? l.addTo(map) : map.removeLayer(l));
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ── Panneau toggle ────────────────────────────────────────────────────────────
+function togglePanel() {
+    document.getElementById('ctrl-panel').classList.toggle('collapsed');
+}
+
+// ── Localisation ─────────────────────────────────────────────────────────────
+let locateMarker = null;
+function localiserMaPosition() {
+    if (!navigator.geolocation) { showToast('GPS non disponible.', 'err'); return; }
+    const btn = document.getElementById('btn-locate');
+    btn.disabled = true;
+    btn.textContent = 'Localisation…';
+    navigator.geolocation.getCurrentPosition(
+        pos => {
+            const { latitude: lat, longitude: lng } = pos.coords;
+            if (locateMarker) map.removeLayer(locateMarker);
+            locateMarker = L.circleMarker([lat, lng], {
+                radius: 9, fillColor: '#3b82f6', color: '#fff', weight: 2,
+                fillOpacity: 1, opacity: 1,
+            }).addTo(map);
+            locateMarker.bindPopup(`<b>Ma position</b><br><small>${lat.toFixed(5)}, ${lng.toFixed(5)}</small>`).openPopup();
+            map.setView([lat, lng], 16);
+            btn.disabled = false;
+            btn.innerHTML = '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> Me localiser';
+        },
+        err => {
+            showToast('Erreur GPS : ' + err.message, 'err');
+            btn.disabled = false;
+            btn.innerHTML = '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> Me localiser';
+        },
+        { enableHighAccuracy: true, timeout: 12000 }
+    );
+}
+
+// ── SVG icônes œil ───────────────────────────────────────────────────────────
+const SVG_EYE_ON  = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
+const SVG_EYE_OFF = `<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>`;
+
+// ── Changement de couleur d'une couche ────────────────────────────────────────
+function changeLayerColor(id, color) {
+    const reg = layerRegistry[id];
+    if (!reg) return;
+    reg.color = color;
+    // Mettre à jour le swatch sans re-render complet
+    document.querySelectorAll(`[data-color-swatch="${id}"]`).forEach(el => el.style.background = color);
+    // Mettre à jour les polylines/polygones Leaflet
+    reg.layers.forEach(l => {
+        if (l.setStyle) l.setStyle({ color, stroke: true });
+    });
+}
+
+// ── Refresh UI couches ────────────────────────────────────────────────────────
+function refreshLayersList() {
+    const container = document.getElementById('layers-list');
+    if (Object.keys(layerRegistry).length === 0) {
+        container.innerHTML = '<div style="color:#475569;font-size:.78rem;font-style:italic;">Aucune donnée chargée.</div>';
+        document.getElementById('legend-hint').style.display = 'none';
+        return;
+    }
+
+    // Construit un élément de légende
+    const renderItem = (id, withColorPicker) => {
+        const reg = layerRegistry[id];
+        if (!reg) return '';
+        const vis = reg.visible;
+        const clr = reg.color;
+
+        const swatchHtml = withColorPicker
+            ? `<label class="color-swatch-btn" data-color-swatch="${id}"
+                      style="background:${clr};opacity:${vis?1:.35};"
+                      title="Cliquer pour changer la couleur">
+                   <input type="color" value="${clr}"
+                          oninput="changeLayerColor('${id}',this.value)">
+               </label>`
+            : `<div class="layer-swatch${reg.isPoly?' poly':''}"
+                    style="${reg.isPoly
+                        ? 'background:'+clr+'22;border:1px solid '+clr+'55;height:10px;'
+                        : 'background:'+clr+';opacity:'+(vis?1:.25)+';'}"></div>`;
+
+        return `
+        <div class="layer-item">
+            ${swatchHtml}
+            <span class="layer-label${vis?' active':''}"
+                  onclick="toggleLayer('${id}')">${reg.label}</span>
+            <button class="eye-btn${vis?'':' hidden-layer'}"
+                    onclick="toggleLayer('${id}')" title="${vis?'Masquer':'Afficher'}">
+                ${vis ? SVG_EYE_ON : SVG_EYE_OFF}
+            </button>
+        </div>`;
+    };
+
+    // Groupes
+    const fixedIds = ['axe', 'emprise', 'pks'].filter(id => layerRegistry[id]);
+    const gIds = Object.keys(layerRegistry)
+        .filter(k => layerRegistry[k]._cote === 'Gauche')
+        .sort((a, b) => layerRegistry[a].label.localeCompare(layerRegistry[b].label));
+    const dIds = Object.keys(layerRegistry)
+        .filter(k => layerRegistry[k]._cote === 'Droit')
+        .sort((a, b) => layerRegistry[a].label.localeCompare(layerRegistry[b].label));
+    const rcpIds = ['rcp_validee', 'rcp_non_validee', 'rcp_a_reprendre'].filter(k => layerRegistry[k]);
+
+    let html = '';
+
+    if (fixedIds.length) {
+        html += '<div class="layer-group-sep">Axe du projet</div>';
+        fixedIds.forEach(id => { html += renderItem(id, false); });
+    }
+    if (gIds.length) {
+        html += '<div class="layer-group-sep">Côté Gauche</div>';
+        gIds.forEach(id => { html += renderItem(id, true); });
+    }
+    if (dIds.length) {
+        html += '<div class="layer-group-sep">Côté Droit</div>';
+        dIds.forEach(id => { html += renderItem(id, true); });
+    }
+    if (rcpIds.length) {
+        html += '<div class="layer-group-sep">Réceptions</div>';
+        rcpIds.forEach(id => { html += renderItem(id, false); });
+    }
+
+    container.innerHTML = html;
+    // Cacher le hint si pas d'axes parallèles (pas de color picker)
+    const hasParalleles = gIds.length > 0 || dIds.length > 0;
+    document.getElementById('legend-hint').style.display = hasParalleles ? '' : 'none';
+}
+
+// ── Conversion PK "1+500" → mètres ──────────────────────────────────────────
+function pkToMeters(pk) {
+    if (!pk) return 0;
+    const s = String(pk).replace(',', '.');
+    const m = s.match(/(\d+)\+(\d+(?:\.\d+)?)/);
+    if (m) return parseInt(m[1]) * 1000 + parseFloat(m[2]);
+    return parseFloat(s) || 0;
+}
+
+// PKs de l'Excel — partagés avec dessinerVerdicts()
+let excelValidPks = [];
+
+// ── Verdicts de réception (tronçons colorés — 3 couches) ─────────────────────
+const VERDICT_COLORS = {
+    validee:      '#10b981',
+    non_validee:  '#ef4444',
+    a_reprendre:  '#f59e0b',
+};
+const VERDICT_LABELS = {
+    validee:      'Validée ✓',
+    non_validee:  'Non validée ✗',
+    a_reprendre:  'À reprendre ↩',
+};
+const VERDICT_LAYER_IDS = {
+    validee:     'rcp_validee',
+    non_validee: 'rcp_non_validee',
+    a_reprendre: 'rcp_a_reprendre',
+};
+
+function dessinerVerdicts(demandes) {
+    const avecVerdict = demandes.filter(d => d.statut_reception);
+    if (avecVerdict.length === 0) return;
+
+    // Enregistrer les 3 couches
+    Object.entries(VERDICT_LAYER_IDS).forEach(([key, lid]) => {
+        registerLayer(lid, VERDICT_LABELS[key], VERDICT_COLORS[key]);
+        layerRegistry[lid]._cote = undefined;
+        layerRegistry[lid]._groupe = 'reception';
+    });
+
+    let total = 0;
+    avecVerdict.forEach(d => {
+        const debut  = pkToMeters(d.pk_debut);
+        const fin    = pkToMeters(d.pk_fin);
+        const segPts = excelValidPks
+            .filter(p => pkToMeters(p.pk) >= debut - 1 && pkToMeters(p.pk) <= fin + 1)
+            .map(p => { const w = toWGS84(p.x, p.y); return [w.lat, w.lng]; });
+        if (segPts.length < 2) return;
+
+        const statut = d.statut_reception;
+        const color  = VERDICT_COLORS[statut];
+        const label  = VERDICT_LABELS[statut];
+        const layId  = VERDICT_LAYER_IDS[statut];
+
+        const seg = L.polyline(segPts, { color, weight: 10, opacity: 0.6 });
+        seg.bindPopup(`
+            <div style="font-weight:700;color:${color};font-size:.88rem;">${label}</div>
+            <div style="font-size:.8rem;color:#94a3b8;margin-top:4px;">
+                <b style="color:#e2e8f0;">${d.numero}</b><br>
+                PK ${d.pk_debut} → ${d.pk_fin}<br>
+                ${d.projet_nom ? 'Projet : ' + d.projet_nom + '<br>' : ''}
+                ${d.cloture_at ? 'Clôturée le ' + new Date(d.cloture_at).toLocaleDateString('fr-FR') : ''}
+            </div>
+        `);
+        addToLayer(layId, seg);
+        total++;
+    });
+
+    // Compteur
+    const cnt = document.getElementById('rcp-count');
+    if (cnt) cnt.textContent = `${total} tronçon${total > 1 ? 's' : ''} réceptionné${total > 1 ? 's' : ''} sur ce projet`;
+
+    refreshLayersList();
+}
+
+// ── Dessin depuis les données Excel ──────────────────────────────────────────
+function dessinerSpatialisation(pks, paralleles) {
+    const validPks = pks.filter(p => p.x !== null && p.y !== null);
+    if (validPks.length === 0) return;
+    excelValidPks = validPks;
+
+    const pkM = p => pkToMeters(p.pk);
+
+    // ── 1. Axe principal ─────────────────────────────────────────────────────
+    registerLayer('axe', 'Axe principal', '#00ffff', '10,6');
+    const axeLatLngs = validPks.map(p => { const w = toWGS84(p.x, p.y); return [w.lat, w.lng]; });
+    addToLayer('axe', L.polyline(axeLatLngs, {
+        color: '#00ffff', weight: 4, opacity: 0.9, dashArray: '10,6', interactive: true,
+    }).bindTooltip('Axe principal', { sticky: true }));
+
+    // ── 2. Emprise (polygone : extrême G + extrême D) ─────────────────────────
+    registerLayer('emprise', 'Emprise projet', '#00ffff', null, true);
+    const gAxes = paralleles.filter(a => a.cote === 'G').sort((a,b) => b.dist_m - a.dist_m);
+    const dAxes = paralleles.filter(a => a.cote === 'D').sort((a,b) => b.dist_m - a.dist_m);
+    const extG = gAxes[0], extD = dAxes[0];
+    if (extG && extD) {
+        const segPks = (ax) => {
+            const deb = pkToMeters(ax.pk_debut), fin = pkToMeters(ax.pk_fin);
+            const seg = validPks.filter(p => pkM(p) >= deb - 1 && pkM(p) <= fin + 1);
+            return seg.length > 1 ? seg : validPks;
+        };
+        const gPts = segPks(extG).map(p => { const w = calcOffset(p, -extG.dist_m); return [w.lat, w.lng]; });
+        const dPts = segPks(extD).map(p => { const w = calcOffset(p,  extD.dist_m); return [w.lat, w.lng]; });
+        addToLayer('emprise', L.polygon([...gPts, ...[...dPts].reverse()], {
+            color: 'transparent', fillColor: '#00ffff', fillOpacity: 0.06, weight: 0, interactive: false,
+        }));
+    }
+
+    // ── 3. Axes parallèles ────────────────────────────────────────────────────
+    const shadeLeft  = ['#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c'];
+    const shadeRight = ['#93c5fd', '#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8'];
+
+    // Ordre de couleur : par ordre d'apparition du label (côté G / côté D séparément)
+    const gLabels = [...new Set(paralleles.filter(a => a.cote === 'G').map(a => a.label))];
+    const dLabels = [...new Set(paralleles.filter(a => a.cote === 'D').map(a => a.label))];
+
+    paralleles.forEach(ax => {
+        const deb = pkToMeters(ax.pk_debut), fin = pkToMeters(ax.pk_fin);
+        const segPks = (deb || fin)
+            ? validPks.filter(p => pkM(p) >= deb - 1 && pkM(p) <= fin + 1)
+            : validPks;
+        if (segPks.length < 2) return;
+
+        const isG        = ax.cote === 'G';
+        const signedDist = isG ? -ax.dist_m : ax.dist_m;
+        const latLngs    = segPks.map(p => { const w = calcOffset(p, signedDist); return [w.lat, w.lng]; });
+
+        const labelArr = isG ? gLabels : dLabels;
+        const colorArr = isG ? shadeLeft : shadeRight;
+        const idx      = labelArr.indexOf(ax.label);
+        const color    = colorArr[Math.min(Math.max(0, idx), colorArr.length - 1)];
+        const isEdge   = idx === labelArr.length - 1;
+
+        const layId = 'elem_' + ax.label.replace(/[^a-zA-Z0-9]/g, '_');
+        if (!layerRegistry[layId]) {
+            registerLayer(layId, ax.description || ax.label, color, isEdge ? null : '5,4');
+            layerRegistry[layId]._cote = isG ? 'Gauche' : 'Droit';
+        }
+        addToLayer(layId, L.polyline(latLngs, {
+            color, weight: isEdge ? 2.5 : 1.5, opacity: isEdge ? 0.85 : 0.6,
+            dashArray: isEdge ? null : '5,4',
+        }).bindTooltip((ax.description || ax.label) + (isG ? ' (G)' : ' (D)'), { sticky: true }));
+    });
+
+    // ── 4. Labels PK ─────────────────────────────────────────────────────────
+    registerLayer('pks', 'Labels PK', '#00ffff');
+    layerRegistry['pks']._cote = undefined;
+    const nStep = Math.max(1, Math.floor(validPks.length / 20));
+    validPks.forEach((p, i) => {
+        const isEndPt = i === 0 || i === validPks.length - 1;
+        if (!isEndPt && i % nStep !== 0) return;
+        const w = toWGS84(p.x, p.y);
+        const dot = L.circleMarker([w.lat, w.lng], {
+            radius: isEndPt ? 6 : 4,
+            fillColor: isEndPt ? '#fbbf24' : '#00ffff',
+            color: '#0f172a', weight: 1.5, fillOpacity: 1, opacity: 1,
+        }).bindTooltip(p.pk, {
+            permanent: true, direction: 'top', offset: [0,-6], className: 'pk-label-tooltip',
+        }).bindPopup(`
+            <div style="font-weight:700;color:#00ffff;font-family:monospace;font-size:.9rem;">${p.pk}</div>
+            <div style="font-size:.75rem;color:#64748b;margin-top:4px;">
+                E : ${p.x.toFixed(1)} m (UTM 31N)<br>
+                N : ${p.y.toFixed(1)} m<br>
+                ${p.z !== null ? 'Z NGF : <b>' + p.z.toFixed(3) + ' m</b><br>' : ''}
+                ${p.cap !== null ? 'Cap : ' + p.cap.toFixed(1) + '°' : ''}
+            </div>
+        `);
+        addToLayer('pks', dot);
+    });
+
+    // ── 5. Centrer ───────────────────────────────────────────────────────────
+    map.fitBounds(L.latLngBounds(axeLatLngs).pad(0.2));
+
+    const badge = document.getElementById('data-badge');
+    document.getElementById('badge-pks').textContent   = validPks.length;
+    document.getElementById('badge-elems').textContent = paralleles.length;
+    badge.style.display = 'block';
+}
+
+// ── Chargement automatique ────────────────────────────────────────────────────
+(async () => {
+    try {
+        const r = await fetch(`/api/pro/projets/${PROJET_ID}/spatialisation`);
+        if (!r.ok) throw new Error(`Erreur ${r.status}`);
+        const data = await r.json();
+
+        if (data.error) throw new Error(data.error);
+
+        if (!data.available || !data.pks || data.pks.length === 0) {
+            document.getElementById('loading-overlay').style.display = 'none';
+            document.getElementById('layers-list').innerHTML =
+                '<div style="color:#f59e0b;font-size:.78rem;">Aucune coordonnée trouvée.<br>' +
+                '<span style="color:#475569;">L\'onglet GEO_COORDONNEES est absent ou vide dans le fichier Excel de ce projet.</span></div>';
+            return;
+        }
+
+        dessinerSpatialisation(data.pks, data.paralleles || []);
+        refreshLayersList();
+
+        // Charger les demandes et coloriser les tronçons selon les verdicts
+        try {
+            const dr = await fetch(`/api/pro/projets/${PROJET_ID}/demandes`);
+            if (dr.ok) {
+                const dd = await dr.json();
+                dessinerVerdicts(dd.demandes || []);
+            }
+        } catch(_) {}
+
+        document.getElementById('loading-overlay').style.display = 'none';
+        showToast(`✓ ${data.pks.length} PK chargés depuis l'Excel`, 'ok');
+
+    } catch(e) {
+        document.getElementById('loading-overlay').style.display = 'none';
+        document.getElementById('layers-list').innerHTML =
+            `<div style="color:#f87171;font-size:.78rem;">Erreur : ${e.message}</div>`;
+        showToast('Erreur de chargement : ' + e.message, 'err');
+    }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport réceptions — {{ projet.nom }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; font-size: 13px; }
+
+        /* ── Barre d'impression (masquée à l'impression) ── */
+        .print-bar {
+            background: #1e293b; padding: 10px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; position: sticky; top: 0; z-index: 100;
+        }
+        .print-bar-logo { display: flex; align-items: center; gap: 8px; }
+        .logo-dots { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; width: 14px; height: 14px; }
+        .logo-dots span { border-radius: 2px; }
+        .print-bar-title { color: #94a3b8; font-size: .78rem; }
+        .btn-print {
+            padding: 7px 18px; background: #0ea5e9; border: none; border-radius: 8px;
+            color: white; font-size: .82rem; font-weight: 700; cursor: pointer; transition: background .15s;
+        }
+        .btn-print:hover { background: #0284c7; }
+
+        /* ── Contenu ── */
+        .page { max-width: 900px; margin: 24px auto; padding: 0 16px 60px; }
+
+        /* ── En-tête rapport ── */
+        .rapport-header {
+            background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+            padding: 24px 28px; margin-bottom: 20px;
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
+            flex-wrap: wrap;
+        }
+        .rapport-header h1 { font-size: 1.25rem; font-weight: 800; color: #0f172a; }
+        .rapport-header p  { font-size: .82rem; color: #64748b; margin-top: 4px; }
+        .rapport-date { font-size: .75rem; color: #94a3b8; text-align: right; }
+
+        /* ── Stats ── */
+        .stats-row {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 16px 18px; text-align: center;
+        }
+        .stat-number { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+        .stat-label  { font-size: .72rem; color: #64748b; margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+        .stat-total  .stat-number { color: #0f172a; }
+        .stat-val    .stat-number { color: #10b981; }
+        .stat-nval   .stat-number { color: #ef4444; }
+        .stat-ar     .stat-number { color: #f59e0b; }
+
+        /* ── Barre de taux ── */
+        .taux-bar-wrap { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; }
+        .taux-bar-label { font-size: .75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 10px; }
+        .taux-bar { height: 12px; border-radius: 6px; background: #f1f5f9; overflow: hidden; display: flex; }
+        .taux-seg-val  { background: #10b981; height: 100%; transition: width .5s; }
+        .taux-seg-nval { background: #ef4444; height: 100%; }
+        .taux-seg-ar   { background: #f59e0b; height: 100%; }
+        .taux-legend { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
+        .taux-legend-item { display: flex; align-items: center; gap: 6px; font-size: .73rem; color: #475569; }
+        .taux-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+        /* ── Tableau ── */
+        .table-wrap { background: white; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
+        .table-title { padding: 14px 20px; font-size: .8rem; font-weight: 700; color: #475569;
+                       text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #f1f5f9; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { padding: 10px 14px; text-align: left; font-size: .7rem; font-weight: 700;
+                   color: #94a3b8; text-transform: uppercase; letter-spacing: .5px;
+                   background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        tbody tr { border-bottom: 1px solid #f1f5f9; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #f8fafc; }
+        tbody td { padding: 11px 14px; vertical-align: middle; }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700;
+        }
+        .badge-val  { background: #d1fae5; color: #065f46; }
+        .badge-nval { background: #fee2e2; color: #991b1b; }
+        .badge-ar   { background: #fef3c7; color: #92400e; }
+        .badge-none { background: #f1f5f9; color: #94a3b8; }
+
+        .mono { font-family: monospace; font-size: .82rem; color: #0f172a; }
+
+        /* ── Pied de page ── */
+        .rapport-footer { margin-top: 28px; text-align: center; font-size: .72rem; color: #94a3b8; }
+
+        /* ── Barre filtre période ── */
+        .periode-bar {
+            background: #1e293b; border-bottom: 1px solid #334155;
+            padding: 8px 24px; display: flex; align-items: center; gap: 10px;
+            flex-wrap: wrap;
+        }
+        .periode-bar label { color: #94a3b8; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+        .periode-bar input[type="date"] {
+            background: #0f172a; border: 1px solid #334155; border-radius: 7px;
+            color: #e2e8f0; padding: 5px 10px; font-size: .8rem; font-family: inherit;
+            cursor: pointer;
+        }
+        .periode-bar input[type="date"]:focus { outline: none; border-color: #0ea5e9; }
+        .btn-filtrer {
+            padding: 6px 16px; background: #0ea5e9; border: none; border-radius: 7px;
+            color: white; font-size: .8rem; font-weight: 700; cursor: pointer;
+        }
+        .btn-filtrer:hover { background: #0284c7; }
+        .btn-reset {
+            padding: 6px 14px; background: transparent; border: 1px solid #475569;
+            border-radius: 7px; color: #94a3b8; font-size: .78rem; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center;
+        }
+        .btn-reset:hover { border-color: #94a3b8; color: #e2e8f0; }
+        .badge-periode {
+            margin-left: auto; padding: 3px 10px; background: #1e3a5f;
+            border: 1px solid #1e40af; border-radius: 20px; color: #7dd3fc;
+            font-size: .72rem; font-weight: 600; white-space: nowrap;
+        }
+
+        /* ── Print ── */
+        @media print {
+            .print-bar, .periode-bar { display: none !important; }
+            body { background: white; }
+            .page { margin: 0; padding: 10px; max-width: 100%; }
+            .rapport-header, .table-wrap, .stat-card, .taux-bar-wrap { break-inside: avoid; box-shadow: none; }
+            table { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Barre filtre période -->
+<form method="GET" class="periode-bar">
+    <label>Du</label>
+    <input type="date" name="date_debut" value="{{ date_debut }}">
+    <label>Au</label>
+    <input type="date" name="date_fin" value="{{ date_fin }}">
+    <button type="submit" class="btn-filtrer">Filtrer</button>
+    {% if date_debut or date_fin %}
+    <a href="{{ url_for('pro_projets.rapport_receptions', projet_id=projet.id) }}" class="btn-reset">
+        × Tout afficher
+    </a>
+    <span class="badge-periode">
+        {% if date_debut %}Du {{ date_debut }}{% endif %}
+        {% if date_debut and date_fin %} · {% endif %}
+        {% if date_fin %}Au {{ date_fin }}{% endif %}
+    </span>
+    {% endif %}
+</form>
+
+<!-- Barre d'impression -->
+<div class="print-bar">
+    <div class="print-bar-logo">
+        <div class="logo-dots">
+            <span style="background:#00ffff;"></span>
+            <span style="background:#fbbf24;"></span>
+            <span style="background:#00ffff;"></span>
+            <span style="background:#00ffff;"></span>
+        </div>
+        <span style="color:#00ffff;font-weight:800;letter-spacing:2px;font-size:12px;">RECEPTA</span>
+        <span class="print-bar-title">— Rapport de réceptions</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+        <a href="{{ url_for('pro_projets.carte_projet', projet_id=projet.id) }}"
+           style="color:#64748b;font-size:.78rem;text-decoration:none;padding:6px 12px;
+                  border:1px solid #334155;border-radius:7px;">
+            ← Carte
+        </a>
+        <button class="btn-print" onclick="window.print()">
+            Imprimer / Exporter PDF
+        </button>
+    </div>
+</div>
+
+<div class="page">
+
+    <!-- En-tête rapport -->
+    <div class="rapport-header">
+        <div>
+            <h1>{{ projet.nom }}</h1>
+            {% if date_debut or date_fin %}
+            <p>Rapport des réceptions topographiques — Période filtrée</p>
+            <p style="margin-top:2px;color:#0ea5e9;font-weight:600;">
+                {% if date_debut %}Du {{ date_debut }}{% endif %}
+                {% if date_debut and date_fin %} → {% endif %}
+                {% if date_fin %}au {{ date_fin }}{% endif %}
+            </p>
+            {% else %}
+            <p>Rapport des réceptions topographiques — Toutes sections clôturées</p>
+            {% endif %}
+            {% if projet.pk_debut and projet.pk_fin %}
+            <p style="margin-top:2px;">PK {{ projet.pk_debut }} → {{ projet.pk_fin }}</p>
+            {% endif %}
+        </div>
+        <div class="rapport-date">
+            Généré le {{ now.strftime('%d/%m/%Y à %H:%M') }}<br>
+            <span style="color:#64748b;">par {{ current_user.nom }}</span>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    {% set total = demandes|length %}
+    <div class="stats-row">
+        <div class="stat-card stat-total">
+            <div class="stat-number">{{ total }}</div>
+            <div class="stat-label">Total réceptions</div>
+        </div>
+        <div class="stat-card stat-val">
+            <div class="stat-number">{{ nb_val }}</div>
+            <div class="stat-label">Validées ✓</div>
+        </div>
+        <div class="stat-card stat-nval">
+            <div class="stat-number">{{ nb_nv }}</div>
+            <div class="stat-label">Non validées ✗</div>
+        </div>
+        <div class="stat-card stat-ar">
+            <div class="stat-number">{{ nb_ar }}</div>
+            <div class="stat-label">À reprendre ↩</div>
+        </div>
+    </div>
+
+    <!-- Barre de taux -->
+    {% if total > 0 %}
+    <div class="taux-bar-wrap">
+        <div class="taux-bar-label">Taux de conformité</div>
+        <div class="taux-bar">
+            <div class="taux-seg-val"  style="width:{{ (nb_val / total * 100)|round(1) }}%;"></div>
+            <div class="taux-seg-ar"   style="width:{{ (nb_ar  / total * 100)|round(1) }}%;"></div>
+            <div class="taux-seg-nval" style="width:{{ (nb_nv  / total * 100)|round(1) }}%;"></div>
+        </div>
+        <div class="taux-legend">
+            <div class="taux-legend-item"><div class="taux-dot" style="background:#10b981;"></div>Validée : {{ (nb_val / total * 100)|round(1) }} %</div>
+            <div class="taux-legend-item"><div class="taux-dot" style="background:#f59e0b;"></div>À reprendre : {{ (nb_ar / total * 100)|round(1) }} %</div>
+            <div class="taux-legend-item"><div class="taux-dot" style="background:#ef4444;"></div>Non validée : {{ (nb_nv / total * 100)|round(1) }} %</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tableau des réceptions -->
+    <div class="table-wrap">
+        <div class="table-title">Détail des réceptions clôturées</div>
+        {% if demandes %}
+        <table>
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Tronçon (PK)</th>
+                    <th>Mode</th>
+                    <th>Demandé par</th>
+                    <th>Clôturée le</th>
+                    <th>Verdict</th>
+                    <th>Tolérance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in demandes %}
+                <tr>
+                    <td><span class="mono">{{ d.numero }}</span></td>
+                    <td>
+                        <span class="mono">{{ d.pk_debut }}</span>
+                        <span style="color:#94a3b8;margin:0 4px;">→</span>
+                        <span class="mono">{{ d.pk_fin }}</span>
+                    </td>
+                    <td>
+                        {% if d.mode == 'assainissement' %}
+                        <span style="font-size:.72rem;font-weight:600;color:#0284c7;">ASS</span>
+                        {% else %}
+                        <span style="font-size:.72rem;font-weight:600;color:#d97706;">TER</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#475569;">{{ d.demandeur.nom }}</td>
+                    <td style="color:#475569;">
+                        {% if d.cloture_at %}{{ d.cloture_at.strftime('%d/%m/%Y') }}{% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if d.statut_reception == 'validee' %}
+                            <span class="badge badge-val">✓ Validée</span>
+                        {% elif d.statut_reception == 'non_validee' %}
+                            <span class="badge badge-nval">✗ Non validée</span>
+                        {% elif d.statut_reception == 'a_reprendre' %}
+                            <span class="badge badge-ar">↩ À reprendre</span>
+                        {% else %}
+                            <span class="badge badge-none">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:#475569;">{{ d.tolerance or '—' }} cm</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="padding:40px;text-align:center;color:#94a3b8;font-style:italic;">
+            Aucune réception clôturée pour ce projet.
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="rapport-footer">
+        Rapport généré par RECEPTA by OPTILAB — {{ now.strftime('%d/%m/%Y') }}
+    </div>
+
+</div>
+</body>
+</html>

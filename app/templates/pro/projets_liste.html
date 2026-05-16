@@ -3,101 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mes projets — RECEPTA PRO</title>
+    <title>Mes projets — RECEPTA</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-</head>
-<body class="font-sans bg-slate-900 min-h-screen">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family:'Inter',sans-serif; background:#07101c; }
 
-<header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
-    <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <a href="/" class="flex items-center gap-3 hover:opacity-80 transition" style="text-decoration:none;">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:20px;height:20px;">
+        /* ── Cards ── */
+        .card-mdc {
+            background: linear-gradient(145deg, #0d1b2e 0%, #0f2038 100%);
+            border: 1px solid #1e3a5f;
+            transition: border-color .2s, box-shadow .2s, transform .15s;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-mdc:hover {
+            border-color: rgba(124,58,237,.5);
+            box-shadow: 0 0 0 1px rgba(124,58,237,.15), 0 20px 40px rgba(0,0,0,.4);
+            transform: translateY(-2px);
+        }
+        .card-et {
+            background: linear-gradient(145deg, #150900 0%, #1c0d00 100%);
+            border: 1px solid #3d1f00;
+            transition: border-color .2s, box-shadow .2s, transform .15s;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-et:hover {
+            border-color: rgba(245,158,11,.4);
+            box-shadow: 0 0 0 1px rgba(245,158,11,.1), 0 20px 40px rgba(0,0,0,.4);
+            transform: translateY(-2px);
+        }
+
+        /* ── Separator ── */
+        .section-sep {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 36px 0 24px;
+        }
+        .section-sep::before, .section-sep::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,.06);
+        }
+
+        /* ── Nav buttons ── */
+        .act-neutral {
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.08);
+            color: #64748b;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: .8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: background .15s, color .15s;
+        }
+        .act-neutral:hover { background: rgba(255,255,255,.08); color: #94a3b8; }
+    </style>
+</head>
+
+<body class="min-h-screen">
+
+<!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+<header style="background:rgba(7,16,28,.9);border-bottom:1px solid #1e3a5f;backdrop-filter:blur(8px);" class="sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-2.5 hover:opacity-80 transition" style="text-decoration:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:18px;height:18px;">
                 <span style="background:#00ffff;border-radius:2px;"></span>
                 <span style="background:#fbbf24;border-radius:2px;"></span>
                 <span style="background:#00ffff;border-radius:2px;"></span>
                 <span style="background:#00ffff;border-radius:2px;"></span>
             </div>
-            <div>
-                <div style="color:#00ffff;font-size:16px;font-weight:800;letter-spacing:2px;line-height:1.1;">RECEPTA</div>
-                <div style="color:rgba(255,255,255,0.4);font-size:9px;font-weight:500;letter-spacing:1px;">by OPTILAB — PRO</div>
+            <div style="display:flex;flex-direction:column;line-height:1.1;">
+                <span style="color:#00ffff;font-weight:800;letter-spacing:2px;font-size:14px;">RECEPTA</span>
+                <span style="color:rgba(0,255,255,.3);font-size:7px;font-weight:600;letter-spacing:1.5px;">by OPTILAB</span>
             </div>
         </a>
-        <div class="flex items-center gap-3">
-            <span class="text-slate-400 text-sm">{{ current_user.nom }}</span>
-            <a href="/" class="text-slate-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-slate-700 transition">Accueil</a>
-            <a href="{{ url_for('auth.logout') }}" class="text-red-400 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition">Déconnexion</a>
+
+        <!-- Right nav -->
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('pro_demandes.historique_receptions') }}"
+               class="act-neutral hidden sm:flex">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Historique
+            </a>
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('admin.dashboard') }}" class="act-neutral">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"/>
+                </svg>
+                Admin
+            </a>
+            {% endif %}
+            <span class="text-slate-500 text-sm hidden sm:block px-2">{{ current_user.nom }}</span>
+            <a href="{{ url_for('auth.logout') }}"
+               class="text-red-500/70 hover:text-red-400 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition border border-red-900/30 hover:border-red-700/40">
+                Déconnexion
+            </a>
         </div>
+
     </div>
 </header>
 
-<main class="max-w-5xl mx-auto px-4 py-10 space-y-6">
+<!-- ── MAIN ───────────────────────────────────────────────────────────── -->
+<main class="max-w-6xl mx-auto px-4 pt-10 pb-20">
 
+    <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <div class="px-4 py-3 rounded-xl text-sm font-medium
-                {% if category == 'success' %}bg-emerald-900/50 text-emerald-300 border border-emerald-700
-                {% elif category == 'danger' %}bg-red-900/50 text-red-300 border border-red-700
-                {% else %}bg-blue-900/50 text-blue-300 border border-blue-700{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
+    {% for cat, msg in messages %}
+    <div class="mb-6 px-4 py-3 rounded-xl text-sm font-medium
+        {% if cat == 'success' %}bg-emerald-900/40 text-emerald-300 border border-emerald-700/50
+        {% elif cat == 'danger'  %}bg-red-900/40    text-red-300    border border-red-700/50
+        {% else %}bg-blue-900/40 text-blue-300 border border-blue-700/50{% endif %}">
+        {{ msg }}
+    </div>
+    {% endfor %}
     {% endwith %}
 
-    <div>
-        <h1 class="text-2xl font-bold text-white">Mes projets</h1>
-        <p class="text-slate-400 text-sm mt-1">{{ projets|length }} projet(s) accessible(s)</p>
+    <!-- ── Greeting ── -->
+    <div class="mb-10">
+        <h1 class="text-3xl font-black text-white tracking-tight">
+            Bonjour, <span style="color:#00ffff;">{{ current_user.nom.split()[0] }}</span>
+        </h1>
+        <p class="text-slate-500 mt-1 text-sm">
+            {% set total = projets|length %}
+            {% if total == 0 %}Vous n'êtes affilié à aucun projet actif pour l'instant.
+            {% elif total == 1 %}Vous avez accès à <strong class="text-slate-300">1 projet</strong>.
+            {% else %}Vous avez accès à <strong class="text-slate-300">{{ total }} projets</strong>.
+            {% endif %}
+            {% if pending_count > 0 %}
+            · <span class="text-red-400 font-semibold">{{ pending_count }} demande{{ 's' if pending_count > 1 }} en attente</span>
+            {% endif %}
+        </p>
     </div>
 
-    {% if projets %}
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {% for p, role in projets %}
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 hover:border-violet-500 transition group">
-            <div class="flex items-start justify-between mb-4">
-                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white font-bold text-lg">
+    <!-- ── No projects ── -->
+    {% if not projets %}
+    <div class="text-center py-24 rounded-3xl" style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);">
+        <div class="text-6xl mb-6">📋</div>
+        <p class="text-slate-400 font-semibold text-lg mb-2">Aucun projet actif</p>
+        <p class="text-slate-600 text-sm">Contactez votre administrateur pour être affilié à un projet.</p>
+    </div>
+    {% endif %}
+
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION MDC
+    ═══════════════════════════════════════════════════════════ -->
+    {% if mdc_projets %}
+
+    {% if et_projets %}
+    <div class="section-sep">
+        <span class="text-xs font-bold tracking-widest uppercase" style="color:rgba(124,58,237,.7);">Mission de Contrôle</span>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    {% for p, role in mdc_projets %}
+    {% set nb_pending = pending_by_projet.get(p.id, 0) %}
+
+    <a href="{{ url_for('pro_projets.projet_hub', projet_id=p.id) }}"
+       class="card-mdc rounded-2xl p-5 gap-4">
+
+        <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-lg flex-shrink-0"
+                     style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">
                     {{ p.nom[0]|upper }}
                 </div>
-                <span class="px-2.5 py-1 text-xs font-bold rounded-full
-                    {% if role == 'mdc' %}bg-blue-900/60 text-blue-300 border border-blue-700
-                    {% else %}bg-orange-900/60 text-orange-300 border border-orange-700{% endif %}">
-                    {{ role|upper }}
-                </span>
-            </div>
-            <h2 class="text-white font-bold text-base mb-1 group-hover:text-violet-300 transition">{{ p.nom }}</h2>
-            <p class="text-slate-400 text-xs mb-3">
-                {% if p.pk_debut and p.pk_fin %}PK {{ p.pk_debut }} → {{ p.pk_fin }}{% else %}PK à définir{% endif %}
-                {% if p.tolerance_defaut %} — Tol. {{ p.tolerance_defaut }} cm{% endif %}
-            </p>
-            {% if p.description %}
-            <p class="text-slate-500 text-xs mb-4 line-clamp-2">{{ p.description }}</p>
-            {% endif %}
-            <div class="flex items-center gap-2 pt-3 border-t border-slate-700">
-                <span class="text-slate-500 text-xs">{{ p.membres.count() }} membre(s)</span>
-                <span class="text-slate-700">·</span>
-                {% if p.actif %}
-                    <span class="text-emerald-400 text-xs">Actif</span>
-                {% else %}
-                    <span class="text-slate-500 text-xs">Inactif</span>
-                {% endif %}
-                <div class="ml-auto">
-                    <!-- Lien vers la réception (V1 encore, sera remplacé V2) -->
-                    <a href="/reception" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition">
-                        Ouvrir
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    </a>
+                <div>
+                    <div class="font-bold text-white text-base leading-tight">{{ p.nom }}</div>
+                    {% if p.intitule %}
+                    <div class="text-slate-500 text-xs mt-0.5 line-clamp-1">{{ p.intitule }}</div>
+                    {% endif %}
                 </div>
             </div>
+            <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide"
+                      style="background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.3);">
+                    {% if role == 'admin' %}ADMIN{% else %}MDC{% endif %}
+                </span>
+                <span class="px-2 py-0.5 rounded-full font-semibold"
+                      style="font-size:.62rem;letter-spacing:.5px;{% if p.plan == 'pro' %}background:rgba(139,92,246,.1);color:#c084fc;border:1px solid rgba(139,92,246,.2);{% else %}background:rgba(100,116,139,.07);color:#475569;border:1px solid rgba(100,116,139,.15);{% endif %}">
+                    {% if p.plan == 'pro' %}PARTENARIAT{% else %}AUTONOME{% endif %}
+                </span>
+            </div>
         </div>
-        {% endfor %}
+
+        <div class="space-y-1.5 flex-1">
+            <div class="text-xs text-slate-500">
+                {% if p.pk_debut and p.pk_fin %}
+                PK {{ p.pk_debut }} → {{ p.pk_fin }}{% if p.tolerance_defaut %} · Tol. {{ p.tolerance_defaut }} cm{% endif %}
+                {% else %}
+                <span class="italic text-slate-600">PK non définis</span>
+                {% endif %}
+            </div>
+            <div class="text-xs {% if p.excel_key %}text-emerald-600{% else %}text-amber-700{% endif %}">
+                {% if p.excel_key %}● Modèle Excel associé{% else %}○ Aucun fichier Excel{% endif %}
+            </div>
+            {% if nb_pending > 0 %}
+            <div class="text-xs text-red-400 font-semibold flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block"></span>
+                {{ nb_pending }} demande{{ 's' if nb_pending > 1 }} en attente
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-white/5">
+            <span class="text-xs text-slate-600">Ouvrir le projet →</span>
+            {% if nb_pending > 0 %}
+            <span class="text-xs font-bold bg-red-500 text-white px-2 py-0.5 rounded-full">
+                {{ nb_pending if nb_pending < 10 else '9+' }}
+            </span>
+            {% endif %}
+        </div>
+
+    </a>
+    {% endfor %}
     </div>
-    {% else %}
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl px-6 py-20 text-center">
-        <div class="text-5xl mb-4">📂</div>
-        <p class="text-slate-400">Vous n'êtes encore membre d'aucun projet.</p>
-        <p class="text-slate-500 text-sm mt-2">Contactez votre administrateur pour être ajouté à un projet.</p>
+    {% endif %}
+
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SECTION ET
+    ═══════════════════════════════════════════════════════════ -->
+    {% if et_projets %}
+
+    {% if mdc_projets %}
+    <div class="section-sep">
+        <span class="text-xs font-bold tracking-widest uppercase" style="color:rgba(245,158,11,.6);">Entreprise de Travaux</span>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    {% for p, role in et_projets %}
+
+    <a href="{{ url_for('pro_projets.projet_hub', projet_id=p.id) }}"
+       class="card-et rounded-2xl p-5 gap-4">
+
+        <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-lg flex-shrink-0"
+                     style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+                    {{ p.nom[0]|upper }}
+                </div>
+                <div>
+                    <div class="font-bold text-white text-base leading-tight">{{ p.nom }}</div>
+                    {% if p.intitule %}
+                    <div class="text-amber-900 text-xs mt-0.5 line-clamp-1">{{ p.intitule }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide"
+                      style="background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.25);">
+                    ET
+                </span>
+                <span class="px-2 py-0.5 rounded-full font-semibold"
+                      style="font-size:.62rem;letter-spacing:.5px;{% if p.plan == 'pro' %}background:rgba(245,158,11,.07);color:#92400e;border:1px solid rgba(245,158,11,.15);{% else %}background:rgba(100,116,139,.07);color:#475569;border:1px solid rgba(100,116,139,.15);{% endif %}">
+                    {% if p.plan == 'pro' %}PARTENARIAT{% else %}AUTONOME{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="space-y-1.5 flex-1">
+            <div class="text-xs text-amber-900/70">
+                {% if p.pk_debut and p.pk_fin %}
+                PK {{ p.pk_debut }} → {{ p.pk_fin }}{% if p.tolerance_defaut %} · Tol. {{ p.tolerance_defaut }} cm{% endif %}
+                {% else %}
+                <span class="italic opacity-50">PK non définis</span>
+                {% endif %}
+            </div>
+            <div class="text-xs {% if p.excel_key %}text-emerald-700{% else %}text-amber-800{% endif %}">
+                {% if p.excel_key %}● Modèle Excel disponible{% else %}○ Aucun fichier Excel{% endif %}
+            </div>
+            {% if et_demandes_count > 0 %}
+            <div class="text-xs text-amber-700/80">
+                {{ et_demandes_count }} demande{{ 's' if et_demandes_count > 1 }} soumise{{ 's' if et_demandes_count > 1 }}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-amber-900/20">
+            <span class="text-xs text-amber-900/50">Ouvrir le projet →</span>
+        </div>
+
+    </a>
+    {% endfor %}
     </div>
     {% endif %}
 
 </main>
+
 </body>
 </html>

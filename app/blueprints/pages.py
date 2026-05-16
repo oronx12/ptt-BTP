@@ -3,17 +3,33 @@
 Blueprint des routes de pages HTML.
 Toutes les pages sont protégées par @login_required.
 """
-from flask import Blueprint, render_template
-from flask_login import login_required
+from flask import Blueprint, render_template, redirect, url_for
+from flask_login import login_required, current_user
 
 pages_bp = Blueprint("pages", __name__)
 
 
 @pages_bp.route("/")
-@login_required
 def home():
-    """Page d'accueil — choix du pipeline de travail."""
-    return render_template("home.html")
+    """Page d'entrée — redirige les utilisateurs connectés vers leur espace."""
+    if current_user.is_authenticated:
+        if current_user.is_admin:
+            return redirect(url_for("admin.dashboard"))
+        from ..models import UserClient, MembreProjet
+        has_projet = (
+            UserClient.query.filter_by(user_id=current_user.id).first()
+            or MembreProjet.query.filter_by(user_id=current_user.id).first()
+        )
+        if has_projet:
+            return redirect(url_for("pro_projets.liste_projets"))
+        return render_template("home.html")
+    return render_template("intro.html")
+
+
+@pages_bp.route("/landing")
+def landing():
+    """Page marketing complète (landing page)."""
+    return render_template("landing.html")
 
 
 @pages_bp.route("/editeur")

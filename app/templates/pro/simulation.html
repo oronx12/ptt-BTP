@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation — {{ projet.nom }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family:'Inter',sans-serif; }
+        /* Statut lignes */
+        tr.ok    { background:#f0fdf4; }
+        tr.nok   { background:#fef2f2; }
+        tr.vide  { background:#fff; }
+        td.cote-ok  { color:#15803d; font-weight:700; }
+        td.cote-nok { color:#dc2626; font-weight:700; }
+        /* Scrollbar table */
+        .tbl-wrap { overflow-x:auto; }
+        /* Print */
+        @media print {
+            header, #toolbar, #config-panel, .no-print { display:none !important; }
+            body { background:#fff; color:#000; }
+            table { font-size:10pt; }
+            tr.ok  { background:#e8f5e9; }
+            tr.nok { background:#ffebee; }
+            .print-header { display:block !important; }
+        }
+        .print-header { display:none; }
+        /* Mode letter badges */
+        .sim-mode-letter { width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:900; color:#fff; letter-spacing:-1px; transition:box-shadow .2s; }
+        .sim-mode-letter.ter  { background:linear-gradient(135deg,#78350f,#d97706); }
+        .sim-mode-letter.asg  { background:linear-gradient(135deg,#3730a3,#818cf8); }
+        .sim-mode-letter.asd  { background:linear-gradient(135deg,#9d174d,#f472b6); }
+        .sim-mode-letter.asgd { background:linear-gradient(135deg,#3730a3 40%,#9d174d); font-size:1rem; }
+        .type-card.ring-2 .sim-mode-letter { box-shadow:0 0 14px rgba(245,158,11,.3); }
+
+        /* Input mesure */
+        .mesure-input {
+            width:90px; border:1px solid #e2e8f0; border-radius:6px;
+            padding:4px 8px; font-size:12px; text-align:right;
+            background:#f8fafc; outline:none; transition:border-color .15s;
+        }
+        .mesure-input:focus { border-color:#7c3aed; background:#fff; }
+        /* Spinner */
+        .spinner { animation:spin 1s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-100">
+
+<!-- HEADER -->
+<header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 no-print">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="/pro/projets/" class="flex items-center gap-2 hover:opacity-80 transition" style="text-decoration:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:16px;height:16px;">
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#fbbf24;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                </div>
+                <span style="color:#00ffff;font-weight:800;letter-spacing:2px;font-size:14px;">RECEPTA</span>
+            </a>
+            <span class="text-slate-600">›</span>
+            <a href="{{ url_for('pro_projets.liste_projets') }}" class="text-slate-400 hover:text-white text-sm transition">Projets</a>
+            <span class="text-slate-600">›</span>
+            <span class="text-slate-300 text-sm font-semibold truncate max-w-[200px]">{{ projet.nom }}</span>
+            <span class="text-slate-600">›</span>
+            <span class="text-amber-400 text-sm font-semibold">Simulation</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-900/40 text-amber-300 border border-amber-700/50">
+                BROUILLON
+            </span>
+            <a href="{{ url_for('auth.logout') }}" class="text-slate-500 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-slate-700 transition">Déconnexion</a>
+        </div>
+    </div>
+</header>
+
+<!-- BARRE D'OUTILS -->
+<div id="toolbar" class="bg-slate-800/80 border-b border-slate-700 no-print">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
+
+        <!-- PK début / fin -->
+        <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-400">PK de</label>
+            <select id="pk-debut-sel" class="bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded-lg px-2 py-1.5 outline-none focus:border-violet-500">
+                <option value="">Début</option>
+            </select>
+            <label class="text-xs text-slate-400">à</label>
+            <select id="pk-fin-sel" class="bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded-lg px-2 py-1.5 outline-none focus:border-violet-500">
+                <option value="">Fin</option>
+            </select>
+        </div>
+
+        <!-- Tolérance -->
+        <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-400">Tolérance :</label>
+            <input type="number" id="tolerance" value="{{ projet.tolerance_defaut or 2 }}" step="0.1" min="0"
+                   class="w-20 bg-slate-700 border border-slate-600 text-slate-200 text-xs rounded-lg px-2 py-1.5 outline-none focus:border-violet-500 text-right">
+            <span class="text-xs text-slate-500">cm</span>
+        </div>
+
+        <!-- Bouton générer -->
+        <button id="btn-generer" onclick="genererTableau()"
+                class="px-4 py-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition">
+            Générer le tableau
+        </button>
+
+        <!-- Séparateur -->
+        <div class="flex-1"></div>
+
+        <!-- Actions export -->
+        <div class="flex items-center gap-2">
+            <button onclick="exportBrouillon()"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                Imprimer / PDF
+            </button>
+            <button onclick="resetMesures()"
+                    class="px-3 py-1.5 border border-slate-600 text-slate-400 hover:text-white text-xs rounded-lg hover:border-slate-400 transition">
+                Réinitialiser
+            </button>
+        </div>
+    </div>
+
+    <!-- Bilan en direct -->
+    <div id="bilan-bar" class="hidden border-t border-slate-700 bg-slate-900/50">
+        <div class="max-w-7xl mx-auto px-4 py-2 flex items-center gap-6">
+            <span class="text-xs text-slate-400">Bilan :</span>
+            <span class="text-xs"><span class="font-bold text-white" id="b-total">0</span> <span class="text-slate-500">points</span></span>
+            <span class="text-xs"><span class="font-bold text-emerald-400" id="b-ok">0</span> <span class="text-slate-500">conformes</span></span>
+            <span class="text-xs"><span class="font-bold text-red-400" id="b-nok">0</span> <span class="text-slate-500">non conformes</span></span>
+            <span class="text-xs"><span class="font-bold text-white" id="b-pct">—</span> <span class="text-slate-500">% conformité</span></span>
+            <div class="flex-1 max-w-xs h-2 bg-slate-700 rounded-full overflow-hidden">
+                <div id="b-bar" class="h-full rounded-full transition-all duration-500" style="width:0%;background:#4ade80"></div>
+            </div>
+            <span class="text-xs text-slate-500 italic ml-auto" id="b-manquants"></span>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<main class="max-w-7xl mx-auto px-4 py-6">
+
+    <!-- En-tête brouillon (visible à l'impression) -->
+    <div class="print-header mb-6 p-4 border-2 border-dashed border-amber-400 rounded-xl text-center">
+        <div class="text-lg font-bold text-amber-700">SIMULATION — BROUILLON NON OFFICIEL</div>
+        <div class="text-sm text-slate-600 mt-1">
+            Projet : <strong>{{ projet.nom }}</strong> · Généré le <span id="ph-date"></span>
+        </div>
+        <div class="text-xs text-slate-400 mt-1">Ce document est une simulation interne. Il ne remplace pas la fiche de réception officielle.</div>
+    </div>
+
+    <!-- Zone de chargement -->
+    <div id="loading-zone" class="flex flex-col items-center justify-center py-24 text-slate-500">
+        <svg class="spinner w-8 h-8 text-violet-500 mb-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <p class="text-sm">Chargement des données Excel du projet…</p>
+    </div>
+
+    <!-- Zone erreur -->
+    <div id="error-zone" class="hidden bg-red-900/30 border border-red-700 rounded-xl px-6 py-8 text-center">
+        <p class="text-red-300 font-semibold mb-1">Impossible de charger les données</p>
+        <p id="error-msg" class="text-red-400 text-sm"></p>
+    </div>
+
+    <!-- Zone config (avant génération) -->
+    <div id="config-zone" class="hidden space-y-4">
+
+        <!-- Type / Côté selector (format paramétrique uniquement) -->
+        <div id="type-selector" class="hidden bg-slate-800 border border-slate-700 rounded-xl p-4">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Type de réception</p>
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4" id="type-cards">
+                <label class="type-card flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-slate-700 cursor-pointer transition hover:border-slate-500 bg-slate-900/40" data-type="terrassement" onclick="selectSimType(this)">
+                    <input type="radio" name="_simtype" class="hidden" value="terrassement">
+                    <div class="sim-mode-letter ter">T</div>
+                    <span class="text-xs font-bold text-slate-400 text-center">Terrassement</span>
+                </label>
+                <label class="type-card flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-slate-700 cursor-pointer transition hover:border-slate-500 bg-slate-900/40" data-type="assainissement_g" onclick="selectSimType(this)">
+                    <input type="radio" name="_simtype" class="hidden" value="assainissement_g">
+                    <div class="sim-mode-letter asg">G</div>
+                    <span class="text-xs font-bold text-slate-400 text-center">Assainissement G</span>
+                </label>
+                <label class="type-card flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-slate-700 cursor-pointer transition hover:border-slate-500 bg-slate-900/40" data-type="assainissement_d" onclick="selectSimType(this)">
+                    <input type="radio" name="_simtype" class="hidden" value="assainissement_d">
+                    <div class="sim-mode-letter asd">D</div>
+                    <span class="text-xs font-bold text-slate-400 text-center">Assainissement D</span>
+                </label>
+                <label class="type-card flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-slate-700 cursor-pointer transition hover:border-slate-500 bg-slate-900/40 ring-2 ring-amber-500" data-type="assainissement" onclick="selectSimType(this)">
+                    <input type="radio" name="_simtype" class="hidden" value="assainissement" checked>
+                    <div class="sim-mode-letter asgd">G+D</div>
+                    <span class="text-xs font-bold text-amber-400 text-center">Assainissement G+D</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-4">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Parties d'ouvrage à simuler</p>
+            <div id="columns-grid" class="grid gap-4 border border-slate-700 rounded-xl overflow-hidden bg-slate-900/30"></div>
+        </div>
+    </div>
+
+    <!-- Tableau de simulation -->
+    <div id="sim-zone" class="hidden">
+
+        <!-- Info onglet courant -->
+        <div class="flex items-center justify-between mb-4">
+            <div class="text-sm text-slate-400">
+                <span id="info-pks" class="text-violet-300"></span>
+                · Tol. <span id="info-tol" class="text-amber-300 font-semibold"></span> cm
+            </div>
+            <div class="text-xs text-amber-400 italic no-print">Saisir 0 ou laisser vide = non mesuré</div>
+        </div>
+
+        <div class="tbl-wrap rounded-xl border border-slate-700 overflow-hidden">
+            <table class="w-full text-sm" id="sim-table" style="background:#0f172a;">
+                <thead>
+                    <tr class="border-b border-slate-700" style="background:#1e293b;">
+                        <th class="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-24">PK</th>
+                        <th class="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide">Élément</th>
+                        <th class="text-center px-3 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-16">Côté</th>
+                        <th class="text-right px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-28">Côte théorique</th>
+                        <th class="text-right px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-28 no-print">Mesure terrain</th>
+                        <th class="text-right px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-24">Écart</th>
+                        <th class="text-center px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-24">Statut</th>
+                    </tr>
+                </thead>
+                <tbody id="sim-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Note brouillon -->
+        <div class="mt-4 flex items-center gap-3 px-4 py-3 bg-amber-900/20 border border-amber-700/40 rounded-xl no-print">
+            <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-xs text-amber-300">
+                <strong>Simulation uniquement.</strong> Ce tableau est un outil de préparation interne.
+                La réception officielle avec fiche signée doit être réalisée par la MDC.
+                Pour soumettre une demande officielle : <a href="{{ url_for('pro_demandes.nouvelle_demande') }}" class="underline hover:text-amber-200">Nouvelle demande →</a>
+            </p>
+        </div>
+    </div>
+
+</main>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// ÉTAT GLOBAL
+// ─────────────────────────────────────────────────────────────────────────────
+const PROJET_ID  = {{ projet.id }};
+const PROJET_NOM = {{ projet.nom | tojson }};
+
+let FORMAT        = null;          // 'parametric' | 'legacy'
+let commonPKs     = [];
+let allElements   = [];
+let allSheetsData = {};
+let sheetNames    = [];
+let columnsState  = {};
+
+const _GROUPE_COLORS = {
+    AXE: { text: 'text-slate-300', border: 'border-slate-600', label: 'Chaussée' },
+    TER: { text: 'text-amber-300', border: 'border-amber-700', label: 'Terrassement' },
+    ASG: { text: 'text-blue-300',  border: 'border-blue-700',  label: 'Canal Gauche' },
+    ASD: { text: 'text-violet-300',border: 'border-violet-700',label: 'Canal Droit' },
+};
+
+const _TYPE_GROUPS = {
+    terrassement:    ['AXE','TER'],
+    assainissement_g:['ASG'],
+    assainissement_d:['ASD'],
+    assainissement:  ['ASG','ASD'],
+};
+let selectedSimType = 'assainissement';
+
+function selectSimType(card) {
+    document.querySelectorAll('.type-card').forEach(c => {
+        c.classList.remove('ring-2','ring-amber-500');
+        c.querySelector('span.text-xs').className = 'text-xs font-bold text-slate-400 text-center';
+    });
+    card.classList.add('ring-2','ring-amber-500');
+    card.querySelector('span.text-xs').className = 'text-xs font-bold text-amber-400 text-center';
+    selectedSimType = card.dataset.type;
+    // Filtrer la grille des éléments si déjà construite
+    filterColumnsGrid();
+}
+
+function filterColumnsGrid() {
+    if (FORMAT !== 'parametric') return;
+    const allowed = _TYPE_GROUPS[selectedSimType] || null;
+    document.querySelectorAll('.elt-checkbox').forEach(cb => {
+        const grp = cb.dataset.groupe;
+        const col = cb.closest('[data-grpname]');
+        if (col) col.style.display = (!allowed || allowed.includes(grp)) ? '' : 'none';
+    });
+    // Cacher les colonnes de groupe entières
+    document.querySelectorAll('#columns-grid > div[data-grpname]').forEach(col => {
+        const grp = col.dataset.grpname;
+        col.style.display = (!allowed || allowed.includes(grp)) ? '' : 'none';
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHARGEMENT INITIAL — détection format via /config
+// ─────────────────────────────────────────────────────────────────────────────
+async function init() {
+    try {
+        const resp = await fetch(`/api/pro/projets/${PROJET_ID}/config`);
+        if (!resp.ok) throw new Error((await resp.json().catch(()=>({}))).error || `Erreur ${resp.status}`);
+        const data = await resp.json();
+
+        FORMAT    = data.format;
+        commonPKs = data.pks || [];
+
+        if (FORMAT === 'parametric') {
+            allElements = data.elements || [];
+        } else {
+            // Legacy : charger les onglets bruts
+            const resp2 = await fetch(`/api/pro/projets/${PROJET_ID}/sheets`);
+            if (!resp2.ok) throw new Error((await resp2.json().catch(()=>({}))).error || `Erreur ${resp2.status}`);
+            const d2 = await resp2.json();
+            allSheetsData = d2.sheets;
+            sheetNames    = d2.sheet_names;
+            const pkSets  = sheetNames
+                .filter(s => allSheetsData[s] && !allSheetsData[s].error)
+                .map(s => allSheetsData[s].pks.map(String));
+            commonPKs = pkSets.length ? pkSets.reduce((a, b) => a.filter(pk => b.includes(pk))) : [];
+        }
+
+        const opts = commonPKs.map(pk => `<option value="${pk}">${pk}</option>`).join('');
+        document.getElementById('pk-debut-sel').innerHTML = '<option value="">— Début —</option>' + opts;
+        document.getElementById('pk-fin-sel').innerHTML   = '<option value="">— Fin —</option>'   + opts;
+
+        if (commonPKs.length >= 2) {
+            document.getElementById('pk-debut-sel').value = commonPKs[0];
+            document.getElementById('pk-fin-sel').value   = commonPKs[commonPKs.length - 1];
+        }
+        if (data.tolerance) document.getElementById('tolerance').value = data.tolerance;
+
+        if (FORMAT === 'parametric') {
+            // Activer sélecteur type + désactiver les options indisponibles
+            const typeSel = document.getElementById('type-selector');
+            typeSel.classList.remove('hidden');
+            const has = {
+                terrassement:    !!data.has_ter,
+                assainissement_g:!!data.has_ass_g,
+                assainissement_d:!!data.has_ass_d,
+                assainissement:  !!(data.has_ass_g || data.has_ass_d),
+            };
+            document.querySelectorAll('.type-card').forEach(card => {
+                const t = card.dataset.type;
+                if (!has[t]) {
+                    card.style.opacity = '.3';
+                    card.style.cursor  = 'not-allowed';
+                    card.onclick       = null;
+                }
+            });
+            // Sélection auto du premier disponible
+            const first = Object.keys(has).find(k => has[k]);
+            if (first) {
+                const fc = document.querySelector(`.type-card[data-type="${first}"]`);
+                if (fc) selectSimType(fc);
+            }
+        }
+        buildColumnsGrid();
+        document.getElementById('loading-zone').classList.add('hidden');
+        document.getElementById('config-zone').classList.remove('hidden');
+
+    } catch(e) {
+        document.getElementById('loading-zone').classList.add('hidden');
+        document.getElementById('error-zone').classList.remove('hidden');
+        document.getElementById('error-msg').textContent = e.message;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GRILLE DE SÉLECTION DES ÉLÉMENTS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildColumnsGrid() {
+    const grid = document.getElementById('columns-grid');
+    grid.innerHTML = '';
+
+    if (FORMAT === 'parametric') {
+        const byGroupe = {};
+        allElements.forEach(elt => { (byGroupe[elt.groupe] = byGroupe[elt.groupe] || []).push(elt); });
+        const groupes = ['AXE', 'TER', 'ASG', 'ASD'].filter(g => byGroupe[g]);
+        grid.style.gridTemplateColumns = `repeat(${Math.min(groupes.length, 4)}, 1fr)`;
+
+        groupes.forEach((grp, gi) => {
+            const c = _GROUPE_COLORS[grp] || { text:'text-slate-300', border:'border-slate-600', label: grp };
+            const col = document.createElement('div');
+            col.className = 'p-4' + (gi < groupes.length - 1 ? ' border-r border-slate-700' : '');
+            col.dataset.grpname = grp;
+            col.innerHTML = `<div class="flex items-center gap-2 mb-3 pb-3 border-b-2 ${c.border}">
+                <span class="text-xs font-bold uppercase tracking-wide ${c.text}">${c.label}</span>
+                <button type="button" onclick="toggleGroupe('${grp}',true)" class="ml-auto text-xs px-1.5 py-0.5 rounded ${c.text} hover:bg-slate-700 transition">Tout</button>
+                <button type="button" onclick="toggleGroupe('${grp}',false)" class="text-xs px-1.5 py-0.5 rounded text-slate-500 hover:bg-slate-700 transition">Aucun</button>
+            </div>`;
+            byGroupe[grp].forEach((elt, ei) => {
+                const id = `elt-${grp}-${ei}`;
+                const itm = document.createElement('label');
+                itm.htmlFor = id;
+                itm.className = 'flex items-center gap-2 py-1.5 cursor-pointer group';
+                itm.innerHTML = `<input type="checkbox" id="${id}" checked data-key="${elt.key}" data-groupe="${elt.groupe}" class="w-4 h-4 flex-shrink-0 elt-checkbox accent-violet-400">
+                    <span class="text-sm text-slate-300 group-hover:text-white transition">${elt.label}</span>`;
+                col.appendChild(itm);
+            });
+            grid.appendChild(col);
+        });
+
+    } else {
+        // Legacy : onglets Cote_Gauche / Cote_Droit
+        grid.style.gridTemplateColumns = `repeat(${Math.max(1, sheetNames.length)}, 1fr)`;
+        sheetNames.forEach((sName, si) => {
+            const sd = allSheetsData[sName];
+            if (!sd || sd.error) return;
+            const isG = sName.toLowerCase().includes('gauch');
+            const col = document.createElement('div');
+            col.className = 'p-4' + (si < sheetNames.length - 1 ? ' border-r border-slate-700' : '');
+            col.innerHTML = `<div class="flex items-center gap-2 mb-3 pb-3 border-b-2 ${isG ? 'border-blue-600' : 'border-emerald-600'}">
+                <span class="text-xs font-bold uppercase tracking-wide ${isG ? 'text-blue-300' : 'text-emerald-300'}">${isG ? '← Côté Gauche' : 'Côté Droit →'}</span>
+                <button type="button" onclick="toggleAll('${sName}',true)" class="ml-auto text-xs px-1.5 py-0.5 rounded text-slate-400 hover:bg-slate-700 transition">Tout</button>
+                <button type="button" onclick="toggleAll('${sName}',false)" class="text-xs px-1.5 py-0.5 rounded text-slate-500 hover:bg-slate-700 transition">Aucun</button>
+            </div>`;
+            columnsState[sName] = [];
+            sd.cote_columns.forEach((colName, ci) => {
+                const id  = `col-${sName}-${ci}`.replace(/\W/g,'_');
+                const itm = document.createElement('label');
+                itm.htmlFor = id;
+                itm.className = 'flex items-center gap-2 py-1.5 cursor-pointer group';
+                itm.innerHTML = `<input type="checkbox" id="${id}" checked data-sheet="${sName}" data-col="${colName}" class="w-4 h-4 flex-shrink-0 accent-violet-400">
+                    <span class="text-sm text-slate-300 group-hover:text-white transition">${formatElement(colName)}</span>`;
+                col.appendChild(itm);
+                columnsState[sName].push({ col: colName, el: itm.querySelector('input') });
+            });
+            grid.appendChild(col);
+        });
+    }
+}
+
+function toggleGroupe(groupe, checked) {
+    document.querySelectorAll(`.elt-checkbox[data-groupe="${groupe}"]`).forEach(cb => { cb.checked = checked; });
+}
+function toggleAll(sheetName, checked) {
+    (columnsState[sheetName] || []).forEach(c => { c.el.checked = checked; });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GÉNÉRATION DU TABLEAU — paramétrique (/cotes) ou legacy (allSheetsData)
+// ─────────────────────────────────────────────────────────────────────────────
+async function genererTableau() {
+    const pkDebut   = document.getElementById('pk-debut-sel').value;
+    const pkFin     = document.getElementById('pk-fin-sel').value;
+    const tolerance = parseFloat(document.getElementById('tolerance').value) || 2;
+
+    if (!pkDebut || !pkFin) { alert('Sélectionnez PK début et PK fin.'); return; }
+
+    const idxD = commonPKs.indexOf(pkDebut);
+    const idxF = commonPKs.indexOf(pkFin);
+    if (idxD < 0 || idxF < 0 || idxD > idxF) { alert('Plage PK invalide.'); return; }
+
+    const pkRange = commonPKs.slice(idxD, idxF + 1);
+    const rows    = [];
+
+    if (FORMAT === 'parametric') {
+        const allowedGrps = _TYPE_GROUPS[selectedSimType] || null;
+        const selectedKeys = Array.from(document.querySelectorAll('.elt-checkbox:checked'))
+            .filter(cb => !allowedGrps || allowedGrps.includes(cb.dataset.groupe))
+            .map(cb => cb.dataset.key);
+        if (selectedKeys.length === 0) { alert('Sélectionnez au moins un élément.'); return; }
+
+        let cotesData;
+        try {
+            const r = await fetch(`/api/pro/projets/${PROJET_ID}/cotes`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ pks: pkRange }),
+            });
+            if (!r.ok) throw new Error((await r.json().catch(()=>({}))).error || `Erreur ${r.status}`);
+            cotesData = (await r.json()).cotes_by_pk || {};
+        } catch(e) {
+            alert('Erreur calcul des côtes : ' + e.message);
+            return;
+        }
+
+        const keySet = new Set(selectedKeys);
+        for (const pk of pkRange) {
+            for (const elt of (cotesData[pk] || [])) {
+                if (!keySet.has(elt.key) || elt.cote === null || elt.cote === undefined) continue;
+                rows.push({ pk, label: elt.label, theorie: elt.cote, groupe: elt.groupe });
+            }
+        }
+
+    } else {
+        // Legacy
+        const selectedCols = {};
+        sheetNames.forEach(sName => {
+            selectedCols[sName] = (columnsState[sName] || []).filter(c => c.el.checked).map(c => c.col);
+        });
+        for (const pk of pkRange) {
+            for (const sName of sheetNames) {
+                const sd   = allSheetsData[sName];
+                const cols = selectedCols[sName] || [];
+                if (!sd || sd.error || !cols.length) continue;
+                const record = sd.data.find(r => String(r[sd.pk_column]) === pk);
+                if (!record) continue;
+                const isG = sName.toLowerCase().includes('gauch');
+                for (const col of cols) {
+                    const th = record[col];
+                    if (th === null || th === undefined) continue;
+                    rows.push({ pk, label: formatElement(col), theorie: parseFloat(th), groupe: isG ? 'ASG' : 'ASD' });
+                }
+            }
+        }
+    }
+
+    if (rows.length === 0) { alert('Aucune côte théorique pour cette sélection.'); return; }
+
+    const _GROUPE_BADGE = {
+        AXE: '<span class="px-1.5 py-0.5 bg-slate-700 text-slate-300 rounded text-xs font-bold">AXE</span>',
+        TER: '<span class="px-1.5 py-0.5 bg-amber-900/50 text-amber-300 rounded text-xs font-bold">TER</span>',
+        ASG: '<span class="px-1.5 py-0.5 bg-blue-900/50 text-blue-300 rounded text-xs font-bold">G</span>',
+        ASD: '<span class="px-1.5 py-0.5 bg-violet-900/50 text-violet-300 rounded text-xs font-bold">D</span>',
+    };
+
+    document.getElementById('info-pks').textContent = `PK ${pkDebut} → ${pkFin} · ${pkRange.length} PK · ${rows.length} points`;
+    document.getElementById('info-tol').textContent  = tolerance;
+    document.getElementById('ph-date').textContent   = new Date().toLocaleDateString('fr-FR');
+
+    const tbody = document.getElementById('sim-tbody');
+    tbody.innerHTML = '';
+
+    rows.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.classList.add('vide');
+        tr.dataset.idx     = i;
+        tr.dataset.theorie = r.theorie;
+        tr.dataset.tol     = tolerance;
+        tr.style.borderBottom = '1px solid #1e293b';
+        tr.innerHTML = `
+            <td class="px-4 py-2.5 font-mono text-sm text-violet-300">${r.pk}</td>
+            <td class="px-4 py-2.5 text-sm text-slate-300">${r.label}</td>
+            <td class="px-3 py-2.5 text-center">${_GROUPE_BADGE[r.groupe] || ''}</td>
+            <td class="px-4 py-2.5 text-right font-mono text-sm text-slate-200">${r.theorie.toFixed(3)}</td>
+            <td class="px-4 py-2.5 text-right no-print">
+                <input type="number" step="0.001" class="mesure-input" placeholder="—"
+                       oninput="onMesure(this,${i})" data-row="${i}">
+            </td>
+            <td class="px-4 py-2.5 text-right font-mono text-sm ecart-cell" id="ecart-${i}">—</td>
+            <td class="px-4 py-2.5 text-center" id="statut-${i}">
+                <span class="text-slate-600 text-xs">—</span>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById('config-zone').classList.add('hidden');
+    document.getElementById('sim-zone').classList.remove('hidden');
+    document.getElementById('bilan-bar').classList.remove('hidden');
+    majBilan();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SAISIE MESURE → calcul écart + statut
+// ─────────────────────────────────────────────────────────────────────────────
+function onMesure(input, idx) {
+    const tr       = document.querySelector(`tr[data-idx="${idx}"]`);
+    const theorie  = parseFloat(tr.dataset.theorie);
+    const tol      = parseFloat(tr.dataset.tol);
+    const valStr   = input.value.trim();
+
+    const ecartCell  = document.getElementById(`ecart-${idx}`);
+    const statutCell = document.getElementById(`statut-${idx}`);
+
+    if (valStr === '' || isNaN(parseFloat(valStr))) {
+        tr.className = 'vide';
+        tr.style.borderBottom = '1px solid #1e293b';
+        ecartCell.textContent  = '—';
+        ecartCell.className    = 'px-4 py-2.5 text-right font-mono text-sm ecart-cell';
+        statutCell.innerHTML   = '<span class="text-slate-600 text-xs">—</span>';
+    } else {
+        const mesure   = parseFloat(valStr);
+        const ecart    = mesure - theorie;
+        const absE     = Math.abs(ecart);
+        const conforme = absE <= tol;
+
+        tr.className = conforme ? 'ok' : 'nok';
+        tr.style.borderBottom = '1px solid #1e293b';
+
+        const sign = ecart >= 0 ? '+' : '';
+        ecartCell.textContent = `${sign}${ecart.toFixed(3)}`;
+        ecartCell.className   = `px-4 py-2.5 text-right font-mono text-sm ecart-cell ${conforme ? 'cote-ok' : 'cote-nok'}`;
+
+        if (conforme) {
+            statutCell.innerHTML = '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-900/50 text-emerald-300 border border-emerald-700">✓ OK</span>';
+        } else {
+            const sens = ecart > 0 ? '▲ excédent' : '▼ déficit';
+            statutCell.innerHTML = `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-900/50 text-red-300 border border-red-700">${sens}</span>`;
+        }
+    }
+    majBilan();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BILAN EN DIRECT
+// ─────────────────────────────────────────────────────────────────────────────
+function majBilan() {
+    const trs     = document.querySelectorAll('#sim-tbody tr');
+    let total = 0, nOk = 0, nNok = 0, nVide = 0;
+
+    trs.forEach(tr => {
+        if (tr.classList.contains('ok'))  { total++; nOk++; }
+        else if (tr.classList.contains('nok')) { total++; nNok++; }
+        else { nVide++; }
+    });
+
+    const allTotal = trs.length;
+    const pct = total > 0 ? Math.round(nOk / total * 100) : null;
+    const barColor = pct === null ? '#6b7280' : (pct >= 80 ? '#4ade80' : pct >= 50 ? '#fbbf24' : '#f87171');
+
+    document.getElementById('b-total').textContent  = total;
+    document.getElementById('b-ok').textContent     = nOk;
+    document.getElementById('b-nok').textContent    = nNok;
+    document.getElementById('b-pct').textContent    = pct !== null ? `${pct}%` : '—';
+    document.getElementById('b-bar').style.width    = `${pct || 0}%`;
+    document.getElementById('b-bar').style.background = barColor;
+    document.getElementById('b-manquants').textContent =
+        nVide > 0 ? `${nVide} point${nVide > 1 ? 's' : ''} non mesuré${nVide > 1 ? 's' : ''}` : '';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function formatElement(colName) {
+    // "G_Roulement" → "Roulement (G)" ; "D_Forme" → "Forme (D)"
+    const s = String(colName);
+    if (s.startsWith('G_') || s.startsWith('g_')) return s.slice(2) + ' <span class="text-xs text-blue-400">(G)</span>';
+    if (s.startsWith('D_') || s.startsWith('d_')) return s.slice(2) + ' <span class="text-xs text-orange-400">(D)</span>';
+    return s;
+}
+
+function resetMesures() {
+    if (!confirm('Réinitialiser toutes les mesures saisies ?')) return;
+    document.querySelectorAll('#sim-tbody input.mesure-input').forEach(inp => {
+        inp.value = '';
+        onMesure(inp, parseInt(inp.dataset.row));
+    });
+}
+
+function exportBrouillon() {
+    // Met à jour la date d'impression puis lance window.print()
+    document.getElementById('ph-date').textContent = new Date().toLocaleDateString('fr-FR', {
+        day:'2-digit', month:'2-digit', year:'numeric'
+    });
+    window.print();
+}
+
+init();
+</script>
+</body>
+</html>

@@ -63,6 +63,10 @@ def build_template_context(data: dict) -> dict:
 
     return dict(
         projet=data.get("projet", ""),
+        intitule=data.get("intitule", ""),
+        logo_mdc_url=data.get("logo_mdc_url", ""),
+        logo_et_url=data.get("logo_et_url", ""),
+        statut_verdict=data.get("statut_verdict"),
         date=data.get("date", ""),
         operateur=data.get("operateur", ""),
         section=data.get("section", ""),

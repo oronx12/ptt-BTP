@@ -2,57 +2,144 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>{% if client %}Modifier le client{% else %}Nouveau client{% endif %} — OPTILAB</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if client %}Modifier le client{% else %}Nouveau client{% endif %} — RECEPTA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f0f4f8; }
-        .card { background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,.1); padding:2rem; width:100%; max-width:440px; }
-        h2 { color:#1e3a5f; margin:0 0 .4rem; }
-        .subtitle { color:#64748b; font-size:.85rem; margin:0 0 1.5rem; }
-        .form-group { margin-bottom:1rem; }
-        label { display:block; font-size:.85rem; font-weight:600; color:#374151; margin-bottom:.35rem; }
-        input[type=text] { width:100%; padding:.65rem .9rem; border:1.5px solid #d1d5db; border-radius:8px; font-size:.95rem; box-sizing:border-box; }
-        input[type=text]:focus { outline:none; border-color:#3b82f6; }
-        .flash { padding:.7rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:.9rem; }
-        .flash.danger { background:#fef2f2; color:#dc2626; }
-        .actions { display:flex; gap:.75rem; margin-top:1.5rem; }
-        .btn { padding:.65rem 1.2rem; border-radius:8px; border:none; font-size:.95rem; font-weight:600; cursor:pointer; }
-        .btn-primary { background:#1e3a5f; color:#fff; }
-        .btn-secondary { background:#f1f5f9; color:#475569; text-decoration:none; display:inline-flex; align-items:center; }
+        *, *:before, *:after { box-sizing:border-box; margin:0; padding:0; }
+        body {
+            font-family:'Inter',sans-serif;
+            background:#07101c;
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+        }
+        header {
+            background:linear-gradient(135deg,#0f2744,#1e3a5f);
+            border-bottom:1px solid rgba(0,255,255,.1);
+            position:sticky; top:0; z-index:50;
+        }
+        .header-inner {
+            max-width:700px; margin:0 auto; padding:0 20px;
+            height:56px; display:flex; align-items:center; justify-content:space-between;
+        }
+        .logo-dots {
+            display:grid; grid-template-columns:1fr 1fr;
+            gap:3px; width:16px; height:16px;
+        }
+        .logo-dots span:nth-child(1) { background:#00ffff; border-radius:2px; }
+        .logo-dots span:nth-child(2) { background:#fbbf24; border-radius:2px; }
+        .logo-dots span:nth-child(3) { background:#00ffff; border-radius:2px; }
+        .logo-dots span:nth-child(4) { background:#00ffff; border-radius:2px; }
+
+        main { flex:1; display:flex; align-items:center; justify-content:center; padding:40px 20px; }
+
+        .card {
+            background:#0d1b2e;
+            border:1px solid #1e3a5f;
+            border-radius:16px;
+            overflow:hidden;
+            width:100%; max-width:480px;
+        }
+        .card-header {
+            padding:20px 28px;
+            border-bottom:1px solid #1e3a5f;
+            background:linear-gradient(90deg,#0f2744,#0d1b2e);
+        }
+        .card-header h2 { color:white; font-size:1rem; font-weight:700; margin:0 0 4px; }
+        .card-header p  { color:#475569; font-size:.82rem; margin:0; }
+        .card-body { padding:28px; }
+
+        .flash { padding:10px 14px; border-radius:10px; font-size:.87rem; font-weight:500; margin-bottom:16px; }
+        .flash.danger  { background:rgba(220,38,38,.15);  border:1px solid rgba(220,38,38,.3);  color:#fca5a5; }
+        .flash.success { background:rgba(52,211,153,.1);  border:1px solid rgba(52,211,153,.2);  color:#6ee7b7; }
+
+        .form-group { margin-bottom:18px; }
+        label.lbl {
+            display:block; font-size:.75rem; font-weight:700; color:#64748b;
+            text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;
+        }
+        input[type=text] {
+            width:100%; background:#0b1727; border:1.5px solid #1e3a5f; color:#e2e8f0;
+            border-radius:10px; padding:10px 14px; font-size:.9rem; outline:none;
+            transition:border-color .2s; font-family:inherit;
+        }
+        input[type=text]:focus { border-color:#00ffff; box-shadow:0 0 0 3px rgba(0,255,255,.08); }
+        input[type=text]::placeholder { color:#334155; }
+
+        .actions { display:flex; gap:12px; margin-top:24px; padding-top:20px; border-top:1px solid #1e3a5f; }
+        .btn-primary {
+            flex:1; padding:12px; background:linear-gradient(135deg,#1e3a5f,#2563eb);
+            color:#fff; font-size:.9rem; font-weight:700; border-radius:10px;
+            border:none; cursor:pointer; transition:opacity .15s;
+        }
+        .btn-primary:hover { opacity:.9; }
+        .btn-secondary {
+            padding:12px 20px; background:rgba(255,255,255,.04); color:#94a3b8;
+            font-size:.9rem; font-weight:600; border-radius:10px;
+            border:1px solid #1e3a5f; text-decoration:none; transition:background .15s;
+        }
+        .btn-secondary:hover { background:rgba(255,255,255,.07); }
     </style>
 </head>
 <body>
+
+<header>
+    <div class="header-inner">
+        <a href="{{ url_for('admin.dashboard') }}" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+            <div class="logo-dots"><span></span><span></span><span></span><span></span></div>
+            <div style="display:flex;flex-direction:column;line-height:1.1;">
+                <span style="color:white;font-size:13px;font-weight:800;letter-spacing:2px;">RECEPTA</span>
+                <span style="color:rgba(255,255,255,.3);font-size:8px;font-weight:600;letter-spacing:1.5px;">by OPTILAB</span>
+            </div>
+        </a>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.8rem;">
+            <span style="color:rgba(255,255,255,.3);">›</span>
+            <span style="color:rgba(255,255,255,.4);">Administration</span>
+            <span style="color:rgba(255,255,255,.2);">›</span>
+            <span style="color:#00ffff;font-weight:600;">{% if client %}Modifier le client{% else %}Nouveau client{% endif %}</span>
+        </div>
+    </div>
+</header>
+
+<main>
 <div class="card">
-    <h2>{% if client %}Modifier le client{% else %}Nouveau client{% endif %}</h2>
-    {% if client %}<p class="subtitle">ID #{{ client.id }}</p>{% endif %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-            <div class="flash {{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endwith %}
+    <div class="card-header">
+        <h2>{% if client %}Modifier le client{% else %}Nouveau client{% endif %}</h2>
+        {% if client %}<p>ID #{{ client.id }}</p>{% else %}<p>Renseignez les informations du client.</p>{% endif %}
+    </div>
 
-    <form method="POST">
-        <div class="form-group">
-            <label for="nom">Nom de l'entreprise *</label>
-            <input type="text" id="nom" name="nom" required
-                   placeholder="Ex: BTP Rhône-Alpes"
-                   value="{{ client.nom if client else '' }}">
-        </div>
-        <div class="form-group">
-            <label for="projet_label">Libellé du projet</label>
-            <input type="text" id="projet_label" name="projet_label"
-                   placeholder="Ex: Déviation RD456 — Lot 2"
-                   value="{{ client.projet_label if client and client.projet_label else '' }}">
-        </div>
-        <div class="actions">
-            <button type="submit" class="btn btn-primary">
-                {% if client %}Enregistrer{% else %}Créer le client{% endif %}
-            </button>
-            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">Annuler</a>
-        </div>
-    </form>
+    <div class="card-body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="form-group">
+                <label class="lbl" for="nom">Nom de l'entreprise *</label>
+                <input type="text" id="nom" name="nom" required
+                       placeholder="Ex : BTP Rhône-Alpes"
+                       value="{{ client.nom if client else '' }}">
+            </div>
+            <div class="form-group">
+                <label class="lbl" for="projet_label">Libellé du projet</label>
+                <input type="text" id="projet_label" name="projet_label"
+                       placeholder="Ex : Déviation RD456 — Lot 2"
+                       value="{{ client.projet_label if client and client.projet_label else '' }}">
+            </div>
+            <div class="actions">
+                <button type="submit" class="btn-primary">
+                    {% if client %}Enregistrer{% else %}Créer le client{% endif %}
+                </button>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
 </div>
+</main>
+
 </body>
 </html>

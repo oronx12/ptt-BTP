@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ demande.numero }} — RECEPTA PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="font-sans bg-slate-900 min-h-screen">
+
+<header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+    <div class="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="/pro/projets/" class="flex items-center gap-2 hover:opacity-80 transition" style="text-decoration:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:18px;height:18px;">
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#fbbf24;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                </div>
+                <div style="display:flex;flex-direction:column;line-height:1.1;">
+                    <span style="color:#00ffff;font-weight:800;letter-spacing:2px;font-size:15px;">RECEPTA</span>
+                    <span style="color:rgba(0,255,255,.35);font-size:8px;font-weight:600;letter-spacing:1.5px;">by OPTILAB</span>
+                </div>
+            </a>
+            <span class="text-slate-600">›</span>
+            <a href="{{ url_for('pro_demandes.liste_demandes') }}" class="text-slate-400 hover:text-white text-sm transition">Demandes</a>
+            <span class="text-slate-600">›</span>
+            <span class="text-slate-300 text-sm font-medium">{{ demande.numero }}</span>
+        </div>
+        <a href="{{ url_for('auth.logout') }}" class="text-slate-500 hover:text-white text-sm px-3 py-1.5 rounded-lg hover:bg-slate-700 transition">Déconnexion</a>
+    </div>
+</header>
+
+<main class="max-w-2xl mx-auto px-4 py-10 space-y-6">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="px-4 py-3 rounded-xl text-sm font-medium
+            {% if category == 'success' %}bg-emerald-900/50 text-emerald-300 border border-emerald-700
+            {% elif category == 'danger' %}bg-red-900/50 text-red-300 border border-red-700
+            {% elif category == 'info' %}bg-slate-700/50 text-slate-300 border border-slate-600
+            {% else %}bg-blue-900/50 text-blue-300 border border-blue-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    {% endwith %}
+
+    <!-- En-tête demande -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+        <div class="flex items-start justify-between gap-4 mb-4">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <h1 class="text-white text-xl font-bold">{{ demande.numero }}</h1>
+                    <span class="px-2.5 py-1 text-xs font-semibold rounded-full
+                        {% if demande.statut == 'en_attente' %}bg-amber-900/60 text-amber-300 border border-amber-700
+                        {% elif demande.statut == 'accusee' %}bg-blue-900/60 text-blue-300 border border-blue-700
+                        {% elif demande.statut == 'acceptee' %}bg-emerald-900/60 text-emerald-300 border border-emerald-700
+                        {% elif demande.statut == 'refusee' %}bg-red-900/60 text-red-300 border border-red-700
+                        {% else %}bg-slate-700 text-slate-400{% endif %}">
+                        {{ demande.statut_label }}
+                    </span>
+                </div>
+                <p class="text-slate-400 text-sm">{{ demande.projet.nom }}</p>
+            </div>
+            <div class="text-right text-xs text-slate-500">
+                Soumis le {{ demande.created_at.strftime('%d/%m/%Y à %H:%M') }}<br>
+                par <span class="text-slate-400">{{ demande.demandeur.nom }}</span>
+            </div>
+        </div>
+
+        <!-- Détails -->
+        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-700">
+            <div>
+                <p class="text-slate-500 text-xs mb-1">PK début</p>
+                <p class="text-white font-semibold">{{ demande.pk_debut }}</p>
+            </div>
+            <div>
+                <p class="text-slate-500 text-xs mb-1">PK fin</p>
+                <p class="text-white font-semibold">{{ demande.pk_fin }}</p>
+            </div>
+            {% if demande.date_souhaitee %}
+            <div>
+                <p class="text-slate-500 text-xs mb-1">Date souhaitée</p>
+                <p class="text-white">{{ demande.date_souhaitee.strftime('%d/%m/%Y') }}
+                    {% if demande.heure_souhaitee %} à {{ demande.heure_souhaitee }}{% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if demande.observations %}
+        <div class="mt-4 pt-4 border-t border-slate-700">
+            <p class="text-slate-500 text-xs mb-1">Observations</p>
+            <p class="text-slate-300 text-sm whitespace-pre-wrap">{{ demande.observations }}</p>
+        </div>
+        {% endif %}
+
+        {% if demande.statut == 'refusee' and demande.motif_refus %}
+        <div class="mt-4 pt-4 border-t border-red-800">
+            <p class="text-red-400 text-xs mb-1 font-semibold">Motif de refus</p>
+            <p class="text-red-300 text-sm whitespace-pre-wrap">{{ demande.motif_refus }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Timeline statuts -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+        <h2 class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-4">Historique</h2>
+        <div class="space-y-3">
+            <!-- Soumission -->
+            <div class="flex items-start gap-3">
+                <div class="w-2 h-2 rounded-full bg-violet-500 mt-1.5 flex-shrink-0"></div>
+                <div>
+                    <p class="text-white text-sm font-medium">Demande soumise</p>
+                    <p class="text-slate-500 text-xs">{{ demande.created_at.strftime('%d/%m/%Y à %H:%M') }} — {{ demande.demandeur.nom }}</p>
+                </div>
+            </div>
+            <!-- Accusé -->
+            {% if demande.accuse_at %}
+            <div class="flex items-start gap-3">
+                <div class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
+                <div>
+                    <p class="text-white text-sm font-medium">Accusé de réception</p>
+                    <p class="text-slate-500 text-xs">{{ demande.accuse_at.strftime('%d/%m/%Y à %H:%M') }}</p>
+                </div>
+            </div>
+            {% endif %}
+            <!-- Acceptée -->
+            {% if demande.accepte_at %}
+            <div class="flex items-start gap-3">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0"></div>
+                <div>
+                    <p class="text-white text-sm font-medium">Demande acceptée</p>
+                    <p class="text-slate-500 text-xs">{{ demande.accepte_at.strftime('%d/%m/%Y à %H:%M') }}</p>
+                </div>
+            </div>
+            {% endif %}
+            <!-- Clôturée / Verdict -->
+            {% if demande.cloture_at %}
+            <div class="flex items-start gap-3">
+                <div class="w-2 h-2 rounded-full mt-1.5 flex-shrink-0
+                    {% if demande.statut_reception == 'validee' %}bg-emerald-400
+                    {% elif demande.statut_reception == 'non_validee' %}bg-red-400
+                    {% elif demande.statut_reception == 'a_reprendre' %}bg-amber-400
+                    {% else %}bg-slate-400{% endif %}"></div>
+                <div>
+                    <p class="text-white text-sm font-medium">
+                        {% if demande.statut_reception %}
+                            Verdict : {{ demande.statut_reception_label }}
+                        {% else %}
+                            Réception clôturée
+                        {% endif %}
+                    </p>
+                    <p class="text-slate-500 text-xs">{{ demande.cloture_at.strftime('%d/%m/%Y à %H:%M') }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Actions MDC -->
+    {% if role in ('mdc', 'admin') %}
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 space-y-4">
+        <h2 class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Actions MDC</h2>
+
+        {% if demande.statut == 'en_attente' %}
+        <!-- Accuser -->
+        <form method="POST" action="{{ url_for('pro_demandes.accuser_reception', demande_id=demande.id) }}">
+            <button type="submit"
+                    class="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition">
+                Accuser réception
+            </button>
+        </form>
+        <!-- Refuser directement -->
+        <button onclick="document.getElementById('refus-form').classList.toggle('hidden')"
+                class="w-full px-4 py-2.5 bg-slate-700 hover:bg-red-900/40 text-slate-300 hover:text-red-300 border border-slate-600 hover:border-red-700 text-sm font-semibold rounded-xl transition">
+            Refuser la demande
+        </button>
+
+        {% elif demande.statut == 'accusee' %}
+        <!-- Accepter -->
+        <form method="POST" action="{{ url_for('pro_demandes.accepter_demande', demande_id=demande.id) }}">
+            <button type="submit"
+                    class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition">
+                Accepter — confirmer la réception
+            </button>
+        </form>
+        <!-- Refuser -->
+        <button onclick="document.getElementById('refus-form').classList.toggle('hidden')"
+                class="w-full px-4 py-2.5 bg-slate-700 hover:bg-red-900/40 text-slate-300 hover:text-red-300 border border-slate-600 hover:border-red-700 text-sm font-semibold rounded-xl transition">
+            Refuser la demande
+        </button>
+        {% endif %}
+
+        <!-- Formulaire motif refus (caché par défaut) -->
+        {% if demande.statut in ('en_attente', 'accusee') %}
+        <div id="refus-form" class="hidden pt-2 border-t border-slate-700 space-y-3">
+            <p class="text-red-400 text-sm font-medium">Motif de refus <span class="text-red-500">*</span></p>
+            <form method="POST" action="{{ url_for('pro_demandes.refuser_demande', demande_id=demande.id) }}" class="space-y-3">
+                <textarea name="motif_refus" rows="3" required
+                          placeholder="Expliquez pourquoi la demande est refusée…"
+                          class="w-full bg-slate-900 border border-red-800 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-500 transition resize-none placeholder-slate-600"></textarea>
+                <button type="submit"
+                        class="w-full px-4 py-2.5 bg-red-700 hover:bg-red-600 text-white text-sm font-semibold rounded-xl transition">
+                    Confirmer le refus
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Lien réception (si acceptée) -->
+    {% if demande.statut == 'acceptee' %}
+    {% if role in ('mdc', 'admin') %}
+    <!-- MDC : bouton Commencer + bloc Verdict -->
+    <div class="bg-emerald-900/20 border border-emerald-700 rounded-xl p-6 text-center">
+        <p class="text-emerald-300 text-sm font-semibold mb-1">Demande acceptée — vous pouvez lancer la réception</p>
+        <p class="text-slate-400 text-xs mb-1">
+            {{ demande.projet.nom }} · PK {{ demande.pk_debut }} → {{ demande.pk_fin }}
+        </p>
+        <p class="text-slate-500 text-xs mb-4">
+            Mode : <span class="text-slate-300 font-medium">{{ demande.mode or 'assainissement' }}</span>
+            · Tolérance : <span class="text-slate-300 font-medium">{{ demande.tolerance or 2 }} mm</span>
+            {% if demande.meteo %} · Météo : <span class="text-slate-300">{{ demande.meteo }}</span>{% endif %}
+        </p>
+        <a href="/reception?demande_id={{ demande.id }}&pro=1"
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>
+            </svg>
+            Commencer la réception topographique
+        </a>
+        <p class="text-slate-600 text-xs mt-3">Les paramètres saisis par l'Entreprise seront pré-remplis. Vous pourrez les ajuster avant de continuer.</p>
+    </div>
+
+    <!-- Bloc verdict — accessible après la réception -->
+    <div class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+        <h2 class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Verdict de réception</h2>
+        <p class="text-slate-500 text-xs mb-5">Après avoir effectué la réception et généré la fiche, enregistrez le verdict de cette section :</p>
+        <div class="grid grid-cols-3 gap-3">
+            <form method="POST" action="{{ url_for('pro_demandes.verdict_demande', demande_id=demande.id) }}">
+                <input type="hidden" name="statut_reception" value="validee">
+                <button type="submit"
+                        class="w-full py-5 bg-emerald-900/30 hover:bg-emerald-800/60 border border-emerald-700 hover:border-emerald-500 text-emerald-300 text-sm font-bold rounded-xl transition flex flex-col items-center gap-2">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Validée
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('pro_demandes.verdict_demande', demande_id=demande.id) }}">
+                <input type="hidden" name="statut_reception" value="non_validee">
+                <button type="submit"
+                        class="w-full py-5 bg-red-900/30 hover:bg-red-800/60 border border-red-700 hover:border-red-500 text-red-300 text-sm font-bold rounded-xl transition flex flex-col items-center gap-2">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Non validée
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('pro_demandes.verdict_demande', demande_id=demande.id) }}">
+                <input type="hidden" name="statut_reception" value="a_reprendre">
+                <button type="submit"
+                        class="w-full py-5 bg-amber-900/30 hover:bg-amber-800/60 border border-amber-700 hover:border-amber-500 text-amber-300 text-sm font-bold rounded-xl transition flex flex-col items-center gap-2">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/>
+                    </svg>
+                    À reprendre
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Entreprise : info uniquement -->
+    <div class="bg-emerald-900/10 border border-emerald-800/50 rounded-xl p-6 text-center">
+        <p class="text-emerald-400 text-sm font-semibold mb-1">Demande acceptée par la MDC</p>
+        <p class="text-slate-500 text-xs">La réception topographique sera lancée par la MDC depuis cette demande.</p>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Verdict affiché (demande clôturée) -->
+    {% if demande.statut == 'cloturee' and demande.statut_reception %}
+    <div class="rounded-xl p-6 text-center border
+        {% if demande.statut_reception == 'validee' %}bg-emerald-900/20 border-emerald-700
+        {% elif demande.statut_reception == 'non_validee' %}bg-red-900/20 border-red-700
+        {% else %}bg-amber-900/20 border-amber-700{% endif %}">
+        <p class="text-xs uppercase tracking-wider font-semibold mb-3
+            {% if demande.statut_reception == 'validee' %}text-emerald-500
+            {% elif demande.statut_reception == 'non_validee' %}text-red-500
+            {% else %}text-amber-500{% endif %}">
+            Verdict de réception
+        </p>
+        {% if demande.statut_reception == 'validee' %}
+        <svg class="w-10 h-10 mx-auto mb-2 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="font-bold text-lg text-emerald-300">Section Validée</p>
+        {% elif demande.statut_reception == 'non_validee' %}
+        <svg class="w-10 h-10 mx-auto mb-2 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="font-bold text-lg text-red-300">Section Non Validée</p>
+        {% else %}
+        <svg class="w-10 h-10 mx-auto mb-2 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/>
+        </svg>
+        <p class="font-bold text-lg text-amber-300">À Reprendre</p>
+        {% endif %}
+        <p class="text-slate-500 text-xs mt-2">PK {{ demande.pk_debut }} → {{ demande.pk_fin }}</p>
+        <p class="text-slate-600 text-xs mt-1">Ce verdict est visible sur la carte du projet.</p>
+    </div>
+    {% endif %}
+
+</main>
+</body>
+</html>

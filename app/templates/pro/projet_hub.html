@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ projet.nom }} — RECEPTA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family:'Inter',sans-serif; background:#07101c; }
+
+        /* ── Tile cards ── */
+        .tile {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 22px 24px;
+            border-radius: 18px;
+            border: 1.5px solid;
+            text-decoration: none;
+            transition: transform .15s, box-shadow .2s, border-color .2s, background .2s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .tile:hover { transform: translateY(-3px); }
+
+        /* Primary tile — top reception (MDC) */
+        .tile-primary-mdc {
+            background: linear-gradient(135deg, #0d1220 0%, #0e1e38 100%);
+            border-color: rgba(0,255,255,.3);
+            box-shadow: 0 0 0 0 rgba(0,255,255,0);
+        }
+        .tile-primary-mdc:hover {
+            border-color: rgba(0,255,255,.6);
+            box-shadow: 0 0 24px rgba(0,255,255,.12), 0 12px 32px rgba(0,0,0,.4);
+        }
+
+        /* Primary tile — nouvelle demande (ET) */
+        .tile-primary-et {
+            background: linear-gradient(135deg, #1c0d00 0%, #241200 100%);
+            border-color: rgba(245,158,11,.35);
+            box-shadow: 0 0 0 0 rgba(245,158,11,0);
+        }
+        .tile-primary-et:hover {
+            border-color: rgba(245,158,11,.65);
+            box-shadow: 0 0 24px rgba(245,158,11,.12), 0 12px 32px rgba(0,0,0,.4);
+        }
+
+        /* Secondary MDC tile */
+        .tile-mdc {
+            background: linear-gradient(145deg, #0d1b2e 0%, #0f2038 100%);
+            border-color: rgba(124,58,237,.2);
+        }
+        .tile-mdc:hover {
+            border-color: rgba(124,58,237,.45);
+            box-shadow: 0 0 16px rgba(124,58,237,.1), 0 8px 24px rgba(0,0,0,.4);
+        }
+
+        /* Secondary ET tile */
+        .tile-et {
+            background: linear-gradient(145deg, #150900 0%, #1a0d00 100%);
+            border-color: rgba(245,158,11,.15);
+        }
+        .tile-et:hover {
+            border-color: rgba(245,158,11,.35);
+            box-shadow: 0 0 16px rgba(245,158,11,.07), 0 8px 24px rgba(0,0,0,.4);
+        }
+
+        /* Tile icon circle */
+        .tile-icon {
+            width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #475569; font-size: .82rem; font-weight: 600;
+            text-decoration: none; padding: 7px 12px;
+            border-radius: 8px; border: 1px solid rgba(255,255,255,.07);
+            transition: color .15s, background .15s;
+        }
+        .back-link:hover { color: #94a3b8; background: rgba(255,255,255,.04); }
+
+        /* Section label */
+        .sec-label {
+            font-size: .7rem; font-weight: 800; letter-spacing: 1.5px;
+            text-transform: uppercase; padding: 4px 10px; border-radius: 99px;
+        }
+
+        /* ── Responsive ──────────────────────────────── */
+        /* Disable hover lift on touch devices */
+        @media (hover:none) {
+            .tile:hover { transform: none; }
+            .tile, a { touch-action: manipulation; }
+        }
+
+        /* Phone (≤480px) */
+        @media (max-width:480px) {
+            .tile { padding: 16px 18px; gap: 8px; border-radius: 14px; }
+            .tile-icon { width: 44px; height: 44px; font-size: 1.25rem; border-radius: 11px; }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+
+<!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+<header style="background:rgba(7,16,28,.9);border-bottom:1px solid #1e3a5f;backdrop-filter:blur(8px);" class="sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+
+        <a href="{{ url_for('pro_projets.liste_projets') }}" class="flex items-center gap-2.5 hover:opacity-80 transition" style="text-decoration:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:18px;height:18px;">
+                <span style="background:#00ffff;border-radius:2px;"></span>
+                <span style="background:#fbbf24;border-radius:2px;"></span>
+                <span style="background:#00ffff;border-radius:2px;"></span>
+                <span style="background:#00ffff;border-radius:2px;"></span>
+            </div>
+            <div style="display:flex;flex-direction:column;line-height:1.1;">
+                <span style="color:#00ffff;font-weight:800;letter-spacing:2px;font-size:14px;">RECEPTA</span>
+                <span style="color:rgba(0,255,255,.3);font-size:7px;font-weight:600;letter-spacing:1.5px;">by OPTILAB</span>
+            </div>
+        </a>
+
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('pro_projets.liste_projets') }}" class="back-link">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
+                </svg>
+                Mes projets
+            </a>
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('admin.dashboard') }}"
+               class="text-slate-500 hover:text-slate-300 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-white/5 transition border border-white/5 hover:border-white/10">
+                Admin
+            </a>
+            {% endif %}
+            <span class="text-slate-600 text-sm hidden sm:block px-2">{{ current_user.nom }}</span>
+            <a href="{{ url_for('auth.logout') }}"
+               class="text-red-500/70 hover:text-red-400 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition border border-red-900/30 hover:border-red-700/40">
+                Déconnexion
+            </a>
+        </div>
+    </div>
+</header>
+
+<!-- ── MAIN ───────────────────────────────────────────────────────────── -->
+<main class="max-w-5xl mx-auto px-4 pt-10 pb-20">
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="mb-6 px-4 py-3 rounded-xl text-sm font-medium
+        {% if cat == 'success' %}bg-emerald-900/40 text-emerald-300 border border-emerald-700/50
+        {% elif cat == 'danger'  %}bg-red-900/40    text-red-300    border border-red-700/50
+        {% else %}bg-blue-900/40 text-blue-300 border border-blue-700/50{% endif %}">
+        {{ msg }}
+    </div>
+    {% endfor %}
+    {% endwith %}
+
+    <!-- ── Projet header ─────────────────────────────────── -->
+    <div class="flex items-start gap-5 mb-10">
+        <!-- Avatar -->
+        <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-2xl flex-shrink-0"
+             style="background:{% if role in ('mdc','admin') %}linear-gradient(135deg,#7c3aed,#4f46e5){% else %}linear-gradient(135deg,#f59e0b,#d97706){% endif %};">
+            {{ projet.nom[0]|upper }}
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-1 flex-wrap">
+                <h1 class="text-2xl font-black text-white tracking-tight">{{ projet.nom }}</h1>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide
+                    {% if role == 'admin' %}bg-cyan-900/40 text-cyan-400 border border-cyan-700/40
+                    {% elif role == 'mdc' %}bg-purple-900/40 text-purple-300 border border-purple-700/40
+                    {% else %}bg-amber-900/40 text-amber-300 border border-amber-700/40{% endif %}">
+                    {% if role == 'admin' %}ADMIN{% elif role == 'mdc' %}MDC{% else %}ET{% endif %}
+                </span>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide"
+                      style="{% if projet.plan == 'pro' %}background:rgba(139,92,246,.12);color:#c084fc;border:1px solid rgba(139,92,246,.25);{% else %}background:rgba(100,116,139,.08);color:#64748b;border:1px solid rgba(100,116,139,.2);{% endif %}">
+                    {% if projet.plan == 'pro' %}PARTENARIAT{% else %}AUTONOME{% endif %}
+                </span>
+            </div>
+            {% if projet.intitule %}
+            <p class="text-slate-500 text-sm mb-2">{{ projet.intitule }}</p>
+            {% endif %}
+            <div class="flex items-center gap-4 text-xs text-slate-600 flex-wrap">
+                {% if projet.pk_debut and projet.pk_fin %}
+                <span>PK {{ projet.pk_debut }} → {{ projet.pk_fin }}</span>
+                {% endif %}
+                {% if projet.tolerance_defaut %}
+                <span>Tolérance {{ projet.tolerance_defaut }} cm</span>
+                {% endif %}
+                {% if projet.excel_key %}
+                <span class="text-emerald-700">● Modèle Excel disponible</span>
+                {% else %}
+                <span class="text-amber-800">● Aucun fichier Excel</span>
+                {% endif %}
+                {% if pending_count > 0 %}
+                <span class="text-red-400 font-semibold">● {{ pending_count }} demande{{ 's' if pending_count > 1 }} en attente</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION MDC / ADMIN
+    ═══════════════════════════════════════════════════ -->
+    {% if role in ('mdc', 'admin') %}
+
+    {% if projet.plan == 'pro' %}
+    <!-- ── PARTENARIAT : deux actions co-primaires ──────────────────── -->
+    <div class="mb-6">
+        <p class="sec-label mb-4" style="background:rgba(0,255,255,.08);color:#67e8f9;border:1px solid rgba(0,255,255,.15);">Actions principales</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <!-- Initier une réception -->
+            <a href="{{ url_for('pro_projets.top_reception', projet_id=projet.id) }}"
+               class="tile tile-primary-mdc">
+                <div class="tile-icon" style="background:rgba(0,255,255,.08);border:1px solid rgba(0,255,255,.2);">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#00ffff" stroke-width="1.5" stroke-linecap="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+                        <circle cx="12" cy="12" r="8" stroke-opacity=".3"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-base font-black" style="color:#00ffff;">Initier une réception</div>
+                    <div class="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                        Démarrer directement, sans attendre une demande de l'entreprise.
+                    </div>
+                </div>
+            </a>
+
+            <!-- Demandes à traiter -->
+            <a href="{{ url_for('pro_demandes.liste_demandes') }}"
+               class="tile tile-primary-mdc">
+                <div class="tile-icon" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-base font-black" style="color:#00ffff;">Demandes à traiter</span>
+                        {% if pending_count > 0 %}
+                        <span class="text-xs font-bold bg-red-500 text-white px-2 py-0.5 rounded-full">
+                            {{ pending_count if pending_count < 100 else '99+' }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-slate-500 mt-0.5">
+                        Traiter les demandes soumises par l'entreprise de travaux.
+                    </div>
+                </div>
+            </a>
+
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ── AUTONOME : Top Réception pleine largeur ────────────────────── -->
+    <div class="mb-6">
+        <p class="sec-label mb-4" style="background:rgba(0,255,255,.08);color:#67e8f9;border:1px solid rgba(0,255,255,.15);">Action principale</p>
+        <a href="{{ url_for('pro_projets.top_reception', projet_id=projet.id) }}"
+           class="tile tile-primary-mdc block">
+            <div class="tile-icon" style="background:rgba(0,255,255,.08);border:1px solid rgba(0,255,255,.2);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#00ffff" stroke-width="1.5" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+                    <circle cx="12" cy="12" r="8" stroke-opacity=".3"/>
+                </svg>
+            </div>
+            <div>
+                <div class="text-lg font-black" style="color:#00ffff;">Top Réception</div>
+                <div class="text-sm text-slate-500 mt-0.5 leading-relaxed">
+                    Démarrer immédiatement une réception — sans demande préalable.<br>
+                    Saisie sur terrain, bilan instantané, export PDF et email.
+                </div>
+            </div>
+            <div class="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
+                <svg class="w-20 h-20" viewBox="0 0 24 24" fill="none" stroke="#00ffff" stroke-width=".5" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="11"/>
+                    <path d="M12 1v4M12 19v4M1 12h4M19 12h4"/>
+                </svg>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- ── Actions secondaires MDC ────────────────────────────────────── -->
+    <div class="mb-3">
+        <p class="sec-label mb-4" style="background:rgba(124,58,237,.08);color:#a78bfa;border:1px solid rgba(124,58,237,.2);">Gestion des réceptions</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+
+        <!-- Rapport de période -->
+        <a href="{{ url_for('pro_projets.rapport_receptions', projet_id=projet.id) }}"
+           class="tile tile-mdc">
+            <div class="tile-icon" style="background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.2);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <line x1="8" y1="17" x2="8" y2="11"/>
+                    <line x1="12" y1="17" x2="12" y2="7"/>
+                    <line x1="16" y1="17" x2="16" y2="13"/>
+                </svg>
+            </div>
+            <div>
+                <div class="font-bold text-white text-base">Rapport</div>
+                <p class="text-xs text-slate-600 mt-1">Bilan des réceptions clôturées, filtrable par période.</p>
+            </div>
+        </a>
+
+        <!-- Simulation -->
+        <a href="{{ url_for('pro_projets.simulation', projet_id=projet.id) }}"
+           class="tile tile-mdc">
+            <div class="tile-icon" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+            </div>
+            <div>
+                <div class="font-bold text-white text-base">Simulation</div>
+                <p class="text-xs text-slate-600 mt-1">Calculer des côtes théoriques sur la plage de PK du projet.</p>
+            </div>
+        </a>
+
+        <!-- Carte GPS -->
+        <a href="{{ url_for('pro_projets.carte_projet', projet_id=projet.id) }}"
+           class="tile tile-mdc">
+            <div class="tile-icon" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-white text-base">Carte</span>
+                    {% if projet.coordonnees_gps %}
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block" title="Tracé GPS disponible"></span>
+                    {% endif %}
+                </div>
+                <p class="text-xs text-slate-600 mt-1">Spatialiser le tracé sur fond de carte Leaflet.</p>
+            </div>
+        </a>
+
+        <!-- Visualisation Excel -->
+        <a href="{{ url_for('admin.visualisation_projet', projet_id=projet.id) }}"
+           class="tile tile-mdc">
+            <div class="tile-icon" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+            </div>
+            <div>
+                <div class="font-bold text-white text-base">Visualisation</div>
+                <p class="text-xs text-slate-600 mt-1">Profil en long, schéma en travers et données du modèle Excel.</p>
+            </div>
+        </a>
+
+        <!-- Ancien format réception -->
+        <a href="/reception?projet_id={{ projet.id }}&pro=1"
+           class="tile tile-mdc" style="opacity:.6;">
+            <div class="tile-icon" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <line x1="8" y1="13" x2="16" y2="13"/>
+                    <line x1="8" y1="17" x2="12" y2="17"/>
+                </svg>
+            </div>
+            <div>
+                <div class="font-bold text-slate-400 text-base">Réception (ancien format)</div>
+                <p class="text-xs text-slate-700 mt-1">Interface classique multi-onglets — format hérité.</p>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- ── Admin-only: gérer le projet ── -->
+    {% if role == 'admin' %}
+    <div class="mb-3">
+        <p class="sec-label mb-4" style="background:rgba(0,0,0,.3);color:#475569;border:1px solid rgba(255,255,255,.07);">Administration</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <a href="{{ url_for('admin.detail_projet', projet_id=projet.id) }}"
+           class="tile" style="background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.08);">
+            <div class="tile-icon" style="background:rgba(100,116,139,.1);border:1px solid rgba(100,116,139,.2);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="font-bold text-slate-300 text-base">Paramètres du projet</div>
+                <p class="text-xs text-slate-700 mt-1">Modifier les infos, uploader l'Excel, gérer les logos et l'équipe.</p>
+            </div>
+        </a>
+        <a href="{{ url_for('admin.dashboard') }}"
+           class="tile" style="background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.08);">
+            <div class="tile-icon" style="background:rgba(100,116,139,.1);border:1px solid rgba(100,116,139,.2);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                </svg>
+            </div>
+            <div>
+                <div class="font-bold text-slate-300 text-base">Dashboard Admin</div>
+                <p class="text-xs text-slate-700 mt-1">Retourner au panneau d'administration complet.</p>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% endif %}
+
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION ENTREPRISE DE TRAVAUX
+    ═══════════════════════════════════════════════════ -->
+    {% if role == 'entreprise' %}
+
+    <!-- Primary action: Nouvelle demande -->
+    <div class="mb-6">
+        <p class="sec-label mb-4" style="background:rgba(245,158,11,.08);color:#fbbf24;border:1px solid rgba(245,158,11,.2);">Action principale</p>
+        <a href="{{ url_for('pro_demandes.nouvelle_demande') }}?projet_id={{ projet.id }}"
+           class="tile tile-primary-et block">
+            <div class="tile-icon" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/>
+                    <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+            </div>
+            <div>
+                <div class="text-lg font-black" style="color:#fbbf24;">Nouvelle demande de réception</div>
+                <div class="text-sm text-slate-600 mt-0.5 leading-relaxed">
+                    Soumettre une demande à la Mission de Contrôle pour une section de chantier.<br>
+                    Sélectionnez les PK et l'entreprise vous confirme les côtes théoriques.
+                </div>
+            </div>
+            <div class="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
+                <svg class="w-20 h-20" fill="none" stroke="#f59e0b" stroke-width="1" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V19.5a2.25 2.25 0 002.25 2.25h.75m0-3.75h3.75"/>
+                </svg>
+            </div>
+        </a>
+    </div>
+
+    <!-- Secondary ET actions -->
+    <div class="mb-3">
+        <p class="sec-label mb-4" style="background:rgba(245,158,11,.06);color:#92400e;border:1px solid rgba(245,158,11,.15);">Outils</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+
+        <!-- Mes demandes -->
+        <a href="{{ url_for('pro_demandes.liste_demandes') }}"
+           class="tile tile-et">
+            <div class="tile-icon" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12,6 12,12 16,14"/>
+                </svg>
+            </div>
+            <div>
+                <div class="font-bold text-amber-300 text-base">Mes demandes</div>
+                <p class="text-xs text-amber-900/70 mt-1">Suivre l'état de vos demandes en cours et passées.</p>
+            </div>
+        </a>
+
+        <!-- Simulation -->
+        <a href="{{ url_for('pro_projets.simulation', projet_id=projet.id) }}"
+           class="tile tile-et">
+            <div class="tile-icon" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+            </div>
+            <div>
+                <div class="font-bold text-amber-300 text-base">Simulation</div>
+                <p class="text-xs text-amber-900/70 mt-1">Calculer les côtes théoriques avant de soumettre votre demande.</p>
+            </div>
+        </a>
+
+        <!-- Visualisation -->
+        <a href="{{ url_for('admin.visualisation_projet', projet_id=projet.id) }}"
+           class="tile tile-et">
+            <div class="tile-icon" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.15);">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+            </div>
+            <div>
+                <div class="font-bold text-amber-300 text-base">Visualisation</div>
+                <p class="text-xs text-amber-900/70 mt-1">Profil en long et schéma en travers du projet.</p>
+            </div>
+        </a>
+
+    </div>
+
+    {% endif %}
+
+</main>
+
+</body>
+</html>

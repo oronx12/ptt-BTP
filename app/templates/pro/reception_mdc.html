@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Réception MDC — {{ projet.nom }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family:'Inter',sans-serif; }
+        tr.ok   { background:#f0fdf4; }
+        tr.nok  { background:#fef2f2; }
+        tr.vide { background:#fff; }
+        td.ok   { color:#15803d; font-weight:700; }
+        td.nok  { color:#dc2626; font-weight:700; }
+        td.corr-pos { color:#059669; font-size:12px; font-weight:600; }
+        td.corr-neg { color:#dc2626; font-size:12px; font-weight:600; }
+        .mesure-input { width:90px; border:1px solid #e2e8f0; border-radius:6px; padding:4px 8px; font-size:12px; text-align:right; background:#f8fafc; outline:none; transition:border-color .15s; }
+        .mesure-input:focus { border-color:#6d28d9; background:#fff; }
+        .tbl-wrap { overflow-x:auto; }
+        input[type="checkbox"] { accent-color:#7c3aed; cursor:pointer; }
+        .spinner { animation:spin 1s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @media print {
+            header, #toolbar, #config-zone, .no-print { display:none !important; }
+            body { background:#fff; color:#000; }
+            table { font-size:10pt; }
+            tr.ok  { background:#e8f5e9; }
+            tr.nok { background:#ffebee; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<!-- HEADER -->
+<header class="bg-gradient-to-r from-[#0f2744] to-[#1e3a5f] sticky top-0 z-50 shadow-lg no-print">
+    <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="/pro/projets/" class="flex items-center gap-2 hover:opacity-80 transition" style="text-decoration:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;width:16px;height:16px;">
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#fbbf24;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                    <span style="background:#00ffff;border-radius:2px;"></span>
+                </div>
+                <span style="color:#00ffff;font-weight:800;letter-spacing:2px;font-size:14px;">RECEPTA</span>
+            </a>
+            <span class="text-white/30">›</span>
+            <a href="{{ url_for('pro_projets.liste_projets') }}" class="text-white/60 hover:text-white text-sm transition">Projets</a>
+            <span class="text-white/30">›</span>
+            <span class="text-white/90 text-sm font-semibold truncate max-w-[180px]">{{ projet.nom }}</span>
+            <span class="text-white/30">›</span>
+            {% if role == 'entreprise' %}
+            <span class="bg-amber-600/80 text-white text-xs font-bold px-2.5 py-1 rounded-full tracking-wide">SIMULATION ET</span>
+            {% else %}
+            <span class="bg-violet-600/80 text-white text-xs font-bold px-2.5 py-1 rounded-full tracking-wide">CONTRÔLE MDC</span>
+            {% endif %}
+            {% if demande_id %}
+            <span class="bg-emerald-700/70 text-emerald-200 text-xs font-semibold px-2.5 py-1 rounded-full">Demande #{{ demande_id }}</span>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="window.print()"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-lg transition no-print">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                Imprimer
+            </button>
+            <a href="{{ url_for('auth.logout') }}" class="text-red-300 hover:text-white text-xs px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition">Déconnexion</a>
+        </div>
+    </div>
+</header>
+
+<!-- BARRE BILAN -->
+<div id="bilan-bar" class="hidden bg-[#1e3a5f] border-b border-slate-700 no-print">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center gap-6">
+        <span class="text-xs text-white/50">Bilan :</span>
+        <span class="text-xs"><span class="font-bold text-white" id="b-total">0</span> <span class="text-white/40">points mesurés</span></span>
+        <span class="text-xs"><span class="font-bold text-emerald-400" id="b-ok">0</span> <span class="text-white/40">conformes</span></span>
+        <span class="text-xs"><span class="font-bold text-red-400" id="b-nok">0</span> <span class="text-white/40">non conformes</span></span>
+        <span class="text-xs font-bold text-white" id="b-pct">—</span>
+        <div class="flex-1 max-w-xs h-2 bg-white/10 rounded-full overflow-hidden">
+            <div id="b-bar" class="h-full rounded-full transition-all duration-500" style="width:0%;background:#4ade80"></div>
+        </div>
+        <span class="text-xs text-white/30 ml-auto" id="b-manquants"></span>
+    </div>
+</div>
+
+<main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- Zone chargement -->
+    <div id="loading-zone" class="flex flex-col items-center justify-center py-24 text-slate-500">
+        <svg class="spinner w-8 h-8 text-violet-500 mb-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <p class="text-sm">Chargement des données Excel…</p>
+    </div>
+
+    <!-- Zone erreur -->
+    <div id="error-zone" class="hidden bg-red-50 border border-red-200 rounded-2xl px-6 py-8 text-center">
+        <p class="text-red-600 font-semibold mb-1">Impossible de charger les données</p>
+        <p id="error-msg" class="text-red-500 text-sm"></p>
+    </div>
+
+    <!-- ── PARAMETRAGE ───────────────────────────────────────────────── -->
+    <div id="config-zone" class="hidden space-y-5">
+
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <h2 class="text-base font-bold text-slate-800 mb-5 flex items-center gap-2">
+                <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                Paramétrage de la réception
+            </h2>
+
+            <!-- PK + Tolérance -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">PK début</label>
+                    <select id="pk-debut" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-violet-400 transition">
+                        <option value="">— Sélectionner —</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">PK fin</label>
+                    <select id="pk-fin" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-violet-400 transition">
+                        <option value="">— Sélectionner —</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Tolérance (cm)</label>
+                    <input type="number" id="tolerance" step="0.1" min="0"
+                           value="{{ projet.tolerance_defaut or 2 }}"
+                           class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-violet-400 transition text-right">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="genererTableau()"
+                            class="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl transition">
+                        Générer →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sélection colonnes : Gauche | Droite -->
+            <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Parties d'ouvrage</p>
+                <div id="columns-grid" class="grid gap-4 border border-slate-100 rounded-xl overflow-hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TABLEAU MESURES ───────────────────────────────────────────── -->
+    <div id="sim-zone" class="hidden">
+
+        <div class="flex items-center justify-between mb-4 no-print">
+            <div class="text-sm text-slate-600">
+                <span class="font-semibold text-slate-800" id="info-title"></span>
+                <span class="text-slate-400 ml-2" id="info-range"></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs text-slate-400 italic">Tol. <span id="info-tol" class="font-semibold text-violet-600"></span> cm</span>
+                <button onclick="resetMesures()"
+                        class="px-3 py-1.5 text-xs border border-slate-200 text-slate-500 rounded-lg hover:bg-slate-50 transition">
+                    Réinitialiser
+                </button>
+                <button onclick="document.getElementById('config-zone').classList.toggle('hidden')"
+                        class="px-3 py-1.5 text-xs border border-violet-200 text-violet-600 rounded-lg hover:bg-violet-50 transition">
+                    Modifier paramètres
+                </button>
+            </div>
+        </div>
+
+        <div class="tbl-wrap bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-24">PK</th>
+                        <th class="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide">Élément</th>
+                        <th class="text-center px-3 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-16">Côté</th>
+                        <th class="text-right px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-28">Côte théorique</th>
+                        <th class="text-right px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-28 no-print">Mesure terrain</th>
+                        <th class="text-right px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-24">Écart</th>
+                        <th class="text-left px-4 py-3 text-xs font-bold text-violet-500 uppercase tracking-wide w-36">Correction</th>
+                        <th class="text-center px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide w-24">Statut</th>
+                    </tr>
+                </thead>
+                <tbody id="sim-tbody"></tbody>
+            </table>
+        </div>
+
+        <p class="text-xs text-slate-400 italic mt-3 no-print">
+            Colonne <strong class="text-violet-600">Correction</strong> : valeur à ajouter ou retrancher pour atteindre la côte théorique.
+        </p>
+    </div>
+
+</main>
+
+<script>
+const PROJET_ID    = {{ projet.id }};
+const TOL_DEFAUT   = {{ projet.tolerance_defaut or 2 }};
+const PK_DEBUT_PRE = {{ ('"' ~ pk_debut ~ '"') if pk_debut else 'null' }};
+const PK_FIN_PRE   = {{ ('"' ~ pk_fin   ~ '"') if pk_fin   else 'null' }};
+const DEMANDE_ID   = {{ demande_id or 'null' }};
+
+// ── État global ───────────────────────────────────────────────────────────────
+let FORMAT        = null;          // 'parametric' | 'legacy'
+let commonPKs     = [];
+let allElements   = [];            // [{key, label, groupe, description}] — format paramétrique
+// Legacy
+let allSheetsData = {};
+let sheetNames    = [];
+let columnsState  = {};
+
+// ─── CHARGEMENT INITIAL ───────────────────────────────────────────────────────
+async function init() {
+    try {
+        // Toujours appeler /config en premier — il détecte le format
+        const resp = await fetch(`/api/pro/projets/${PROJET_ID}/config`);
+        if (!resp.ok) throw new Error((await resp.json().catch(()=>({}))).error || `Erreur ${resp.status}`);
+        const data = await resp.json();
+
+        FORMAT    = data.format;       // 'parametric' | 'legacy'
+        commonPKs = data.pks || [];
+
+        if (FORMAT === 'parametric') {
+            allElements = data.elements || [];
+        } else {
+            // Legacy : charger les données de chaque onglet
+            const resp2 = await fetch(`/api/pro/projets/${PROJET_ID}/sheets`);
+            if (!resp2.ok) throw new Error((await resp2.json().catch(()=>({}))).error || `Erreur ${resp2.status}`);
+            const d2 = await resp2.json();
+            allSheetsData = d2.sheets;
+            sheetNames    = d2.sheet_names;
+            // Recalculer commonPKs depuis les onglets legacy
+            let pkSets = sheetNames
+                .filter(s => allSheetsData[s] && !allSheetsData[s].error)
+                .map(s => allSheetsData[s].pks.map(String));
+            commonPKs = pkSets.length ? pkSets.reduce((a, b) => a.filter(pk => b.includes(pk))) : [];
+        }
+
+        // Peupler sélecteurs PK
+        const opts = commonPKs.map(pk => `<option value="${pk}">${pk}</option>`).join('');
+        document.getElementById('pk-debut').innerHTML = '<option value="">— Début —</option>' + opts;
+        document.getElementById('pk-fin').innerHTML   = '<option value="">— Fin —</option>'   + opts;
+
+        // Pré-sélection PK depuis demande ou premier/dernier
+        const pDeb = PK_DEBUT_PRE || data.pk_debut;
+        const pFin = PK_FIN_PRE   || data.pk_fin;
+        if (pDeb && commonPKs.includes(pDeb)) document.getElementById('pk-debut').value = pDeb;
+        else if (commonPKs.length)            document.getElementById('pk-debut').value = commonPKs[0];
+        if (pFin && commonPKs.includes(pFin)) document.getElementById('pk-fin').value = pFin;
+        else if (commonPKs.length > 1)        document.getElementById('pk-fin').value = commonPKs[commonPKs.length - 1];
+
+        // Tolérance par défaut depuis le projet
+        if (data.tolerance) document.getElementById('tolerance').value = data.tolerance;
+
+        buildColumnsGrid();
+        document.getElementById('loading-zone').classList.add('hidden');
+        document.getElementById('config-zone').classList.remove('hidden');
+
+    } catch(e) {
+        document.getElementById('loading-zone').classList.add('hidden');
+        document.getElementById('error-zone').classList.remove('hidden');
+        document.getElementById('error-msg').textContent = e.message;
+    }
+}
+
+// ─── GRILLE DE SÉLECTION DES ÉLÉMENTS ────────────────────────────────────────
+const _GROUPE_COLORS = {
+    AXE: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300', label: 'Chaussée' },
+    TER: { bg: 'bg-amber-50',  text: 'text-amber-700', border: 'border-amber-300', label: 'Terrassement' },
+    ASG: { bg: 'bg-blue-50',   text: 'text-blue-700',  border: 'border-blue-300',  label: 'Canal Gauche' },
+    ASD: { bg: 'bg-violet-50', text: 'text-violet-700',border: 'border-violet-300',label: 'Canal Droit' },
+};
+
+function buildColumnsGrid() {
+    const grid = document.getElementById('columns-grid');
+    grid.innerHTML = '';
+
+    if (FORMAT === 'parametric') {
+        // Grouper les éléments par groupe
+        const byGroupe = {};
+        allElements.forEach(elt => {
+            (byGroupe[elt.groupe] = byGroupe[elt.groupe] || []).push(elt);
+        });
+
+        const groupeOrder = ['AXE', 'TER', 'ASG', 'ASD'];
+        const groupes = groupeOrder.filter(g => byGroupe[g]);
+        grid.style.gridTemplateColumns = `repeat(${Math.min(groupes.length, 4)}, 1fr)`;
+
+        groupes.forEach((grp, gi) => {
+            const c = _GROUPE_COLORS[grp] || { bg:'bg-slate-50', text:'text-slate-600', border:'border-slate-200', label: grp };
+            const col = document.createElement('div');
+            col.className = 'p-4' + (gi < groupes.length - 1 ? ' border-r border-slate-100' : '');
+
+            const hdr = document.createElement('div');
+            hdr.className = `flex items-center gap-2 mb-3 pb-3 border-b-2 ${c.border}`;
+            hdr.innerHTML = `
+                <span class="text-xs font-bold uppercase tracking-wide ${c.text}">${c.label}</span>
+                <button type="button" onclick="toggleGroupe('${grp}', true)"
+                        class="ml-auto text-xs px-1.5 py-0.5 rounded ${c.text} hover:${c.bg} transition">Tout</button>
+                <button type="button" onclick="toggleGroupe('${grp}', false)"
+                        class="text-xs px-1.5 py-0.5 rounded text-slate-400 hover:bg-slate-50 transition">Aucun</button>`;
+            col.appendChild(hdr);
+
+            byGroupe[grp].forEach((elt, ei) => {
+                const id  = `elt-${grp}-${ei}`;
+                const itm = document.createElement('label');
+                itm.htmlFor = id;
+                itm.className = 'flex items-center gap-2 py-1.5 cursor-pointer group';
+                itm.innerHTML = `
+                    <input type="checkbox" id="${id}" checked
+                           data-key="${elt.key}" data-groupe="${elt.groupe}"
+                           class="w-4 h-4 flex-shrink-0 elt-checkbox">
+                    <span class="text-sm text-slate-700 group-hover:text-slate-900 transition" title="${elt.description}">${elt.label}</span>`;
+                col.appendChild(itm);
+            });
+            grid.appendChild(col);
+        });
+
+    } else {
+        // ── Legacy : onglets Cote_Gauche / Cote_Droit ────────────────────────
+        grid.style.gridTemplateColumns = `repeat(${sheetNames.length}, 1fr)`;
+        sheetNames.forEach((sName, si) => {
+            const sd = allSheetsData[sName];
+            if (!sd || sd.error) return;
+            const isG = sName.toLowerCase().includes('gauch');
+            const col = document.createElement('div');
+            col.className = 'p-4' + (si < sheetNames.length - 1 ? ' border-r border-slate-100' : '');
+
+            const hdr = document.createElement('div');
+            hdr.className = 'flex items-center gap-2 mb-3 pb-3 border-b-2 ' + (isG ? 'border-blue-300' : 'border-emerald-300');
+            hdr.innerHTML = `
+                <span class="text-xs font-bold uppercase tracking-wide ${isG ? 'text-blue-700' : 'text-emerald-700'}">
+                    ${isG ? '← Côté Gauche' : 'Côté Droit →'}
+                </span>
+                <button type="button" onclick="toggleAll('${sName}', true)"
+                        class="ml-auto text-xs px-1.5 py-0.5 rounded ${isG ? 'text-blue-600 hover:bg-blue-50' : 'text-emerald-600 hover:bg-emerald-50'} transition">Tout</button>
+                <button type="button" onclick="toggleAll('${sName}', false)"
+                        class="text-xs px-1.5 py-0.5 rounded text-slate-400 hover:bg-slate-50 transition">Aucun</button>`;
+            col.appendChild(hdr);
+
+            columnsState[sName] = [];
+            sd.cote_columns.forEach((colName, ci) => {
+                const id  = `col-${sName}-${ci}`.replace(/\W/g,'_');
+                const lbl = formatElement(colName);
+                const itm = document.createElement('label');
+                itm.htmlFor = id;
+                itm.className = 'flex items-center gap-2 py-1.5 cursor-pointer group';
+                itm.innerHTML = `
+                    <input type="checkbox" id="${id}" checked
+                           data-sheet="${sName}" data-col="${colName}"
+                           class="w-4 h-4 flex-shrink-0">
+                    <span class="text-sm text-slate-700 group-hover:text-slate-900 transition">${lbl}</span>`;
+                col.appendChild(itm);
+                columnsState[sName].push({ col: colName, el: itm.querySelector('input') });
+            });
+            grid.appendChild(col);
+        });
+    }
+}
+
+function toggleGroupe(groupe, checked) {
+    document.querySelectorAll(`.elt-checkbox[data-groupe="${groupe}"]`)
+            .forEach(cb => { cb.checked = checked; });
+}
+function toggleAll(sheetName, checked) {
+    (columnsState[sheetName] || []).forEach(c => { c.el.checked = checked; });
+}
+
+// ─── GÉNÉRATION DU TABLEAU ────────────────────────────────────────────────────
+async function genererTableau() {
+    const pkDebut   = document.getElementById('pk-debut').value;
+    const pkFin     = document.getElementById('pk-fin').value;
+    const tolerance = parseFloat(document.getElementById('tolerance').value) || 2;
+
+    if (!pkDebut || !pkFin) { alert('Sélectionnez PK début et PK fin.'); return; }
+
+    const idxD = commonPKs.indexOf(pkDebut);
+    const idxF = commonPKs.indexOf(pkFin);
+    if (idxD < 0 || idxF < 0 || idxD > idxF) { alert('Plage PK invalide.'); return; }
+
+    const pkRange = commonPKs.slice(idxD, idxF + 1);
+    const rows = [];
+
+    if (FORMAT === 'parametric') {
+        // ── Format paramétrique : appel /cotes ───────────────────────────────
+        const selectedKeys = Array.from(
+            document.querySelectorAll('.elt-checkbox:checked')
+        ).map(cb => cb.dataset.key);
+
+        if (selectedKeys.length === 0) { alert('Sélectionnez au moins un élément.'); return; }
+
+        let cotesData;
+        try {
+            const r = await fetch(`/api/pro/projets/${PROJET_ID}/cotes`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ pks: pkRange }),
+            });
+            if (!r.ok) throw new Error((await r.json().catch(()=>({}))).error || `Erreur ${r.status}`);
+            cotesData = (await r.json()).cotes_by_pk || {};
+        } catch(e) {
+            alert('Erreur lors du calcul des côtes : ' + e.message);
+            return;
+        }
+
+        const keySet = new Set(selectedKeys);
+        for (const pk of pkRange) {
+            const pkCotes = cotesData[pk] || [];
+            for (const elt of pkCotes) {
+                if (!keySet.has(elt.key)) continue;
+                if (elt.cote === null || elt.cote === undefined) continue;
+                const isG = elt.groupe === 'ASG' || elt.label.includes('(G)');
+                rows.push({ pk, label: elt.label, theorie: elt.cote, isGauche: isG, groupe: elt.groupe });
+            }
+        }
+
+    } else {
+        // ── Format legacy : lecture depuis allSheetsData ─────────────────────
+        const selectedCols = {};
+        sheetNames.forEach(sName => {
+            selectedCols[sName] = (columnsState[sName] || [])
+                .filter(c => c.el.checked).map(c => c.col);
+        });
+
+        for (const pk of pkRange) {
+            for (const sName of sheetNames) {
+                const sd   = allSheetsData[sName];
+                const cols = selectedCols[sName] || [];
+                if (!sd || sd.error || cols.length === 0) continue;
+                const record = sd.data.find(r => String(r[sd.pk_column]) === pk);
+                if (!record) continue;
+                const isG = sName.toLowerCase().includes('gauch');
+                for (const col of cols) {
+                    const th = record[col];
+                    if (th === null || th === undefined) continue;
+                    rows.push({ pk, label: formatElement(col), theorie: parseFloat(th), isGauche: isG, groupe: isG ? 'G' : 'D' });
+                }
+            }
+        }
+    }
+
+    if (rows.length === 0) { alert('Aucune donnée pour cette sélection.'); return; }
+
+    // Infos header
+    document.getElementById('info-title').textContent = `${pkRange.length} PK · ${rows.length} points`;
+    document.getElementById('info-range').textContent = `PK ${pkDebut} → ${pkFin}`;
+    document.getElementById('info-tol').textContent   = tolerance;
+
+    // Construire le tbody
+    const tbody = document.getElementById('sim-tbody');
+    tbody.innerHTML = '';
+
+    const _GROUPE_BADGE = {
+        AXE: '<span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded text-xs font-bold">AXE</span>',
+        TER: '<span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-bold">TER</span>',
+        ASG: '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">G</span>',
+        ASD: '<span class="px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-xs font-bold">D</span>',
+        G:   '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">G</span>',
+        D:   '<span class="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">D</span>',
+    };
+
+    rows.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.className = 'vide border-b border-slate-100';
+        tr.dataset.idx     = i;
+        tr.dataset.theorie = r.theorie;
+        tr.dataset.tol     = tolerance;
+
+        const badge = _GROUPE_BADGE[r.groupe] || _GROUPE_BADGE[r.isGauche ? 'G' : 'D'];
+
+        tr.innerHTML = `
+            <td class="px-4 py-2.5 font-mono text-sm text-violet-700">${r.pk}</td>
+            <td class="px-4 py-2.5 text-sm text-slate-700">${r.label}</td>
+            <td class="px-3 py-2.5 text-center">${badge}</td>
+            <td class="px-4 py-2.5 text-right font-mono text-sm font-semibold text-slate-700">${r.theorie.toFixed(3)}</td>
+            <td class="px-4 py-2.5 text-right no-print">
+                <input type="number" step="0.001" class="mesure-input" placeholder="—"
+                       oninput="onMesure(this,${i})" data-row="${i}">
+            </td>
+            <td class="px-4 py-2.5 text-right font-mono text-sm" id="ecart-${i}">—</td>
+            <td class="px-4 py-2.5 text-sm" id="corr-${i}">
+                <span class="text-slate-300 text-xs">—</span>
+            </td>
+            <td class="px-4 py-2.5 text-center" id="statut-${i}">
+                <span class="text-slate-300 text-xs">—</span>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById('config-zone').classList.add('hidden');
+    document.getElementById('sim-zone').classList.remove('hidden');
+    document.getElementById('bilan-bar').classList.remove('hidden');
+    majBilan();
+}
+
+// ─── SAISIE MESURE ────────────────────────────────────────────────────────────
+function onMesure(input, idx) {
+    const tr      = document.querySelector(`tr[data-idx="${idx}"]`);
+    const theorie = parseFloat(tr.dataset.theorie);
+    const tol     = parseFloat(tr.dataset.tol);
+    const val     = input.value.trim();
+
+    const ecartEl  = document.getElementById(`ecart-${idx}`);
+    const corrEl   = document.getElementById(`corr-${idx}`);
+    const statutEl = document.getElementById(`statut-${idx}`);
+
+    if (val === '' || isNaN(parseFloat(val))) {
+        tr.className = 'vide border-b border-slate-100';
+        ecartEl.textContent  = '—';
+        ecartEl.className    = 'px-4 py-2.5 text-right font-mono text-sm';
+        corrEl.innerHTML     = '<span class="text-slate-300 text-xs">—</span>';
+        statutEl.innerHTML   = '<span class="text-slate-300 text-xs">—</span>';
+    } else {
+        const mesure   = parseFloat(val);
+        const ecart    = mesure - theorie;
+        const absE     = Math.abs(ecart);
+        const conforme = absE <= tol;
+        // Correction = théorique - mesure (ce qu'il faut rajouter/retrancher)
+        const corr     = theorie - mesure;
+
+        tr.className = (conforme ? 'ok' : 'nok') + ' border-b border-slate-100';
+
+        const sign = ecart >= 0 ? '+' : '';
+        ecartEl.textContent = `${sign}${ecart.toFixed(3)}`;
+        ecartEl.className   = `px-4 py-2.5 text-right font-mono text-sm ${conforme ? 'ok' : 'nok'}`;
+
+        if (conforme) {
+            corrEl.innerHTML = '<span class="text-emerald-600 text-xs font-semibold">✓ Conforme</span>';
+            statutEl.innerHTML = '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">OK</span>';
+        } else {
+            const corrAbs = Math.abs(corr).toFixed(3);
+            if (corr > 0) {
+                // Mesure trop basse → rajouter du matériau
+                corrEl.innerHTML = `<span class="corr-pos">▲ Rajouter ${corrAbs} cm</span>`;
+            } else {
+                // Mesure trop haute → retirer du matériau
+                corrEl.innerHTML = `<span class="corr-neg">▼ Retirer ${corrAbs} cm</span>`;
+            }
+            const sens = ecart > 0 ? '▲ excédent' : '▼ déficit';
+            statutEl.innerHTML = `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">${sens}</span>`;
+        }
+    }
+    majBilan();
+}
+
+// ─── BILAN ────────────────────────────────────────────────────────────────────
+function majBilan() {
+    const trs = document.querySelectorAll('#sim-tbody tr');
+    let nOk = 0, nNok = 0, nVide = 0;
+    trs.forEach(tr => {
+        if      (tr.classList.contains('ok'))  nOk++;
+        else if (tr.classList.contains('nok')) nNok++;
+        else                                   nVide++;
+    });
+    const total = nOk + nNok;
+    const pct   = total > 0 ? Math.round(nOk / total * 100) : null;
+    const color = pct === null ? '#6b7280' : (pct >= 80 ? '#4ade80' : pct >= 50 ? '#fbbf24' : '#f87171');
+
+    document.getElementById('b-total').textContent   = total;
+    document.getElementById('b-ok').textContent      = nOk;
+    document.getElementById('b-nok').textContent     = nNok;
+    document.getElementById('b-pct').textContent     = pct !== null ? `${pct}%` : '—';
+    document.getElementById('b-bar').style.width     = `${pct || 0}%`;
+    document.getElementById('b-bar').style.background = color;
+    document.getElementById('b-manquants').textContent =
+        nVide > 0 ? `${nVide} non mesuré${nVide > 1 ? 's' : ''}` : '';
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function formatElement(colName) {
+    const s = String(colName);
+    if (s.startsWith('G_') || s.startsWith('g_')) return s.slice(2);
+    if (s.startsWith('D_') || s.startsWith('d_')) return s.slice(2);
+    return s;
+}
+
+function resetMesures() {
+    if (!confirm('Réinitialiser toutes les mesures ?')) return;
+    document.querySelectorAll('#sim-tbody input.mesure-input').forEach(inp => {
+        inp.value = '';
+        onMesure(inp, parseInt(inp.dataset.row));
+    });
+}
+
+init();
+</script>
+</body>
+</html>

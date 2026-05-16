@@ -1,160 +1,545 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion — OPTILAB</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#1e3a5f', dark: '#0f2744', light: '#2d5a8e' },
-                        accent:  { DEFAULT: '#3b82f6', hover: '#2563eb' },
-                    },
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                    animation: { 'fade-in': 'fadeIn .45s ease' },
-                    keyframes:  { fadeIn: { '0%': { opacity: '0', transform: 'translateY(18px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } } },
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connexion — RECEPTA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { height:100%; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #07101c;
+  color: #0f172a;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+/* ── LEFT PANEL (form) ──────────────────────────────────────── */
+.form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  background: #ffffff;
+  position: relative;
+}
+
+.form-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 110% 10%, rgba(0,184,220,.05) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 70% at -10% 90%, rgba(0,184,220,.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.form-inner {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  animation: fadeSlideUp .5s ease both;
+}
+
+/* ── Brand ── */
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 36px;
+}
+.brand-logo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  align-self: center;
+  margin-bottom: 1px;
+}
+.brand-logo span { border-radius: 2px; }
+.brand-logo span:nth-child(1) { background: #00ffff; }
+.brand-logo span:nth-child(2) { background: #fbbf24; }
+.brand-logo span:nth-child(3) { background: #00ffff; }
+.brand-logo span:nth-child(4) { background: #00ffff; }
+.brand-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #07101c;
+  letter-spacing: -.02em;
+}
+.brand-name em {
+  color: #00B8DC;
+  font-style: normal;
+}
+.brand-suite {
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* ── Title ── */
+.form-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #07101c;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+.form-sub {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* ── Flash messages ── */
+.flash {
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 18px;
+  line-height: 1.45;
+}
+.flash-danger  { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.flash-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.flash-info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.flash svg { width:16px; height:16px; flex-shrink:0; margin-top:1px; }
+
+/* ── Form fields ── */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+.input-wrap { position: relative; }
+.input-icon {
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+  width: 16px; height: 16px;
+}
+.input-wrap input {
+  width: 100%;
+  padding: 11px 14px 11px 40px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: #07101c;
+  background: #f8fafc;
+  transition: border-color .18s, background .18s, box-shadow .18s;
+  outline: none;
+}
+.input-wrap input:focus {
+  border-color: #00B8DC;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0,184,220,.12);
+}
+.input-wrap input::placeholder { color: #c4cdd6; }
+
+/* ── Remember + forgot ── */
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  margin-top: -4px;
+}
+.remember {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: #64748b; cursor: pointer; user-select: none;
+}
+.remember input[type="checkbox"] {
+  width: 15px; height: 15px;
+  accent-color: #00B8DC;
+  cursor: pointer;
+}
+.forgot {
+  font-size: 13px;
+  color: #00B8DC;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color .15s;
+}
+.forgot:hover { color: #0088b0; }
+
+/* ── Submit button ── */
+.btn-submit {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #07101c 0%, #0d1b2e 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s, background .18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(7,16,28,.25);
+}
+.btn-submit:hover {
+  background: linear-gradient(135deg, #00B8DC 0%, #0088b0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(0,184,220,.35);
+}
+.btn-submit:active { transform: translateY(0); }
+.btn-submit svg { width: 15px; height: 15px; }
+
+/* ── Footer ── */
+.form-footer {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.form-footer-logo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px; width: 12px; height: 12px;
+}
+.form-footer-logo span { border-radius: 1px; }
+.form-footer-logo span:nth-child(1) { background: #94a3b8; }
+.form-footer-logo span:nth-child(2) { background: #cbd5e1; }
+.form-footer-logo span:nth-child(3) { background: #94a3b8; }
+.form-footer-logo span:nth-child(4) { background: #94a3b8; }
+.form-footer p { font-size: 11px; color: #94a3b8; }
+
+/* ── RIGHT PANEL (brand) ──────────────────────────────────────── */
+.brand-panel {
+  background: linear-gradient(145deg, #07101c 0%, #0d1b2e 60%, #0f2038 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 52px 56px;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Topographic wave lines */
+.topo-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  opacity: .07;
+  pointer-events: none;
+}
+
+/* Floating dots */
+.bp-dots {
+  position: absolute;
+  right: 40px; top: 48px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px; width: 22px; height: 22px;
+}
+.bp-dots span { border-radius: 3px; }
+.bp-dots span:nth-child(1) { background: #00ffff; }
+.bp-dots span:nth-child(2) { background: #fbbf24; }
+.bp-dots span:nth-child(3) { background: #00ffff; }
+.bp-dots span:nth-child(4) { background: #00ffff; }
+
+/* Top section */
+.bp-top { position: relative; }
+.bp-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #00B8DC;
+  margin-bottom: 18px;
+}
+.bp-headline {
+  font-size: clamp(22px, 2.8vw, 32px);
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -.02em;
+  color: #ffffff;
+  max-width: 340px;
+}
+.bp-headline em {
+  color: #00ffff;
+  font-style: normal;
+}
+
+/* Middle — features list */
+.bp-features {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bp-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  transition: background .2s, border-color .2s;
+}
+.bp-feature:hover {
+  background: rgba(0,184,220,.07);
+  border-color: rgba(0,184,220,.18);
+}
+.bp-feat-icon {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  background: rgba(0,184,220,.1);
+  border: 1px solid rgba(0,184,220,.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.bp-feat-icon svg { width: 16px; height: 16px; stroke: #00B8DC; fill: none; stroke-width: 1.8; }
+.bp-feat-title { font-size: 13px; font-weight: 600; color: #e2f0ff; margin-bottom: 2px; }
+.bp-feat-desc  { font-size: 12px; color: rgba(180,210,240,.55); line-height: 1.5; }
+
+/* Bottom — stats */
+.bp-stats {
+  position: relative;
+  display: flex;
+  gap: 28px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.bp-stat-val {
+  font-size: 22px;
+  font-weight: 700;
+  color: #00ffff;
+  font-family: 'Inter', monospace;
+  letter-spacing: -.02em;
+  line-height: 1;
+}
+.bp-stat-label {
+  font-size: 11px;
+  color: rgba(255,255,255,.45);
+  margin-top: 4px;
+}
+
+/* ── Animation ── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  body { grid-template-columns: 1fr; }
+  .brand-panel { display: none; }
+  .form-panel { padding: 40px 24px; }
+}
+</style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4"
-      style="background: linear-gradient(135deg, #0f1f38 0%, #1e3a5f 45%, #0d2645 100%);">
+<body>
 
-    <!-- Cercles décoratifs de fond -->
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute -top-32 -right-32 w-80 h-80 rounded-full opacity-10"
-             style="background: radial-gradient(circle, #3b82f6, transparent);"></div>
-        <div class="absolute -bottom-32 -left-32 w-80 h-80 rounded-full opacity-10"
-             style="background: radial-gradient(circle, #60a5fa, transparent);"></div>
-        <div class="absolute top-1/3 right-1/4 w-48 h-48 rounded-full opacity-5"
-             style="background: radial-gradient(circle, #93c5fd, transparent);"></div>
+<!-- ── LEFT — Formulaire ────────────────────────────────────── -->
+<div class="form-panel">
+  <div class="form-inner">
+
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-logo">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <span class="brand-name">RECEP<em>TA</em></span>
+      <span class="brand-suite">by OPTILAB</span>
     </div>
 
-    <div class="relative w-full max-w-md animate-fade-in">
+    <!-- Title -->
+    <h1 class="form-title">Connexion</h1>
+    <p class="form-sub">Accédez à vos projets de réception topographique.</p>
 
-        <!-- Card principale -->
-        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+      </svg>
+      {{ message }}
+    </div>
+    {% endfor %}
+    {% endwith %}
 
-            <!-- En-tête : identité de l'outil RECEPTA -->
-            <div style="background: linear-gradient(135deg, #0d1f38 0%, #1e3a5f 60%, #2d5a8e 100%); padding: 32px 32px 28px; text-align:center;">
+    <!-- Form -->
+    <form method="POST" action="{{ url_for('auth.login') }}">
 
-                <!-- Logo RECEPTA (grille de points + nom) -->
-                <div style="display:inline-flex; align-items:center; gap:12px; margin-bottom:18px;">
-                    <!-- Grille 2×2 points — identique au header de l'app -->
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; width:28px; height:28px; flex-shrink:0;">
-                        <span style="width:11px;height:11px;border-radius:50%;background:#00ffff;display:block;"></span>
-                        <span style="width:11px;height:11px;border-radius:50%;background:#fbbf24;display:block;"></span>
-                        <span style="width:11px;height:11px;border-radius:50%;background:#00ffff;display:block;"></span>
-                        <span style="width:11px;height:11px;border-radius:50%;background:#00ffff;display:block;"></span>
-                    </div>
-                    <!-- Nom -->
-                    <div style="text-align:left;">
-                        <div style="color:#00ffff; font-size:1.7rem; font-weight:900; letter-spacing:0.12em; line-height:1; text-transform:uppercase;">RECEPTA</div>
-                        <div style="color:rgba(255,255,255,0.35); font-size:0.62rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; margin-top:2px;">by OPTILAB</div>
-                    </div>
-                </div>
-
-                <!-- Sous-titre de l'outil -->
-                <div style="color:rgba(191,219,254,0.75); font-size:0.78rem; font-weight:500; letter-spacing:0.04em; margin-bottom:0;">
-                    Réception Topographique
-                </div>
-            </div>
-
-            <!-- Formulaire -->
-            <div class="px-8 py-7">
-
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% for category, message in messages %}
-                        <div class="mb-5 px-4 py-3 rounded-xl text-sm font-medium flex items-start gap-2
-                            {% if category == 'danger' %}bg-red-50 text-red-700 border border-red-200
-                            {% elif category == 'warning' %}bg-amber-50 text-amber-700 border border-amber-200
-                            {% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
-                            <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                            </svg>
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endwith %}
-
-                <p class="text-sm text-slate-500 mb-6 text-center font-medium">Connectez-vous à votre espace</p>
-
-                <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-5">
-
-                    <div>
-                        <label for="email" class="block text-sm font-semibold text-slate-700 mb-1.5">
-                            Adresse email
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
-                                </svg>
-                            </div>
-                            <input type="email" id="email" name="email" required autofocus
-                                   placeholder="votre@email.fr"
-                                   class="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition bg-slate-50 focus:bg-white">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label for="password" class="block text-sm font-semibold text-slate-700 mb-1.5">
-                            Mot de passe
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                </svg>
-                            </div>
-                            <input type="password" id="password" name="password" required
-                                   placeholder="••••••••"
-                                   class="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition bg-slate-50 focus:bg-white">
-                        </div>
-                    </div>
-
-                    <label class="flex items-center gap-2.5 cursor-pointer select-none">
-                        <input type="checkbox" name="remember"
-                               class="w-4 h-4 text-accent border-slate-300 rounded focus:ring-accent">
-                        <span class="text-sm text-slate-600">Rester connecté</span>
-                    </label>
-
-                    <button type="submit"
-                            class="w-full py-3.5 text-white font-semibold rounded-xl transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 text-sm tracking-wide"
-                            style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%);">
-                        Se connecter
-                    </button>
-
-                </form>
-            </div>
-
-            <!-- Pied de card -->
-            <div class="px-8 py-4 border-t border-slate-100 text-center" style="background:#f8fafc;">
-                <p class="text-xs text-slate-400" style="display:flex; align-items:center; justify-content:center; gap:6px;">
-                    <!-- Mini logo dots -->
-                    <span style="display:inline-grid; grid-template-columns:1fr 1fr; gap:2px; width:12px; height:12px; vertical-align:middle;">
-                        <span style="width:4px;height:4px;border-radius:50%;background:#64748b;display:block;"></span>
-                        <span style="width:4px;height:4px;border-radius:50%;background:#94a3b8;display:block;"></span>
-                        <span style="width:4px;height:4px;border-radius:50%;background:#64748b;display:block;"></span>
-                        <span style="width:4px;height:4px;border-radius:50%;background:#64748b;display:block;"></span>
-                    </span>
-                    RECEPTA &mdash; Usage professionnel exclusif
-                </p>
-            </div>
+      <div class="field">
+        <label for="email">Adresse email professionnelle</label>
+        <div class="input-wrap">
+          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
+          </svg>
+          <input type="email" id="email" name="email" required autofocus
+                 placeholder="prenom.nom@cabinet.fr">
         </div>
+      </div>
 
-        <!-- Mention suite en bas -->
-        <p class="text-center mt-4" style="font-size:0.68rem; color:rgba(100,116,139,0.65); letter-spacing:0.05em;">
-            <strong style="color:rgba(148,163,184,0.75); font-weight:700; letter-spacing:0.06em;">RECEPTA</strong>
-            <span style="margin:0 6px; opacity:0.4;">·</span>
-            Un outil de la suite <strong style="color:rgba(148,163,184,0.75); font-weight:700;">OPTILAB</strong>
-        </p>
+      <div class="field">
+        <label for="password">Mot de passe</label>
+        <div class="input-wrap">
+          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+          </svg>
+          <input type="password" id="password" name="password" required
+                 placeholder="••••••••">
+        </div>
+      </div>
+
+      <div class="row-between">
+        <label class="remember">
+          <input type="checkbox" name="remember">
+          Rester connecté
+        </label>
+        <a href="#" class="forgot">Mot de passe oublié ?</a>
+      </div>
+
+      <button type="submit" class="btn-submit">
+        <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
+        </svg>
+        Se connecter
+      </button>
+
+    </form>
+
+    <div class="form-footer">
+      <div class="form-footer-logo">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <p>RECEPTA — Usage professionnel exclusif</p>
     </div>
+
+  </div>
+</div>
+
+<!-- ── RIGHT — Brand panel ──────────────────────────────────── -->
+<div class="brand-panel">
+
+  <!-- Logo dots top-right -->
+  <div class="bp-dots">
+    <span></span><span></span><span></span><span></span>
+  </div>
+
+  <!-- Topographic wave lines SVG -->
+  <svg class="topo-svg" viewBox="0 0 500 700" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0 100 Q60 70, 120 100 T240 100 T360 100 T480 100 T600 100" stroke="white" stroke-width="1.2" fill="none"/>
+    <path d="M0 160 Q80 125, 160 160 T320 160 T480 160 T640 160" stroke="white" stroke-width="1" fill="none"/>
+    <path d="M0 230 Q70 200, 140 230 T280 230 T420 230 T560 230" stroke="white" stroke-width="1.2" fill="none"/>
+    <path d="M0 310 Q90 275, 180 310 T360 310 T540 310" stroke="white" stroke-width="1" fill="none"/>
+    <path d="M0 400 Q65 368, 130 400 T260 400 T390 400 T520 400" stroke="white" stroke-width="1.2" fill="none"/>
+    <path d="M0 500 Q85 465, 170 500 T340 500 T510 500" stroke="white" stroke-width="1" fill="none"/>
+    <path d="M0 610 Q75 578, 150 610 T300 610 T450 610 T600 610" stroke="white" stroke-width="1.2" fill="none"/>
+    <!-- Measurement points -->
+    <circle cx="120" cy="100" r="3" fill="#00ffff" opacity=".6"/>
+    <circle cx="240" cy="160" r="3" fill="#fbbf24" opacity=".6"/>
+    <circle cx="360" cy="230" r="3" fill="#00ffff" opacity=".6"/>
+    <circle cx="180" cy="310" r="3" fill="#fbbf24" opacity=".5"/>
+    <circle cx="300" cy="400" r="3" fill="#00ffff" opacity=".5"/>
+    <!-- PK labels -->
+    <text x="108" y="92" fill="#00ffff" font-size="8" opacity=".5" font-family="monospace">PK 0+050</text>
+    <text x="228" y="152" fill="#fbbf24" font-size="8" opacity=".45" font-family="monospace">PK 0+200</text>
+    <text x="348" y="222" fill="#00ffff" font-size="8" opacity=".45" font-family="monospace">PK 0+450</text>
+  </svg>
+
+  <!-- Top: tagline -->
+  <div class="bp-top">
+    <div class="bp-eyebrow">Réception topographique BTP</div>
+    <h2 class="bp-headline">
+      Validez vos relevés en confiance,<br>
+      du chantier au <em>procès-verbal</em>.
+    </h2>
+  </div>
+
+  <!-- Middle: features -->
+  <div class="bp-features">
+    <div class="bp-feature">
+      <div class="bp-feat-icon">
+        <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="bp-feat-title">Comparaison automatique</div>
+        <div class="bp-feat-desc">Écarts théorique/mesuré calculés en temps réel, code couleur conformité.</div>
+      </div>
+    </div>
+    <div class="bp-feature">
+      <div class="bp-feat-icon">
+        <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="bp-feat-title">Fiches PDF officielles</div>
+        <div class="bp-feat-desc">Signatures manuscrites, logos, archivage cloud. Envoi email en 2 clics.</div>
+      </div>
+    </div>
+    <div class="bp-feature">
+      <div class="bp-feat-icon">
+        <svg stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <path d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="bp-feat-title">Mode MDC / ET</div>
+        <div class="bp-feat-desc">Workflow collaboratif Mission de Contrôle ↔ Entreprise de Travaux.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom: stats -->
+  <div class="bp-stats">
+    <div>
+      <div class="bp-stat-val">± 2 cm</div>
+      <div class="bp-stat-label">Précision terrain</div>
+    </div>
+    <div>
+      <div class="bp-stat-val">4 étapes</div>
+      <div class="bp-stat-label">Workflow guidé</div>
+    </div>
+    <div>
+      <div class="bp-stat-val">&lt; 30 s</div>
+      <div class="bp-stat-label">Génération PDF</div>
+    </div>
+  </div>
+
+</div>
 
 </body>
 </html>

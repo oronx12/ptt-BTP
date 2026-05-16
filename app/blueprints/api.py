@@ -27,26 +27,20 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 def _get_excel_source():
     """
     Retourne la source Excel du client connecté :
-    - Si admin avec fichier de test sélectionné → retourne ce fichier local.
-    - Si le client a une clé R2 → télécharge les bytes depuis R2.
+    - Si le projet du client a une clé R2 → télécharge les bytes depuis R2.
     - Sinon → retourne le Path du fichier modèle par défaut.
     """
-    from flask import session
-    from pathlib import Path as _Path
+    from ..models import Projet, UserClient
 
-    # Admin : fichier de test choisi depuis le panel admin
-    if current_user.is_authenticated and current_user.is_admin:
-        test_path = session.get("admin_test_excel")
-        if test_path:
-            p = _Path(test_path)
-            if p.exists():
-                return p
-
-    if current_user.is_authenticated and current_user.client and current_user.excel_key:
-        try:
-            return download_excel(current_user.excel_key)
-        except FileNotFoundError:
-            pass  # fallback sur le fichier local
+    if current_user.is_authenticated and not current_user.is_admin:
+        uc = UserClient.query.filter_by(user_id=current_user.id).first()
+        if uc:
+            projet = Projet.query.filter_by(client_id=uc.client_id).first()
+            if projet and projet.excel_key:
+                try:
+                    return download_excel(projet.excel_key)
+                except FileNotFoundError:
+                    pass
     return current_app.config["MODEL_EXCEL"]
 
 
@@ -65,6 +59,451 @@ def excel_sheets():
         return jsonify({"error": str(e)}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@api_bp.route("/pro/projets/<int:projet_id>/pks", methods=["GET"])
+@login_required
+def get_projet_pks(projet_id):
+    """Retourne la liste triée des PK disponibles dans l'Excel d'un projet."""
+    from ..models import Projet, UserClient
+
+    projet = Projet.query.get_or_404(projet_id)
+
+    if not current_user.is_admin:
+        if not projet.client_id:
+            return jsonify({"error": "Accès refusé"}), 403
+        acces = UserClient.query.filter_by(
+            user_id=current_user.id, client_id=projet.client_id
+        ).first()
+        if not acces:
+            return jsonify({"error": "Accès refusé"}), 403
+
+    if not projet.excel_key:
+        return jsonify({"error": "Aucun fichier Excel associé à ce projet"}), 404
+
+    try:
+        excel_bytes = download_excel(projet.excel_key)
+        sheets = get_sheet_names(excel_bytes)
+        all_pks = set()
+        for sheet in sheets:
+            try:
+                data = get_sheet_data(excel_bytes, sheet)
+                all_pks.update(str(pk) for pk in data["pks"] if pk is not None)
+            except Exception:
+                pass
+        return jsonify({"pks": sorted(all_pks, key=str)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api_bp.route("/pro/projets/<int:projet_id>/sheets", methods=["GET"])
+@login_required
+def get_projet_sheets(projet_id):
+    """Retourne tous les onglets + données côtes théoriques d'un projet."""
+    from ..models import Projet, UserClient
+
+    projet = Projet.query.get_or_404(projet_id)
+
+    if not current_user.is_admin:
+        if not projet.client_id:
+            return jsonify({"error": "Accès refusé"}), 403
+        acces = UserClient.query.filter_by(
+            user_id=current_user.id, client_id=projet.client_id
+        ).first()
+        if not acces:
+            return jsonify({"error": "Accès refusé"}), 403
+
+    if not projet.excel_key:
+        return jsonify({"error": "Aucun fichier Excel associé à ce projet"}), 404
+
+    try:
+        excel_bytes = download_excel(projet.excel_key)
+        sheets = get_sheet_names(excel_bytes)
+        result = {}
+        for sheet in sheets:
+            try:
+                result[sheet] = get_sheet_data(excel_bytes, sheet)
+            except Exception as e:
+                result[sheet] = {"error": str(e)}
+        return jsonify({"sheets": result, "sheet_names": sheets})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ── Helpers accès projet V3 ───────────────────────────────────────────────────
+
+def _acces_projet(projet_id: int):
+    """
+    Vérifie l'accès au projet.
+    Retourne (projet, None) si OK, (projet, response_403) sinon.
+    Priorité : MembreProjet direct (V3) → UserClient+ClientProjet (V2).
+    """
+    from ..models import Projet, ClientProjet, UserClient, MembreProjet
+    projet = Projet.query.get_or_404(projet_id)
+    if current_user.is_admin:
+        return projet, None
+    # V3 direct
+    if MembreProjet.query.filter_by(projet_id=projet_id, user_id=current_user.id).first():
+        return projet, None
+    # V2 UserClient → ClientProjet
+    cp_entries  = ClientProjet.query.filter_by(projet_id=projet_id).all()
+    client_ids  = [cp.client_id for cp in cp_entries]
+    if client_ids:
+        uc = UserClient.query.filter(
+            UserClient.user_id == current_user.id,
+            UserClient.client_id.in_(client_ids)
+        ).first()
+        if uc:
+            return projet, None
+    return projet, (jsonify({"error": "Accès refusé"}), 403)
+
+
+# ── Config projet (format paramétrique) ──────────────────────────────────────
+
+@api_bp.route("/pro/projets/<int:projet_id>/config", methods=["GET"])
+@login_required
+def get_projet_config(projet_id):
+    """
+    Retourne la config parsée du projet :
+      { format, pks, elements, pk_debut, pk_fin, tolerance }
+    format = 'parametric' si l'Excel a un profil en long AXE_
+           = 'legacy'     si l'Excel a des onglets Cote_Gauche/Cote_Droit
+    """
+    from ..services.excel_service import parse_modele_config
+    from ..services.calculation_service import elements_disponibles
+
+    projet, err = _acces_projet(projet_id)
+    if err:
+        return err
+
+    if not projet.excel_key:
+        return jsonify({"error": "Aucun fichier Excel associé à ce projet"}), 404
+
+    # Logos présignés (non bloquants)
+    logo_mdc = None
+    logo_et  = None
+    if projet.logo_mdc_url:
+        try: logo_mdc = generate_presigned_url(projet.logo_mdc_url, 3600)
+        except Exception: pass
+    if projet.logo_et_url:
+        try: logo_et  = generate_presigned_url(projet.logo_et_url,  3600)
+        except Exception: pass
+
+    try:
+        excel_bytes = download_excel(projet.excel_key)
+        config      = parse_modele_config(excel_bytes)
+
+        profil = config.get('profil_long', [])
+        if profil:
+            # Format paramétrique
+            pks  = [p['pk'] for p in profil]
+            elts = elements_disponibles(config)
+
+            # Extra info pour le flux de paramétrage (Type → PK → Sections → Parties)
+            pk_m_map      = {p['pk']: p['pk_m'] for p in profil}
+            secs_raw      = config.get('sections', {})
+            sections_info = {
+                grp: [{'pk_debut_m': s.get('pk_debut_m', 0),
+                       'pk_fin_m':   s.get('pk_fin_m')}
+                      for s in secs]
+                for grp, secs in secs_raw.items()
+            }
+            has_ter   = bool(secs_raw.get('AXE'))
+            has_ass_g = bool(secs_raw.get('ASG') and
+                             (config.get('ass_long_g') or config.get('ass_long')))
+            has_ass_d = bool(secs_raw.get('ASD') and
+                             (config.get('ass_long_d') or config.get('ass_long')))
+
+            # Sections de profil en travers (TER_PROFIL_TYPE) — pour l'étape "Parties"
+            from collections import OrderedDict
+            ter_raw = config.get('ter_points', [])
+            _sec_map = OrderedDict()
+            for pt in ter_raw:
+                deb  = pt.get('pk_debut_m')
+                fin  = pt.get('pk_fin_m')
+                k    = (deb, fin)
+                if k not in _sec_map:
+                    _sec_map[k] = {'pk_debut_m': deb, 'pk_fin_m': fin, 'g': [], 'd': []}
+                side = 'g' if 'G' in str(pt.get('cote', '')).upper() else 'd'
+                _sec_map[k][side].append({
+                    'label':      pt.get('label') or f"{side.upper()}{len(_sec_map[k][side])+1}",
+                    'dist_axe_m': pt.get('dist_axe_m'),
+                    'pente_pct':  pt.get('pente_pct'),
+                    'ordre':      pt.get('ordre'),
+                })
+            profil_sections = list(_sec_map.values())
+
+            return jsonify({
+                'format':          'parametric',
+                'pks':             pks,
+                'elements':        elts,
+                'pk_debut':        projet.pk_debut or (pks[0] if pks else None),
+                'pk_fin':          projet.pk_fin   or (pks[-1] if pks else None),
+                'tolerance':       projet.tolerance_defaut or 2.0,
+                'errors':          config.get('errors', []),
+                'logo_mdc_url':    logo_mdc,
+                'logo_et_url':     logo_et,
+                'pk_m_map':        pk_m_map,
+                'sections_info':   sections_info,
+                'has_ter':         has_ter,
+                'has_ass_g':       has_ass_g,
+                'has_ass_d':       has_ass_d,
+                'profil_sections': profil_sections,
+            })
+        else:
+            # Pas de profil en long → fallback legacy (onglets Cote_*)
+            sheets_data = get_sheet_names(excel_bytes)
+            legacy_sheets = [s for s in sheets_data
+                             if 'COTE' in s.upper() or 'GAUCH' in s.upper()
+                             or 'DROIT' in s.upper()]
+            # Calculer les PK communs à tous les onglets legacy
+            all_pks: list[set] = []
+            for s in legacy_sheets:
+                try:
+                    sd = get_sheet_data(excel_bytes, s)
+                    all_pks.append(set(str(p) for p in sd['pks']))
+                except Exception:
+                    pass
+            common = sorted(
+                set.intersection(*all_pks) if all_pks else set(),
+                key=str
+            )
+            return jsonify({
+                'format':    'legacy',
+                'pks':       common,
+                'sheet_names': legacy_sheets,
+                'pk_debut':  projet.pk_debut or (common[0] if common else None),
+                'pk_fin':    projet.pk_fin   or (common[-1] if common else None),
+                'tolerance': projet.tolerance_defaut or 2.0,
+                'logo_mdc_url': logo_mdc,
+                'logo_et_url':  logo_et,
+            })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ── SVG profil en travers (Feature 5) ────────────────────────────────────────
+
+@api_bp.route("/projets/<int:projet_id>/section-svg", methods=["GET"])
+@login_required
+def get_section_svg(projet_id):
+    """Retourne le SVG du profil en travers type du projet."""
+    from ..models import Projet, MembreProjet
+    from ..services.excel_service import parse_modele_config
+    from ..services.visualization_service import generate_section_svg
+
+    projet = Projet.query.get_or_404(projet_id)
+    if not current_user.is_admin:
+        from ..models import ClientProjet, UserClient
+        is_membre = MembreProjet.query.filter_by(
+            projet_id=projet_id, user_id=current_user.id).first()
+        if not is_membre:
+            cp_entries = ClientProjet.query.filter_by(projet_id=projet_id).all()
+            client_ids = [cp.client_id for cp in cp_entries]
+            uc = UserClient.query.filter(
+                UserClient.user_id == current_user.id,
+                UserClient.client_id.in_(client_ids)
+            ).first() if client_ids else None
+            if not uc:
+                return jsonify({"error": "Accès refusé"}), 403
+
+    if not projet.excel_key:
+        return jsonify({"available": False, "svg": None})
+    try:
+        config = parse_modele_config(download_excel(projet.excel_key))
+        svg    = generate_section_svg(config)
+        return jsonify({"available": True, "svg": svg})
+    except Exception as e:
+        return jsonify({"available": False, "svg": None, "error": str(e)})
+
+
+# ── Côtes théoriques (format paramétrique) ────────────────────────────────────
+
+@api_bp.route("/pro/projets/<int:projet_id>/cotes", methods=["POST"])
+@login_required
+def get_projet_cotes(projet_id):
+    """
+    Calcule les côtes théoriques pour une liste de PK.
+    Corps JSON : { "pks": ["1+000", "1+050", ...] }
+    Réponse    : { "cotes_by_pk": { "1+000": [{key, label, cote, groupe}] } }
+    """
+    from ..services.excel_service import parse_modele_config
+    from ..services.calculation_service import cotes_pour_pk
+
+    projet, err = _acces_projet(projet_id)
+    if err:
+        return err
+
+    body = request.get_json(silent=True) or {}
+    pks  = body.get('pks', [])
+    if not pks:
+        return jsonify({"error": "Liste de PK vide"}), 400
+
+    if not projet.excel_key:
+        return jsonify({"error": "Aucun fichier Excel associé à ce projet"}), 404
+
+    try:
+        excel_bytes  = download_excel(projet.excel_key)
+        config       = parse_modele_config(excel_bytes)
+        cotes_by_pk  = {}
+        for pk in pks:
+            cotes_by_pk[pk] = cotes_pour_pk(pk, config)
+        return jsonify({"cotes_by_pk": cotes_by_pk})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api_bp.route("/pro/projets/<int:projet_id>/demandes", methods=["GET"])
+@login_required
+def get_projet_demandes(projet_id):
+    """
+    Retourne les demandes d'un projet avec leur verdict de réception,
+    pour coloriser les tronçons sur la carte.
+    """
+    from ..models import Projet, UserClient, DemandeReception
+
+    projet = Projet.query.get_or_404(projet_id)
+    if not current_user.is_admin:
+        if not projet.client_id:
+            return jsonify({"error": "Accès refusé"}), 403
+        acces = UserClient.query.filter_by(
+            user_id=current_user.id, client_id=projet.client_id
+        ).first()
+        if not acces:
+            return jsonify({"error": "Accès refusé"}), 403
+
+    demandes = DemandeReception.query.filter_by(projet_id=projet_id).all()
+    return jsonify({
+        "demandes": [
+            {
+                "id":               d.id,
+                "numero":           d.numero,
+                "pk_debut":         d.pk_debut,
+                "pk_fin":           d.pk_fin,
+                "statut":           d.statut,
+                "statut_reception": d.statut_reception,
+                "projet_nom":       projet.nom,
+                "cloture_at":       d.cloture_at.isoformat() if d.cloture_at else None,
+            }
+            for d in demandes
+        ]
+    })
+
+
+@api_bp.route("/pro/projets/<int:projet_id>/spatialisation", methods=["GET"])
+@login_required
+def get_spatialisation(projet_id):
+    """
+    Retourne les données de spatialisation du projet depuis les onglets Excel
+    GEO_COORDONNEES (coordonnées UTM Zone 31N de l'axe principal) et
+    GEO_AXES_PARALLELES (axes parallèles à l'axe par section avec distance).
+    """
+    import pandas as pd
+    from io import BytesIO
+    from ..models import Projet, UserClient, MembreProjet
+
+    projet = Projet.query.get_or_404(projet_id)
+
+    if not current_user.is_admin:
+        has_access = MembreProjet.query.filter_by(
+            projet_id=projet_id, user_id=current_user.id
+        ).first() is not None
+        if not has_access and projet.client_id:
+            has_access = UserClient.query.filter_by(
+                user_id=current_user.id, client_id=projet.client_id
+            ).first() is not None
+        if not has_access:
+            return jsonify({"error": "Accès refusé"}), 403
+
+    excel_bytes = None
+    excel_path  = None
+    if projet.excel_key:
+        try:
+            excel_bytes = download_excel(projet.excel_key)
+        except Exception:
+            pass
+
+    if excel_bytes is None:
+        src = _get_excel_source()
+        if isinstance(src, (str, Path)):
+            excel_path = Path(src)
+        else:
+            excel_bytes = bytes(src)
+
+    def make_source():
+        return BytesIO(excel_bytes) if excel_bytes else excel_path
+
+    def safe_float(v):
+        try:
+            f = float(v)
+            return f if f == f else None
+        except (TypeError, ValueError):
+            return None
+
+    def is_empty(v):
+        return v is None or str(v).strip() in ("", "nan", "None", "NaT")
+
+    # ── Lire GEO_COORDONNEES ─────────────────────────────────────────────────
+    # Structure : row 1 = titre, row 2 = headers (PK, XY_X, XY_Y, XY_Z, XY_Cap_deg), row 3+ = données
+    pks_data   = []
+    has_coords = False
+    try:
+        df_pk = pd.read_excel(make_source(), sheet_name="GEO_COORDONNEES", header=1)
+        for _, row in df_pk.iterrows():
+            pk_v = row.iloc[0] if len(row) > 0 else None
+            if is_empty(pk_v):
+                continue
+            # Ignorer lignes de commentaire (texte long, pas un PK)
+            if isinstance(pk_v, str) and len(pk_v) > 20:
+                continue
+            pks_data.append({
+                "pk":  str(pk_v),
+                "x":   safe_float(row.iloc[1]) if len(row) > 1 else None,  # UTM 31N — Easting
+                "y":   safe_float(row.iloc[2]) if len(row) > 2 else None,  # UTM 31N — Northing
+                "z":   safe_float(row.iloc[3]) if len(row) > 3 else None,  # Cote NGF axe
+                "cap": safe_float(row.iloc[4]) if len(row) > 4 else None,  # Azimut depuis Nord (°)
+            })
+        has_coords = len(pks_data) > 0
+    except Exception:
+        pass
+
+    # ── Lire GEO_AXES_PARALLELES ─────────────────────────────────────────────
+    # Structure : row 1 = titre, row 2 = headers
+    # (Num, PK_debut, PK_fin, XY_Label, XY_Cote, XY_Dist_m, XY_Description), row 3+ = données
+    paralleles_data = []
+    try:
+        df_par = pd.read_excel(make_source(), sheet_name="GEO_AXES_PARALLELES", header=1)
+        for _, row in df_par.iterrows():
+            num_v = row.iloc[0] if len(row) > 0 else None
+            if is_empty(num_v):
+                continue
+            # Ignorer lignes d'instruction (texte long en colonne Num)
+            if isinstance(num_v, str) and len(num_v) > 20:
+                continue
+            label_v = row.iloc[3] if len(row) > 3 else None
+            if is_empty(label_v):
+                continue
+            dist_v = safe_float(row.iloc[5]) if len(row) > 5 else None
+            if dist_v is None:
+                continue
+            cote_v = str(row.iloc[4]).strip().upper() if len(row) > 4 and not is_empty(row.iloc[4]) else "D"
+            desc_v = row.iloc[6] if len(row) > 6 and not is_empty(row.iloc[6]) else label_v
+            paralleles_data.append({
+                "label":       str(label_v),
+                "cote":        cote_v,           # "G" ou "D"
+                "dist_m":      dist_v,           # distance perpendiculaire positive (m)
+                "pk_debut":    str(row.iloc[1]) if len(row) > 1 and not is_empty(row.iloc[1]) else "",
+                "pk_fin":      str(row.iloc[2]) if len(row) > 2 and not is_empty(row.iloc[2]) else "",
+                "description": str(desc_v),
+            })
+    except Exception:
+        pass
+
+    return jsonify({
+        "available":   has_coords,
+        "pks":         pks_data,
+        "paralleles":  paralleles_data,
+    })
 
 
 @api_bp.route("/excel/data/<sheet_name>", methods=["GET"])
@@ -86,31 +525,89 @@ def excel_data(sheet_name):
 # PDF
 # ---------------------------------------------------------------------------
 
-def _archive_fiche(data: dict, html_content: str) -> None:
+def _enrich_data_with_projet(data: dict) -> None:
+    """
+    Enrichit le dict PDF avec intitule et URLs présignées des logos (MDC / ET).
+    Non critique : silencieux si projet introuvable.
+    """
+    try:
+        from ..models import Projet, UserClient, DemandeReception
+
+        projet = None
+        demande_id = data.get("demande_id")
+        if demande_id:
+            d = DemandeReception.query.get(int(demande_id))
+            if d:
+                projet = d.projet
+
+        if projet is None and current_user.is_authenticated and not current_user.is_admin:
+            uc = UserClient.query.filter_by(user_id=current_user.id).first()
+            if uc:
+                projet = Projet.query.filter_by(client_id=uc.client_id).first()
+
+        if projet:
+            if projet.intitule and not data.get("intitule"):
+                data["intitule"] = projet.intitule
+            if projet.logo_mdc_url:
+                try:
+                    data["logo_mdc_url"] = generate_presigned_url(projet.logo_mdc_url, 3600)
+                except Exception:
+                    pass
+            if projet.logo_et_url:
+                try:
+                    data["logo_et_url"] = generate_presigned_url(projet.logo_et_url, 3600)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+
+def _archive_fiche(data: dict, html_content: str, demande_id: int = None) -> None:
     """
     Archive la fiche HTML dans R2 et enregistre les métadonnées en base.
+    Si demande_id est fourni, lie la fiche à la DemandeReception correspondante.
     Non critique : les erreurs sont silencieuses pour ne pas bloquer le téléchargement.
     """
-    if not (current_user.is_authenticated and current_user.client_id):
-        return
     try:
-        from ..models import FicheReception
+        from ..models import FicheReception, UserClient, DemandeReception
         from .. import db as _db
 
+        if not current_user.is_authenticated or current_user.is_admin:
+            return
+        uc = UserClient.query.filter_by(user_id=current_user.id).first()
+        if not uc:
+            return
+        client_id = uc.client_id
+
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        r2_key = f"fiches/{current_user.client_id}/{ts}.html"
+        r2_key = f"fiches/{client_id}/{ts}.html"
         upload_fiche(html_content.encode("utf-8"), r2_key)
 
+        sv = data.get("statut_verdict")
+        if sv not in ("validee", "non_validee", "a_reprendre"):
+            sv = None
+
         fiche = FicheReception(
-            client_id=current_user.client_id,
+            client_id=client_id,
             user_id=current_user.id,
             r2_key=r2_key,
             projet=data.get("projet", ""),
             section=data.get("section", ""),
             date_reception=data.get("date", ""),
             operateur=data.get("operateur", ""),
+            statut_verdict=sv,
         )
         _db.session.add(fiche)
+        _db.session.flush()  # obtenir fiche.id avant le commit
+
+        # Lier la fiche à la demande PRO si fournie
+        if demande_id:
+            demande = DemandeReception.query.get(demande_id)
+            if demande:
+                demande.fiche_id = fiche.id
+                if sv:  # Propager le verdict sur la demande
+                    demande.statut_reception = sv
+
         _db.session.commit()
     except Exception:
         pass  # archivage non critique
@@ -125,11 +622,13 @@ def generate_pdf():
     """
     try:
         data = request.get_json(force=True)
+        _enrich_data_with_projet(data)
         context = build_template_context(data)
         html_content = render_fiche_html(context)
 
-        # Archivage automatique dans R2
-        _archive_fiche(data, html_content)
+        # Archivage automatique dans R2 (lier à la demande PRO si présent)
+        demande_id = data.get("demande_id")
+        _archive_fiche(data, html_content, demande_id=int(demande_id) if demande_id else None)
 
         try:
             pdf_bytes = make_pdf_bytes_any(html_content, request.host_url)
@@ -155,6 +654,7 @@ def preview_pdf():
     """
     try:
         data = request.get_json(force=True)
+        _enrich_data_with_projet(data)
         context = build_template_context(data)
         html_content = render_fiche_html(context)
         return Response(html_content, mimetype="text/html; charset=utf-8")
@@ -170,12 +670,14 @@ def preview_pdf():
 @login_required
 def list_fiches():
     """Liste les fiches archivées — toutes si admin, sinon celles du client connecté."""
-    from ..models import FicheReception
+    from ..models import FicheReception, UserClient
     if current_user.is_admin:
         fiches = FicheReception.query.order_by(FicheReception.created_at.desc()).limit(200).all()
     else:
+        uc = UserClient.query.filter_by(user_id=current_user.id).first()
+        client_id = uc.client_id if uc else None
         fiches = (FicheReception.query
-                  .filter_by(client_id=current_user.client_id)
+                  .filter_by(client_id=client_id)
                   .order_by(FicheReception.created_at.desc())
                   .limit(50).all())
 
@@ -198,8 +700,11 @@ def fiche_url(fiche_id):
     from .. import db
     fiche = db.get_or_404(FicheReception, fiche_id)
 
-    if not current_user.is_admin and fiche.client_id != current_user.client_id:
-        return jsonify({"error": "Accès refusé."}), 403
+    if not current_user.is_admin:
+        from ..models import UserClient
+        uc = UserClient.query.filter_by(user_id=current_user.id).first()
+        if not uc or fiche.client_id != uc.client_id:
+            return jsonify({"error": "Accès refusé."}), 403
 
     url = generate_presigned_url(fiche.r2_key)
     return jsonify({"url": url})

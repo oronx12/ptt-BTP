@@ -9,35 +9,168 @@
     <style>
         body { font-family:'Inter',sans-serif; background:#07101c; }
 
-        /* ── Cards ── */
-        .card-mdc {
-            background: linear-gradient(145deg, #0d1b2e 0%, #0f2038 100%);
-            border: 1px solid #1e3a5f;
-            transition: border-color .2s, box-shadow .2s, transform .15s;
+        /* ── Project card container ── */
+        .proj-card {
+            position: relative;
+            border-radius: 20px;
+            padding: 5px;
             text-decoration: none;
             display: flex;
             flex-direction: column;
+            transition: transform .15s, box-shadow .2s;
+            overflow: hidden;
         }
-        .card-mdc:hover {
-            border-color: rgba(124,58,237,.5);
-            box-shadow: 0 0 0 1px rgba(124,58,237,.15), 0 20px 40px rgba(0,0,0,.4);
-            transform: translateY(-2px);
+        .proj-card:hover { transform: translateY(-3px); }
+
+        .proj-card-mdc {
+            background: #07101c;
+            box-shadow: 0 0 0 1px #1E3A5F;
         }
-        .card-et {
-            background: linear-gradient(145deg, #150900 0%, #1c0d00 100%);
-            border: 1px solid #3d1f00;
-            transition: border-color .2s, box-shadow .2s, transform .15s;
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
+        .proj-card-mdc:hover {
+            box-shadow: 0 0 0 1px rgba(34,211,238,.45), 0 24px 48px rgba(0,0,0,.55);
         }
-        .card-et:hover {
-            border-color: rgba(245,158,11,.4);
-            box-shadow: 0 0 0 1px rgba(245,158,11,.1), 0 20px 40px rgba(0,0,0,.4);
-            transform: translateY(-2px);
+        .proj-card-et {
+            background: #07101c;
+            box-shadow: 0 0 0 1px #3d1f00;
+        }
+        .proj-card-et:hover {
+            box-shadow: 0 0 0 1px rgba(245,158,11,.45), 0 24px 48px rgba(0,0,0,.55);
         }
 
-        /* ── Separator ── */
+        /* ── Colored top section ── */
+        .card-top {
+            position: relative;
+            border-radius: 15px;
+            height: 140px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .card-top-mdc { background: linear-gradient(135deg, #064e6a 0%, #0e9cc4 55%, #22D3EE 100%); }
+        .card-top-et  { background: linear-gradient(135deg, #7c3300 0%, #c97200 55%, #F59E0B 100%); }
+
+        /* ── Diagonal cut corner (box-shadow trick) ── */
+        .card-cut {
+            position: absolute;
+            width: 180px;
+            height: 200px;
+            top: -40px;
+            right: 40px;
+            transform: skew(-40deg);
+            box-shadow: -10px -10px 0 0 #07101c;
+            pointer-events: none;
+        }
+
+        /* ── Big watermark letter ── */
+        .card-watermark {
+            position: absolute;
+            bottom: -18px;
+            right: -4px;
+            font-size: 124px;
+            font-weight: 900;
+            line-height: 1;
+            color: rgba(255,255,255,.13);
+            pointer-events: none;
+            user-select: none;
+            letter-spacing: -6px;
+        }
+
+        /* ── Top inner layout ── */
+        .card-top-inner {
+            position: relative;
+            z-index: 1;
+            padding: 14px 16px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* ── Avatar ── */
+        .card-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: rgba(0,0,0,.28);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 18px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        /* ── Badges ── */
+        .card-badges { display: flex; gap: 6px; align-items: center; }
+        .badge {
+            padding: 3px 9px;
+            border-radius: 99px;
+            font-size: .64rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+        }
+        .badge-role { background: rgba(255,255,255,.22); color: #fff; }
+        .badge-plan { background: rgba(0,0,0,.28); color: rgba(255,255,255,.88); }
+
+        /* ── Pending pill (top section) ── */
+        .badge-pending {
+            display: inline-block;
+            background: #ef4444;
+            color: #fff;
+            font-size: .62rem;
+            font-weight: 800;
+            padding: 3px 9px;
+            border-radius: 99px;
+        }
+        .badge-pending-pulse { animation: wm-pulse 2s infinite; }
+        @keyframes wm-pulse { 0%,100%{opacity:1} 50%{opacity:.65} }
+
+        /* ── Bottom content ── */
+        .card-bottom {
+            padding: 13px 14px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            flex: 1;
+        }
+        .card-proj-name {
+            font-size: .98rem;
+            font-weight: 800;
+            color: #f1f5f9;
+            line-height: 1.25;
+        }
+        .card-proj-sub {
+            font-size: .71rem;
+            color: #475569;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            font-size: .69rem;
+            color: #475569;
+        }
+        .meta-sep { width: 3px; height: 3px; border-radius: 50%; background: #334155; }
+
+        .excel-ok   { font-size: .68rem; color: #10b981; }
+        .excel-none { font-size: .68rem; color: #6b3100; }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,.05);
+            margin-top: auto;
+        }
+        .open-label-mdc { font-size: .7rem; font-weight: 600; color: rgba(34,211,238,.45); }
+        .open-label-et  { font-size: .7rem; font-weight: 600; color: rgba(245,158,11,.35); }
+
+        /* ── Section separators ── */
         .section-sep {
             display: flex;
             align-items: center;
@@ -166,70 +299,87 @@
 
     {% if et_projets %}
     <div class="section-sep">
-        <span class="text-xs font-bold tracking-widest uppercase" style="color:rgba(124,58,237,.7);">Mission de Contrôle</span>
+        <span class="text-xs font-bold tracking-widest uppercase" style="color:rgba(34,211,238,.55);">Mission de Contrôle</span>
     </div>
     {% endif %}
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
     {% for p, role in mdc_projets %}
     {% set nb_pending = pending_by_projet.get(p.id, 0) %}
+    {% set wm = 'P' if p.plan == 'pro' else 'A' %}
 
     <a href="{{ url_for('pro_projets.projet_hub', projet_id=p.id) }}"
-       class="card-mdc rounded-2xl p-5 gap-4">
+       class="proj-card proj-card-mdc">
 
-        <div class="flex items-start justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-lg flex-shrink-0"
-                     style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">
-                    {{ p.nom[0]|upper }}
+        <!-- ── Colored top ── -->
+        <div class="card-top card-top-mdc">
+            <div class="card-cut"></div>
+            <div class="card-watermark">{{ wm }}</div>
+            <div class="card-top-inner">
+
+                <!-- Avatar + badges -->
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div class="card-avatar">{{ p.nom[0]|upper }}</div>
+                    <div class="card-badges">
+                        <span class="badge badge-role">
+                            {% if role == 'admin' %}ADMIN{% else %}MDC{% endif %}
+                        </span>
+                        <span class="badge badge-plan">
+                            {% if p.plan == 'pro' %}PARTENARIAT{% else %}AUTONOME{% endif %}
+                        </span>
+                    </div>
                 </div>
+
+                <!-- Pending indicator -->
                 <div>
-                    <div class="font-bold text-white text-base leading-tight">{{ p.nom }}</div>
-                    {% if p.intitule %}
-                    <div class="text-slate-500 text-xs mt-0.5 line-clamp-1">{{ p.intitule }}</div>
+                    {% if nb_pending > 0 %}
+                    <span class="badge-pending badge-pending-pulse">
+                        {{ nb_pending if nb_pending < 10 else '9+' }} demande{{ 's' if nb_pending > 1 }} en attente
+                    </span>
+                    {% else %}
+                    <span style="font-size:.63rem;color:rgba(255,255,255,.38);">Aucune demande en attente</span>
                     {% endif %}
                 </div>
-            </div>
-            <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
-                <span class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide"
-                      style="background:rgba(124,58,237,.15);color:#a78bfa;border:1px solid rgba(124,58,237,.3);">
-                    {% if role == 'admin' %}ADMIN{% else %}MDC{% endif %}
-                </span>
-                <span class="px-2 py-0.5 rounded-full font-semibold"
-                      style="font-size:.62rem;letter-spacing:.5px;{% if p.plan == 'pro' %}background:rgba(139,92,246,.1);color:#c084fc;border:1px solid rgba(139,92,246,.2);{% else %}background:rgba(100,116,139,.07);color:#475569;border:1px solid rgba(100,116,139,.15);{% endif %}">
-                    {% if p.plan == 'pro' %}PARTENARIAT{% else %}AUTONOME{% endif %}
-                </span>
+
             </div>
         </div>
 
-        <div class="space-y-1.5 flex-1">
-            <div class="text-xs text-slate-500">
-                {% if p.pk_debut and p.pk_fin %}
-                PK {{ p.pk_debut }} → {{ p.pk_fin }}{% if p.tolerance_defaut %} · Tol. {{ p.tolerance_defaut }} cm{% endif %}
-                {% else %}
-                <span class="italic text-slate-600">PK non définis</span>
+        <!-- ── Bottom content ── -->
+        <div class="card-bottom">
+
+            <div>
+                <div class="card-proj-name">{{ p.nom }}</div>
+                {% if p.intitule %}
+                <div class="card-proj-sub">{{ p.intitule }}</div>
                 {% endif %}
             </div>
-            <div class="text-xs {% if p.excel_key %}text-emerald-600{% else %}text-amber-700{% endif %}">
+
+            <div class="card-meta">
+                {% if p.pk_debut and p.pk_fin %}
+                <span>PK {{ p.pk_debut }} → {{ p.pk_fin }}</span>
+                {% if p.tolerance_defaut %}
+                <span class="meta-sep"></span>
+                <span>Tol. {{ p.tolerance_defaut }} cm</span>
+                {% endif %}
+                {% else %}
+                <span style="font-style:italic;color:#334155;">PK non définis</span>
+                {% endif %}
+            </div>
+
+            <div class="{% if p.excel_key %}excel-ok{% else %}excel-none{% endif %}">
                 {% if p.excel_key %}● Modèle Excel associé{% else %}○ Aucun fichier Excel{% endif %}
             </div>
-            {% if nb_pending > 0 %}
-            <div class="text-xs text-red-400 font-semibold flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block"></span>
-                {{ nb_pending }} demande{{ 's' if nb_pending > 1 }} en attente
+
+            <div class="card-footer">
+                <span class="open-label-mdc">Ouvrir le projet →</span>
+                {% if nb_pending > 0 %}
+                <span style="background:#ef4444;color:#fff;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:99px;">
+                    {{ nb_pending if nb_pending < 10 else '9+' }}
+                </span>
+                {% endif %}
             </div>
-            {% endif %}
-        </div>
 
-        <div class="flex items-center justify-between pt-3 border-t border-white/5">
-            <span class="text-xs text-slate-600">Ouvrir le projet →</span>
-            {% if nb_pending > 0 %}
-            <span class="text-xs font-bold bg-red-500 text-white px-2 py-0.5 rounded-full">
-                {{ nb_pending if nb_pending < 10 else '9+' }}
-            </span>
-            {% endif %}
         </div>
-
     </a>
     {% endfor %}
     </div>
@@ -243,63 +393,79 @@
 
     {% if mdc_projets %}
     <div class="section-sep">
-        <span class="text-xs font-bold tracking-widest uppercase" style="color:rgba(245,158,11,.6);">Entreprise de Travaux</span>
+        <span class="text-xs font-bold tracking-widest uppercase" style="color:rgba(245,158,11,.55);">Entreprise de Travaux</span>
     </div>
     {% endif %}
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
     {% for p, role in et_projets %}
+    {% set wm = 'P' if p.plan == 'pro' else 'A' %}
 
     <a href="{{ url_for('pro_projets.projet_hub', projet_id=p.id) }}"
-       class="card-et rounded-2xl p-5 gap-4">
+       class="proj-card proj-card-et">
 
-        <div class="flex items-start justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-lg flex-shrink-0"
-                     style="background:linear-gradient(135deg,#f59e0b,#d97706);">
-                    {{ p.nom[0]|upper }}
+        <!-- ── Colored top ── -->
+        <div class="card-top card-top-et">
+            <div class="card-cut"></div>
+            <div class="card-watermark">{{ wm }}</div>
+            <div class="card-top-inner">
+
+                <!-- Avatar + badges -->
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div class="card-avatar">{{ p.nom[0]|upper }}</div>
+                    <div class="card-badges">
+                        <span class="badge badge-role">ET</span>
+                        <span class="badge badge-plan">
+                            {% if p.plan == 'pro' %}PARTENARIAT{% else %}AUTONOME{% endif %}
+                        </span>
+                    </div>
                 </div>
+
+                <!-- Demandes info -->
                 <div>
-                    <div class="font-bold text-white text-base leading-tight">{{ p.nom }}</div>
-                    {% if p.intitule %}
-                    <div class="text-amber-900 text-xs mt-0.5 line-clamp-1">{{ p.intitule }}</div>
+                    {% if et_demandes_count > 0 %}
+                    <span style="font-size:.63rem;color:rgba(255,255,255,.75);">
+                        {{ et_demandes_count }} demande{{ 's' if et_demandes_count > 1 }} soumise{{ 's' if et_demandes_count > 1 }}
+                    </span>
+                    {% else %}
+                    <span style="font-size:.63rem;color:rgba(255,255,255,.3);">Aucune demande soumise</span>
                     {% endif %}
                 </div>
-            </div>
-            <div class="flex flex-col items-end gap-1.5 flex-shrink-0">
-                <span class="px-2.5 py-1 rounded-full text-xs font-bold tracking-wide"
-                      style="background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.25);">
-                    ET
-                </span>
-                <span class="px-2 py-0.5 rounded-full font-semibold"
-                      style="font-size:.62rem;letter-spacing:.5px;{% if p.plan == 'pro' %}background:rgba(245,158,11,.07);color:#92400e;border:1px solid rgba(245,158,11,.15);{% else %}background:rgba(100,116,139,.07);color:#475569;border:1px solid rgba(100,116,139,.15);{% endif %}">
-                    {% if p.plan == 'pro' %}PARTENARIAT{% else %}AUTONOME{% endif %}
-                </span>
+
             </div>
         </div>
 
-        <div class="space-y-1.5 flex-1">
-            <div class="text-xs text-amber-900/70">
-                {% if p.pk_debut and p.pk_fin %}
-                PK {{ p.pk_debut }} → {{ p.pk_fin }}{% if p.tolerance_defaut %} · Tol. {{ p.tolerance_defaut }} cm{% endif %}
-                {% else %}
-                <span class="italic opacity-50">PK non définis</span>
+        <!-- ── Bottom content ── -->
+        <div class="card-bottom">
+
+            <div>
+                <div class="card-proj-name">{{ p.nom }}</div>
+                {% if p.intitule %}
+                <div class="card-proj-sub" style="color:#78350f;">{{ p.intitule }}</div>
                 {% endif %}
             </div>
-            <div class="text-xs {% if p.excel_key %}text-emerald-700{% else %}text-amber-800{% endif %}">
+
+            <div class="card-meta">
+                {% if p.pk_debut and p.pk_fin %}
+                <span>PK {{ p.pk_debut }} → {{ p.pk_fin }}</span>
+                {% if p.tolerance_defaut %}
+                <span class="meta-sep"></span>
+                <span>Tol. {{ p.tolerance_defaut }} cm</span>
+                {% endif %}
+                {% else %}
+                <span style="font-style:italic;color:#334155;">PK non définis</span>
+                {% endif %}
+            </div>
+
+            <div class="{% if p.excel_key %}excel-ok{% else %}excel-none{% endif %}">
                 {% if p.excel_key %}● Modèle Excel disponible{% else %}○ Aucun fichier Excel{% endif %}
             </div>
-            {% if et_demandes_count > 0 %}
-            <div class="text-xs text-amber-700/80">
-                {{ et_demandes_count }} demande{{ 's' if et_demandes_count > 1 }} soumise{{ 's' if et_demandes_count > 1 }}
+
+            <div class="card-footer">
+                <span class="open-label-et">Ouvrir le projet →</span>
             </div>
-            {% endif %}
-        </div>
 
-        <div class="flex items-center justify-between pt-3 border-t border-amber-900/20">
-            <span class="text-xs text-amber-900/50">Ouvrir le projet →</span>
         </div>
-
     </a>
     {% endfor %}
     </div>

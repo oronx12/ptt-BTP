@@ -139,7 +139,8 @@ def top_reception(projet_id):
     if not projet.excel_key:
         flash("Pas de fichier Excel associé à ce projet.", "warning")
         return redirect(url_for("pro_projets.liste_projets"))
-    return render_template("pro/top_reception.html", projet=projet, role=role)
+    is_simulation = request.args.get("simulation", "0") == "1"
+    return render_template("pro/top_reception.html", projet=projet, role=role, is_simulation=is_simulation)
 
 
 @pro_projets_bp.route("/<int:projet_id>/simulation")
@@ -153,7 +154,7 @@ def simulation(projet_id):
     if not projet.excel_key:
         flash("Pas de fichier Excel associé à ce projet.", "warning")
         return redirect(url_for("pro_projets.liste_projets"))
-    return render_template("pro/simulation.html", projet=projet, role=role)
+    return render_template("pro/top_reception.html", projet=projet, role=role, is_simulation=True)
 
 
 @pro_projets_bp.route("/<int:projet_id>/reception-mdc")

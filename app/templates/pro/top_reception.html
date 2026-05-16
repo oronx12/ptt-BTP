@@ -1,3 +1,4 @@
+{% set is_simulation = is_simulation if is_simulation is defined else false %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -8,11 +9,19 @@
     <style>
         *, *:before, *:after { box-sizing:border-box; margin:0; padding:0; }
         :root {
-            --bg:#0c0900; --bg2:#110c00; --bg3:#0e0a00;
+            /* === MDC / NAVY+CYAN THEME === */
+            --bg:#07101c;  --bg2:#0d1b2e;  --bg3:#0a1628;
             --amber:#f59e0b; --amber2:#fbbf24;
-            --cyan:#00ffff;
-            --border:#2e1a00; --border2:#3d2200;
-            --text:#e2e8f0; --muted:#78350f;
+            --cyan:#22d3ee; --cyan2:#00ffff;
+            --border:#1e3a5f; --border2:#2c4f7c;
+            --text:#e2e8f0; --muted:#64748b;
+            /* aliases utilisés dans le CSS amber hérité */
+            --a-bg-cell:#07101c;
+            --a-bg-head:#0d1b2e;
+            --a-text-hi:#22d3ee;
+            --a-text-mid:#94a3b8;
+            --a-text-low:#475569;
+            --a-brd:#1e3a5f;
         }
         body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
@@ -353,9 +362,147 @@
             .obs-toggle::before { content:''; position:absolute; inset:-8px; }
             .btn-val, .obs-toggle { position:relative; }
         }
+
+        /* ═══════════════════════════════════════════════════════
+           NAVY+CYAN THEME OVERRIDES — remplace les hardcoded amber
+           ═══════════════════════════════════════════════════════ */
+
+        /* Backgrounds amber-dark → navy */
+        .hdr, .hdr-in { background:#0d1b2e !important; border-color:#1e3a5f !important; }
+        .card  { background:#0d1b2e !important; border-color:#1e3a5f !important; }
+        .card-head.amber { background:#0a1628 !important; border-left-color:#22d3ee !important; }
+        .card-head.amber h2 { color:#22d3ee !important; }
+        .card-head.cyan  h2 { color:#22d3ee !important; }
+
+        /* Phase stepper — amber dots → cyan */
+        .ph-num.done   { background:#1e3a5f !important; border-color:#22d3ee !important; color:#22d3ee !important; }
+        .ph-num.active { background:#22d3ee !important; border-color:#22d3ee !important; color:#07101c !important; box-shadow:0 0 12px rgba(34,211,238,.35) !important; }
+        .ph-label.active { color:#22d3ee !important; }
+        .ph-label.done   { color:#94a3b8 !important; }
+        .ph-sep.done { background:#22d3ee !important; }
+
+        /* Sub-stepper */
+        .ss-dot.active { background:#22d3ee !important; border-color:#22d3ee !important; color:#07101c !important; }
+        .ss-dot.done   { background:#1e3a5f !important; border-color:#22d3ee !important; color:#22d3ee !important; }
+        .ss-lbl.active { color:#22d3ee !important; }
+        .ss-lbl.done   { color:#94a3b8 !important; }
+        .ss-sep.done { background:#22d3ee !important; }
+        .sub-stepper { background:#0a1628 !important; border-color:#1e3a5f !important; }
+
+        /* Mode cards */
+        .mode-card { background:#07101c !important; border-color:#1e3a5f !important; }
+        .mode-card:hover:not(.disabled) { background:#0d1b2e !important; border-color:#2c4f7c !important; }
+        .mode-card.selected { background:#0d1b2e !important; border-color:#22d3ee !important; box-shadow:0 0 18px rgba(34,211,238,.14) !important; }
+        .mode-card.selected .mode-check { background:#22d3ee !important; border-color:#22d3ee !important; }
+        .mode-card.selected .mode-letter { box-shadow:0 0 16px rgba(34,211,238,.25) !important; }
+        .mode-title { color:#94a3b8 !important; }
+        .mode-card.selected .mode-title { color:#22d3ee !important; }
+        .mode-sub { color:#475569 !important; }
+        .mode-check { border-color:#1e3a5f !important; }
+
+        /* PK grid */
+        .pk-grid-wrap { background:#07101c !important; border-color:#1e3a5f !important; }
+        .pk-row:hover { background:rgba(34,211,238,.06) !important; border-color:rgba(34,211,238,.12) !important; }
+        .pk-row input { accent-color:#22d3ee !important; }
+        .pk-row label { color:#22d3ee !important; }
+        .pk-row input:checked ~ label { color:#67e8f9 !important; }
+
+        /* Section coverage */
+        .sec-group-title { color:#94a3b8 !important; }
+        .sec-item { background:#07101c !important; border-color:#1e3a5f !important; }
+        .sec-range { color:#22d3ee !important; }
+        .sec-count { background:#0d1b2e !important; border-color:#1e3a5f !important; color:#94a3b8 !important; }
+
+        /* Element checkboxes */
+        .elt-row:hover { background:rgba(34,211,238,.05) !important; }
+        .elt-row input { accent-color:#22d3ee !important; }
+        .elt-row .elt-lbl { color:#94a3b8 !important; }
+        .grp-header { color:#64748b !important; }
+
+        /* Buttons */
+        .btn-primary { background:linear-gradient(135deg,#0e9cc4,#22d3ee) !important; color:#07101c !important; }
+        .btn-sec { color:#64748b !important; border-color:#1e3a5f !important; background:rgba(255,255,255,.02) !important; }
+        .btn-sec:hover { background:rgba(34,211,238,.06) !important; color:#94a3b8 !important; }
+        .bm { background:#0d1b2e !important; border-color:#1e3a5f !important; color:#64748b !important; }
+        .bm:hover { background:#14253d !important; color:#22d3ee !important; }
+        .btn-add-stn { background:rgba(34,211,238,.05) !important; color:#64748b !important; border-color:#1e3a5f !important; }
+        .btn-add-stn:hover { background:rgba(34,211,238,.10) !important; color:#22d3ee !important; border-color:#22d3ee !important; }
+
+        /* Inputs */
+        .inp, .inp-rec {
+            background:#07101c !important; border-color:#1e3a5f !important; color:#e2e8f0 !important;
+        }
+        .inp:focus, .inp-rec:focus { border-color:rgba(34,211,238,.5) !important; box-shadow:0 0 0 3px rgba(34,211,238,.07) !important; }
+        .inp::placeholder { color:#475569 !important; }
+
+        /* Tables */
+        table.rec th { background:#0d1b2e !important; color:#64748b !important; border-color:#1e3a5f !important; }
+        table.rec td { border-color:rgba(30,58,95,.4) !important; }
+        table.rec tr.sep-pk td { background:#0d1b2e !important; color:#94a3b8 !important; border-color:#1e3a5f !important; }
+        .rec-table-wrap { border-color:#1e3a5f !important; }
+
+        /* Station */
+        .stn-card { background:#0d1b2e !important; border-color:#1e3a5f !important; }
+        .stn-hdr { background:#0a1628 !important; border-color:#1e3a5f !important; }
+        .stn-hdr-title { color:#22d3ee !important; }
+        .stn-params { background:#07101c !important; border-color:#1e3a5f !important; }
+        .cb-display { background:#0d1b2e !important; border-color:#1e3a5f !important; }
+        .lar-disp { color:#94a3b8 !important; }
+
+        /* Obs / interpolation */
+        .interp-btn { color:#475569 !important; border-color:#1e3a5f !important; }
+        .interp-btn:hover { color:#22d3ee !important; border-color:#22d3ee !important; background:rgba(34,211,238,.04) !important; }
+        .obs-toggle { background:#07101c !important; border-color:#1e3a5f !important; color:#64748b !important; }
+        .obs-toggle.active { border-color:rgba(34,211,238,.4) !important; color:#22d3ee !important; background:rgba(34,211,238,.07) !important; }
+        .obs-row td { background:#060e18 !important; border-color:#1e3a5f !important; }
+        .photo-add { background:#07101c !important; border-color:#1e3a5f !important; }
+        .photo-add:hover { border-color:#22d3ee !important; }
+        .profil-section-sep span { color:#475569 !important; }
+        .profil-add-row { color:#475569 !important; border-color:#1e3a5f !important; }
+
+        /* Signatures */
+        .sig-box { background:#07101c !important; border-color:#1e3a5f !important; }
+        .sig-title { color:#94a3b8 !important; background:#0a1628 !important; border-color:#1e3a5f !important; }
+        canvas.sig-canvas { background:#050d18 !important; }
+
+        /* Modal */
+        .modal-box { background:#0d1b2e !important; border-color:#1e3a5f !important; }
+        .modal-title { color:#22d3ee !important; }
+        .modal-close { color:#475569 !important; }
+
+        /* Bilan bar */
+        .bilan-bar { background:#0a1628 !important; border-color:#1e3a5f !important; }
+        .bilan-progress { background:#1e3a5f !important; }
+
+        /* Misc amber-colored text/backgrounds */
+        [style*="color:#92400e"], [style*="color: #92400e"] { color:#94a3b8 !important; }
+        [style*="color:#4a2800"], [style*="color: #4a2800"] { color:#64748b !important; }
+        [style*="color:#d97706"], [style*="color: #d97706"] { color:#22d3ee !important; }
+        [style*="background:#0c0700"], [style*="background: #0c0700"],
+        [style*="background:#110c00"], [style*="background: #110c00"],
+        [style*="background:#160d00"], [style*="background: #160d00"],
+        [style*="background:#1a0d00"], [style*="background: #1a0d00"] {
+            background:#0d1b2e !important;
+        }
+
+        /* ═══════════════════════════════════════════════════════
+           SIMULATION MODE
+           ═══════════════════════════════════════════════════════ */
+        @media print {
+            .sim-banner { display:none !important; }
+            body.sim-mode::after {
+                content:'SIMULATION';
+                position:fixed; top:50%; left:50%;
+                transform:translate(-50%,-50%) rotate(-42deg);
+                font-size:110px; font-weight:900;
+                color:rgba(245,158,11,.18);
+                letter-spacing:8px; pointer-events:none;
+                z-index:9999; white-space:nowrap;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="{% if is_simulation %}sim-mode{% endif %}">
 
 <!-- HEADER -->
 <header class="hdr">
@@ -380,9 +527,23 @@
                 <span style="color:var(--cyan);font-size:.85rem;font-weight:700;white-space:nowrap;flex-shrink:0;">Top Réception</span>
             </div>
         </div>
-        <a href="{{ url_for('auth.logout') }}" style="color:var(--muted);font-size:.8rem;padding:6px 12px;border-radius:8px;text-decoration:none;">Déconnexion</a>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+            {% if is_simulation %}
+            <span style="background:linear-gradient(135deg,#92400e,#d97706);color:#fff;font-size:.72rem;font-weight:800;letter-spacing:1px;padding:4px 10px;border-radius:99px;">BROUILLON</span>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}" style="color:var(--muted);font-size:.8rem;padding:6px 12px;border-radius:8px;text-decoration:none;">Déconnexion</a>
+        </div>
     </div>
 </header>
+
+{% if is_simulation %}
+<!-- Simulation banner -->
+<div class="sim-banner" style="background:linear-gradient(90deg,rgba(245,158,11,.12) 0%,rgba(245,158,11,.06) 100%);border-bottom:2px dashed rgba(245,158,11,.35);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <span style="background:#d97706;color:#07101c;font-size:.72rem;font-weight:900;letter-spacing:1.5px;padding:3px 10px;border-radius:4px;flex-shrink:0;">SIMULATION</span>
+    <span style="color:#fbbf24;font-size:.83rem;font-weight:500;">Mode simulation — aucune fiche officielle ne sera générée. Vous pouvez imprimer un brouillon avec filigrane.</span>
+    <a href="{{ url_for('pro_projets.projet_hub', projet_id=projet.id) }}" style="color:#94a3b8;font-size:.8rem;margin-left:auto;text-decoration:none;padding:4px 10px;border:1px solid rgba(148,163,184,.2);border-radius:6px;white-space:nowrap;">← Hub projet</a>
+</div>
+{% endif %}
 
 <!-- Phase stepper -->
 <div class="phase-bar">
@@ -732,8 +893,9 @@
 
 <script>
 // ── État global ───────────────────────────────────────────────────────────────
-const PROJET_ID  = {{ projet.id }};
-const PROJET_NOM = {{ projet.nom | tojson }};
+const PROJET_ID     = {{ projet.id }};
+const PROJET_NOM    = {{ projet.nom | tojson }};
+const IS_SIMULATION = {{ 'true' if is_simulation else 'false' }};
 
 let cfg         = null;   // config chargée depuis /api/pro/projets/<id>/config
 let selectedMode = null;
@@ -1229,11 +1391,26 @@ function buildReceptionTable(pks, cotesByPk) {
     document.getElementById('rec-info').style.display     = 'flex';
     document.getElementById('add-stn-wrap').style.display = '';
     document.getElementById('obs-card').style.display     = '';
-    document.getElementById('sig-card').style.display     = '';
+    if (!IS_SIMULATION) {
+        document.getElementById('sig-card').style.display = '';
+    }
     document.getElementById('export-card').style.display  = 'flex';
     document.getElementById('bilan-wrap').style.display   = 'flex';
 
-    initSignatures();
+    if (IS_SIMULATION) {
+        const btnPdf = document.getElementById('btn-pdf');
+        if (btnPdf) {
+            btnPdf.textContent = 'Imprimer la simulation';
+            btnPdf.style.background = 'linear-gradient(135deg,#92400e,#d97706)';
+            btnPdf.onclick = function() { window.print(); };
+        }
+        const btnPreview = document.getElementById('btn-preview');
+        if (btnPreview) btnPreview.style.display = 'none';
+        const btnEmail = document.getElementById('btn-email');
+        if (btnEmail) btnEmail.style.display = 'none';
+    } else {
+        initSignatures();
+    }
     majBilan();
 }
 

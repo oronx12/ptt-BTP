@@ -6,7 +6,7 @@
     <title>OPTILAB - Réception topographique</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -16,22 +16,59 @@
     </script>
     <style>
         :root {
-            --surface-1: #ffffff;
-            --surface-2: #f8fafc;
-            --surface-3: #f1f5f9;
-            --border-color: #cbd5e1;
-            --border-strong: #94a3b8;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-muted: #94a3b8;
-            --accent-blue: #3b82f6;
-            --accent-blue-light: #eff6ff;
-            --accent-green: #22c55e;
-            --accent-green-light: #f0fdf4;
-            --accent-orange: #f59e0b;
-            --accent-orange-light: #fffbeb;
-            --accent-red: #ef4444;
-            --accent-red-light: #fef2f2;
+            /* === RECEPTA — Dark Navy Theme === */
+            --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+            --surface-1: #0D1B2E;
+            --surface-2: #14253D;
+            --surface-3: #1a2f4b;
+            --border-color: #1E3A5F;
+            --border-strong: #2C4F7C;
+            --text-primary: #F1F5F9;
+            --text-secondary: #CBD5E1;
+            --text-muted: #64748B;
+
+            --accent-blue: #22D3EE;
+            --accent-blue-light: rgba(34, 211, 238, 0.12);
+            --accent-green: #10B981;
+            --accent-green-light: rgba(16, 185, 129, 0.12);
+            --accent-orange: #F59E0B;
+            --accent-orange-light: rgba(245, 158, 11, 0.14);
+            --accent-red: #EF4444;
+            --accent-red-light: rgba(239, 68, 68, 0.14);
+
+            --row-ok-bg:    rgba(16, 185, 129, 0.12);
+            --row-ok-bd:    rgba(16, 185, 129, 0.55);
+            --row-err-bg:   rgba(239, 68, 68, 0.14);
+            --row-err-bd:   rgba(239, 68, 68, 0.60);
+            --row-warn-bg:  rgba(34, 211, 238, 0.10);
+            --row-warn-bd:  rgba(34, 211, 238, 0.40);
+            --row-int-bg:   rgba(148, 163, 184, 0.10);
+            --row-int-bd:   rgba(148, 163, 184, 0.45);
+
+            /* === Remapping des variables de style.css → dark === */
+            --bg:           #07101C;
+            --bg-dark:      #0D1B2E;
+            --card:         #0D1B2E;
+            --text:         #F1F5F9;
+            --text-light:   #CBD5E1;
+            --border:       #1E3A5F;
+            --border-light: #14253D;
+            --primary:      #1E3A5F;
+            --primary-dark: #0D1B2E;
+            --primary-light: #2C4F7C;
+            --accent:       #22D3EE;
+            --accent-light: rgba(34,211,238,0.5);
+            --accent-dark:  #06B6D4;
+            --success:      #10B981;
+            --success-light: rgba(16,185,129,0.12);
+            --warning:      #F59E0B;
+            --warning-light: rgba(245,158,11,0.12);
+            --error:        #EF4444;
+            --error-light:  rgba(239,68,68,0.12);
+            --info:         #22D3EE;
+            --info-light:   rgba(34,211,238,0.12);
         }
         
         .nav-active {
@@ -1148,9 +1185,537 @@
             background: #f0fdf4; border-color: #86efac; color: #16a34a;
             transform: scale(1.2);
         }
+
+        /* ============================================================
+           DARK THEME OVERRIDES — appliqué sur tous les hardcoded
+           qui ne passent pas par les variables :root ci-dessus
+           ============================================================ */
+
+        html, body {
+            background: #07101C !important;
+            color: #F1F5F9 !important;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0D1B2E; }
+        ::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2C4F7C; }
+
+        /* ── Header ── */
+        header, .app-header {
+            background: #0D1B2E !important;
+            border-bottom: 1px solid #1E3A5F !important;
+        }
+        .reception-wizard-bar, .wizard-bar {
+            background: #0D1B2E !important;
+            border-bottom: 1px solid #1E3A5F !important;
+        }
+
+        /* ── Wizard steps ── */
+        .wi-step { color: #64748B !important; }
+        .wi-step.active .wi-dot, .wi-step.done .wi-dot {
+            background: #22D3EE !important;
+            border-color: #22D3EE !important;
+            color: #07101C !important;
+        }
+        .wi-step.done .wi-dot {
+            background: #10B981 !important;
+            border-color: #10B981 !important;
+            color: #07101C !important;
+        }
+        .wi-dot {
+            background: #14253D !important;
+            border-color: #1E3A5F !important;
+            color: #64748B !important;
+        }
+        .wi-step.active .wi-label { color: #22D3EE !important; }
+        .wi-step.done .wi-label  { color: #10B981 !important; }
+        .wi-connector, .wi-line { background: #1E3A5F !important; }
+        .wi-connector.done, .wi-line.done { background: #10B981 !important; }
+
+        /* ── Wizard navigation buttons ── */
+        .btn-wz-next, .btn-wz-prev, .btn-step-next, .btn-step-prev,
+        [class*="btn-wz"], button.next-step, button.prev-step {
+            background: #14253D !important;
+            border: 1.5px solid #1E3A5F !important;
+            color: #CBD5E1 !important;
+        }
+        .btn-wz-next:hover, .btn-step-next:hover, button.next-step:hover {
+            background: #22D3EE !important;
+            border-color: #22D3EE !important;
+            color: #07101C !important;
+        }
+        .btn-wz-prev:hover, .btn-step-prev:hover, button.prev-step:hover {
+            background: #1E3A5F !important;
+            color: #F1F5F9 !important;
+        }
+        .btn-wz-next.green {
+            background: linear-gradient(135deg, #059669, #047857) !important;
+            border: none !important;
+            color: #fff !important;
+        }
+        .btn-wz-next.green:hover {
+            background: linear-gradient(135deg, #047857, #065f46) !important;
+            box-shadow: 0 4px 12px rgba(5,150,105,.35) !important;
+        }
+
+        /* ── Toggle actor button ── */
+        .btn-toggle-actor {
+            background: #14253D !important;
+            border-color: #1E3A5F !important;
+            color: #94A3B8 !important;
+        }
+        .btn-toggle-actor:hover, .btn-toggle-actor.active {
+            background: rgba(34,211,238,0.12) !important;
+            border-color: rgba(34,211,238,0.4) !important;
+            color: #22D3EE !important;
+        }
+
+        /* ── Actor block title hardcoded colors ── */
+        .actor-block-title.orange { color: #F59E0B !important; border-color: rgba(245,158,11,0.3) !important; }
+        .actor-block-title.blue   { border-color: rgba(34,211,238,0.3) !important; }
+
+        /* ── Cards / panels ── */
+        .card, .step-card, .section-card, .form-card,
+        .panel, .info-card, .reception-card {
+            background: #0D1B2E !important;
+            border: 1px solid #1E3A5F !important;
+            color: #F1F5F9 !important;
+        }
+        .card-title, .section-title, .step-title,
+        h1, h2, h3, h4, h5 { color: #F1F5F9 !important; }
+        label, .form-label { color: #CBD5E1 !important; }
+        p, .text-muted, small, .meta { color: #94A3B8 !important; }
+
+        /* ── Inputs / selects / textareas ── */
+        input, select, textarea,
+        .form-control, .form-input, .form-select {
+            background: #14253D !important;
+            border: 1.5px solid #1E3A5F !important;
+            color: #F1F5F9 !important;
+        }
+        input::placeholder, textarea::placeholder { color: #475569 !important; }
+        input:focus, select:focus, textarea:focus {
+            border-color: #22D3EE !important;
+            box-shadow: 0 0 0 3px rgba(34,211,238,0.15) !important;
+            outline: none !important;
+        }
+
+        /* ── Station header ── */
+        .station-header, .station-hd, tr.station-hd-row td {
+            background: linear-gradient(90deg, #0D1B2E 0%, #14253D 100%) !important;
+            border-top: 2px solid #22D3EE !important;
+            color: #F1F5F9 !important;
+        }
+        .station-header h3, .station-hd h3, .station-name {
+            color: #22D3EE !important;
+        }
+
+        /* ── Station params (cote repère, LAV, pente) ── */
+        .station-params, .station-params-row td {
+            background: #0D1B2E !important;
+            border-bottom: 1px solid #1E3A5F !important;
+        }
+        .station-params input {
+            background: #14253D !important;
+            border-color: #1E3A5F !important;
+            color: #F1F5F9 !important;
+            font-family: var(--font-mono) !important;
+        }
+        .station-param-label { color: #94A3B8 !important; }
+
+        /* ── Reception table ── */
+        .recep-table, .reception-table, table.saisie-table {
+            background: #07101C !important;
+        }
+        .recep-table thead th, .reception-table thead th,
+        table.saisie-table thead th {
+            background: #0D1B2E !important;
+            border-bottom: 1px solid #1E3A5F !important;
+            color: #94A3B8 !important;
+            font-size: 0.72rem !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+        }
+        .recep-table tbody tr, .reception-table tbody tr,
+        table.saisie-table tbody tr.data-row {
+            background: #0D1B2E !important;
+            border-bottom: 1px solid #1E3A5F !important;
+        }
+        .recep-table tbody tr:nth-child(even),
+        table.saisie-table tbody tr.data-row:nth-child(even) {
+            background: #10203A !important;
+        }
+        .recep-table td, .reception-table td,
+        table.saisie-table td {
+            color: #CBD5E1 !important;
+            border-color: #1E3A5F !important;
+        }
+        .pk-cell, td.pk-val { color: #22D3EE !important; font-family: var(--font-mono) !important; }
+        .elem-cell { color: #F1F5F9 !important; font-weight: 600 !important; }
+
+        /* ── Measured input inside table ── */
+        .measure-input, td input.cote-input, td input[type="number"],
+        td input[type="text"].measured-input {
+            background: #14253D !important;
+            border: 1.5px solid #2C4F7C !important;
+            color: #F1F5F9 !important;
+            font-family: var(--font-mono) !important;
+        }
+        .measure-input:focus, td input.cote-input:focus {
+            border-color: #22D3EE !important;
+            box-shadow: 0 0 0 2px rgba(34,211,238,0.18) !important;
+        }
+
+        /* ── Écart cells ── */
+        td.computed, td.ecart-val { color: #94A3B8 !important; font-family: var(--font-mono) !important; }
+        td.ecart-positif-cell { color: #10B981 !important; font-family: var(--font-mono) !important; }
+        td.ecart-negatif-cell { color: #EF4444 !important; font-family: var(--font-mono) !important; }
+
+        /* ── Row states ── */
+        tr.ecart-ok, tr.data-row.ecart-ok {
+            background: rgba(16,185,129,0.10) !important;
+            box-shadow: inset 3px 0 0 rgba(16,185,129,0.7) !important;
+        }
+        tr.ecart-ok td { color: #CBD5E1 !important; }
+
+        tr.ecart-positif, tr.data-row.ecart-positif {
+            background: rgba(239,68,68,0.10) !important;
+            box-shadow: inset 3px 0 0 rgba(239,68,68,0.7) !important;
+        }
+        tr.ecart-positif td { color: #CBD5E1 !important; }
+        tr.ecart-positif td.ecart-positif-cell { color: #F87171 !important; }
+
+        tr.ecart-negatif, tr.data-row.ecart-negatif {
+            background: rgba(239,68,68,0.10) !important;
+            box-shadow: inset 3px 0 0 rgba(239,68,68,0.7) !important;
+        }
+        tr.ecart-negatif td { color: #CBD5E1 !important; }
+        tr.ecart-negatif td.ecart-negatif-cell { color: #F87171 !important; }
+
+        tr.row-interpolated, tr.data-row.row-interpolated {
+            background: rgba(148,163,184,0.08) !important;
+            box-shadow: inset 3px 0 0 rgba(148,163,184,0.4) !important;
+            opacity: 0.8 !important;
+        }
+        tr.row-interpolated td { color: #64748B !important; font-style: italic !important; }
+
+        /* Côté gauche/droit row tinting — palette navy compatible */
+        tr.data-row.side-gauche { box-shadow: inset 3px 0 0 rgba(34,211,238,0.40) !important; }
+        tr.data-row.side-droit  { box-shadow: inset 3px 0 0 rgba(139,92,246,0.40) !important; }
+
+        /* Hors-plan (imprévus) */
+        tr.data-row.row-imprevu {
+            background: rgba(139,92,246,0.07) !important;
+        }
+
+        /* ── Validation button ── */
+        .btn-validation.pending  { background: #14253D !important; color: #64748B !important; border-color: #1E3A5F !important; }
+        .btn-validation.validated{ background: rgba(16,185,129,0.18) !important; color: #10B981 !important; border-color: rgba(16,185,129,0.5) !important; }
+        .btn-validation.to-check { background: rgba(245,158,11,0.18) !important; color: #F59E0B !important; border-color: rgba(245,158,11,0.5) !important; }
+
+        /* ── Obs notes button ── */
+        .btn-obs-notes {
+            background: #14253D !important; color: #94A3B8 !important;
+            border-color: #1E3A5F !important;
+        }
+        .btn-obs-notes:hover {
+            background: rgba(34,211,238,0.12) !important;
+            color: #22D3EE !important; border-color: rgba(34,211,238,0.4) !important;
+        }
+        .btn-obs-notes.has-notes {
+            background: rgba(245,158,11,0.14) !important;
+            color: #F59E0B !important; border-color: rgba(245,158,11,0.5) !important;
+        }
+
+        /* ── Interpolation button ── */
+        .btn-interp-plus {
+            background: #14253D !important;
+            border-color: #2C4F7C !important;
+            color: #64748B !important;
+        }
+        .btn-interp-plus:hover {
+            background: rgba(16,185,129,0.15) !important;
+            border-color: rgba(16,185,129,0.5) !important;
+            color: #10B981 !important;
+            transform: scale(1.2) !important;
+        }
+
+        /* ── Interpolated badge ── */
+        .interpolated-badge {
+            background: rgba(148,163,184,0.15) !important;
+            color: #94A3B8 !important;
+            border: 1px solid rgba(148,163,184,0.3) !important;
+        }
+
+        /* ── Sub-points (multi-mesure) ── */
+        tr.sub-point-row {
+            background: rgba(34,211,238,0.04) !important;
+        }
+        tr.sub-point-row td { color: #94A3B8 !important; }
+        .btn-multi-sub {
+            background: #14253D !important;
+            border-color: #1E3A5F !important;
+            color: #64748B !important;
+        }
+
+        /* ── Signature canvas ── */
+        .signature-zone, .sig-block {
+            background: #14253D !important;
+            border: 1.5px solid #1E3A5F !important;
+        }
+        .signature-canvas {
+            background: #1a2f4b !important;
+            border-color: #2C4F7C !important;
+        }
+        .signature-canvas:hover, .signature-canvas.signing {
+            border-color: #22D3EE !important;
+            box-shadow: 0 0 0 3px rgba(34,211,238,0.15) !important;
+        }
+        .signature-canvas.has-sig {
+            border-style: solid !important;
+            border-color: rgba(16,185,129,0.6) !important;
+        }
+        .sig-hint, .sig-placeholder { color: #475569 !important; }
+        .sig-label, .sig-name { color: #CBD5E1 !important; }
+        .sig-grade { color: #94A3B8 !important; }
+
+        /* ── Côté gauche / droit row colors (dark) ── */
+        tr.data-row[data-side="gauche"] td:first-child { border-left: 4px solid #F87171 !important; }
+        tr.data-row[data-side="droit"]  td:first-child { border-left: 4px solid #22D3EE !important; }
+        tr.data-row[data-side="gauche"] { background: rgba(239,68,68,0.08) !important; }
+        tr.data-row[data-side="droit"]  { background: rgba(34,211,238,0.06) !important; }
+        tr.data-row[data-side="gauche"] .element-label-cell { color: #FCA5A5 !important; }
+        tr.data-row[data-side="droit"]  .element-label-cell { color: #67E8F9 !important; }
+        tr.data-row[data-side="gauche"] .element-label-cell::before { background: #F87171 !important; }
+        tr.data-row[data-side="droit"]  .element-label-cell::before { background: #22D3EE !important; }
+
+        /* ── ecart-negatif dark bg (original was light blue) ── */
+        tr.data-row.ecart-negatif { background: rgba(34,211,238,0.08) !important; }
+
+        /* ── Hors-plan / imprévus (dark amber) ── */
+        tr.data-row.row-imprevu {
+            background: rgba(245,158,11,0.08) !important;
+            border-left: 3px solid #F59E0B !important;
+        }
+        tr.data-row.row-imprevu .element-label-cell { color: #FCD34D !important; font-style: italic !important; }
+        tr.data-row.row-imprevu .element-label-cell::before { background: #F59E0B !important; }
+        .pk-separator-imprevu {
+            color: #FCD34D !important;
+            background: rgba(245,158,11,0.10) !important;
+            border-top-color: rgba(245,158,11,0.4) !important;
+            border-bottom-color: rgba(245,158,11,0.4) !important;
+        }
+        .imprevus-col-section {
+            background: rgba(245,158,11,0.06) !important;
+            border-top-color: rgba(245,158,11,0.5) !important;
+        }
+        .imprevus-col-title {
+            color: #F59E0B !important;
+            border-bottom-color: rgba(245,158,11,0.5) !important;
+        }
+
+        /* ── Actor blocks (signatures step) ── */
+        .actor-block { background: #0D1B2E !important; border: 1px solid #1E3A5F !important; }
+        .actor-block.blue-bg  { background: rgba(34,211,238,0.06) !important; border-color: rgba(34,211,238,0.3) !important; }
+        .actor-block.orange-bg { background: rgba(245,158,11,0.06) !important; border-color: rgba(245,158,11,0.3) !important; }
+
+        /* ── Info boxes ── */
+        .info-box { background: #14253D !important; border-color: #1E3A5F !important; color: #CBD5E1 !important; }
+        .info-box.blue   { background: rgba(34,211,238,0.08) !important; border-color: rgba(34,211,238,0.35) !important; color: #22D3EE !important; }
+        .info-box.orange { background: rgba(245,158,11,0.08) !important; border-color: rgba(245,158,11,0.35) !important; color: #F59E0B !important; }
+        .info-box.green  { background: rgba(16,185,129,0.08) !important; border-color: rgba(16,185,129,0.35) !important; color: #10B981 !important; }
+
+        /* ── Error state ── */
+        .error-state, .error-msg, .alert-error {
+            background: rgba(239,68,68,0.10) !important;
+            border: 1px solid rgba(239,68,68,0.4) !important;
+            color: #F87171 !important;
+        }
+
+        /* ── Verdict selection (step 4/5) ── */
+        .verdict-opt, .verdict-card {
+            background: #14253D !important;
+            border: 2px solid #1E3A5F !important;
+            color: #CBD5E1 !important;
+        }
+        .verdict-opt:hover, .verdict-card:hover { border-color: #22D3EE !important; }
+        .verdict-opt.selected.ok, .verdict-card.selected.ok   { background: rgba(16,185,129,0.14) !important; border-color: #10B981 !important; }
+        .verdict-opt.selected.bad, .verdict-card.selected.bad { background: rgba(239,68,68,0.14) !important; border-color: #EF4444 !important; }
+        .verdict-opt.selected.redo,.verdict-card.selected.redo { background: rgba(245,158,11,0.14) !important; border-color: #F59E0B !important; }
+
+        /* ── KPI grid ── */
+        .kpi-grid, .kpi-row { background: transparent !important; }
+        .kpi, .kpi-card {
+            background: #0D1B2E !important;
+            border: 1px solid #1E3A5F !important;
+        }
+        .kpi-val, .kpi-value { color: #22D3EE !important; font-family: var(--font-mono) !important; }
+        .kpi-label { color: #94A3B8 !important; }
+
+        /* ── Results section ── */
+        .results-section, .resultats-section {
+            background: #0D1B2E !important;
+            border: 1px solid #1E3A5F !important;
+        }
+
+        /* ── Buttons generic ── */
+        .btn-primary, button.primary, .btn.primary {
+            background: #22D3EE !important;
+            color: #07101C !important;
+            border: none !important;
+        }
+        .btn-primary:hover { background: #06B6D4 !important; }
+        .btn-secondary, button.secondary, .btn.secondary {
+            background: #14253D !important;
+            border: 1.5px solid #1E3A5F !important;
+            color: #CBD5E1 !important;
+        }
+        .btn-secondary:hover { background: #1E3A5F !important; }
+
+        /* Add-station button */
+        .btn-add-station, button.add-station-btn {
+            background: rgba(34,211,238,0.10) !important;
+            border: 1.5px dashed rgba(34,211,238,0.4) !important;
+            color: #22D3EE !important;
+        }
+        .btn-add-station:hover { background: rgba(34,211,238,0.18) !important; }
+
+        /* ── Modal / overlay ── */
+        .modal-overlay, .modal-backdrop {
+            background: rgba(7,16,28,0.85) !important;
+            backdrop-filter: blur(4px) !important;
+        }
+        .modal-box, .modal-content, .modal-panel {
+            background: #0D1B2E !important;
+            border: 1px solid #1E3A5F !important;
+            color: #F1F5F9 !important;
+        }
+        .modal-title { color: #F1F5F9 !important; }
+        .modal-close, .btn-modal-close {
+            background: #14253D !important;
+            border-color: #1E3A5F !important;
+            color: #94A3B8 !important;
+        }
+
+        /* ── Toast / notifications ── */
+        .toast, .notif {
+            background: #14253D !important;
+            border: 1px solid #1E3A5F !important;
+            color: #F1F5F9 !important;
+        }
+
+        /* ── Specific ID overrides for inline-styled elements ── */
+        #export-reception-pdf {
+            background: #14253D !important;
+            color: #CBD5E1 !important;
+            border-color: #2C4F7C !important;
+        }
+        #export-reception-pdf:hover {
+            background: #1E3A5F !important;
+            border-color: #22D3EE !important;
+        }
+        #email-fiche-resume {
+            background: rgba(16,185,129,0.08) !important;
+            border-color: rgba(16,185,129,0.4) !important;
+            color: #A7F3D0 !important;
+        }
+        #obs-generales-entries {
+            background: transparent !important;
+        }
+        /* Results section containers */
+        #resultats-section, #resultats-container, #section-resultats {
+            background: #0D1B2E !important;
+            border-color: #1E3A5F !important;
+        }
+        /* Inline-style div containers (catchall for f8fafc / white containers) */
+        [style*="background:#f8fafc"], [style*="background: #f8fafc"],
+        [style*="background:#fff;"], [style*="background: #fff;"],
+        [style*="background:white"], [style*="background: white"] {
+            background: #0D1B2E !important;
+        }
+        [style*="background:#f0fdf4"] { background: rgba(16,185,129,0.08) !important; }
+        [style*="background:#dbeafe"] { background: rgba(34,211,238,0.10) !important; }
+        [style*="background:#fee2e2"] { background: rgba(239,68,68,0.10) !important; }
+        [style*="background:#fef9c3"], [style*="background:#fef3c7"] { background: rgba(245,158,11,0.10) !important; }
+        [style*="background:#e2e8f0"], [style*="background:#f1f5f9"] { background: #14253D !important; }
+        [style*="background:#dcfce7"] { background: rgba(16,185,129,0.14) !important; }
+
+        /* Inline color overrides */
+        [style*="color:#1d4ed8"], [style*="color: #1d4ed8"] { color: #22D3EE !important; }
+        [style*="color:#15803d"], [style*="color: #15803d"],
+        [style*="color:#16a34a"], [style*="color: #16a34a"] { color: #10B981 !important; }
+        [style*="color:#92400e"], [style*="color: #92400e"],
+        [style*="color:#b45309"], [style*="color: #b45309"] { color: #F59E0B !important; }
+        [style*="color:#dc2626"], [style*="color: #dc2626"],
+        [style*="color:#d97706"], [style*="color: #d97706"] { color: #F87171 !important; }
+        [style*="color:#64748b"], [style*="color: #64748b"] { color: #94A3B8 !important; }
+
+        /* Inline border overrides */
+        [style*="border:1px solid #e2e8f0"], [style*="border: 1px solid #e2e8f0"],
+        [style*="border:1.5px solid #e2e8f0"] { border-color: #1E3A5F !important; }
+        [style*="border:1px solid #86efac"], [style*="border:1.5px solid #86efac"] { border-color: rgba(16,185,129,0.5) !important; }
+        [style*="border:1px solid #bfdbfe"], [style*="border:1.5px solid #bfdbfe"] { border-color: rgba(34,211,238,0.4) !important; }
+        [style*="border:1px solid #fca5a5"] { border-color: rgba(239,68,68,0.4) !important; }
+        [style*="border-top:1px solid #e2e8f0"], [style*="border-bottom:1px solid #e2e8f0"] { border-color: #1E3A5F !important; }
+
+        /* ── Simulation mode — charte PARTENARIAT amber/or ── */
+        body.simulation-mode .wi-step.active .wi-dot,
+        body.simulation-mode .wi-step.done .wi-dot {
+            background: #F59E0B !important;
+            border-color: #F59E0B !important;
+            color: #07101C !important;
+        }
+        body.simulation-mode .wi-step.active .wi-label { color: #F59E0B !important; }
+        body.simulation-mode .wi-step.done .wi-label   { color: #D97706 !important; }
+        body.simulation-mode .wi-connector.done,
+        body.simulation-mode .wi-line.done { background: #F59E0B !important; }
+        body.simulation-mode .btn-wz-next:hover,
+        body.simulation-mode button.next-step:hover {
+            background: #D97706 !important;
+            border-color: #D97706 !important;
+            color: #07101C !important;
+        }
+        body.simulation-mode .btn-wz-next.green {
+            background: linear-gradient(135deg,#d97706,#f59e0b) !important;
+        }
+        body.simulation-mode .workflow-nav-item.home {
+            background: rgba(245,158,11,.15) !important;
+            border-color: rgba(245,158,11,.4) !important;
+            color: #F59E0B !important;
+        }
+        /* Filigrane SIMULATION à l'impression */
+        @media print {
+            body.simulation-mode::after {
+                content: 'SIMULATION';
+                position: fixed;
+                top: 50%; left: 50%;
+                transform: translate(-50%,-50%) rotate(-42deg);
+                font-size: 110px;
+                font-weight: 900;
+                letter-spacing: 6px;
+                color: rgba(245,158,11,.18);
+                pointer-events: none;
+                z-index: 9999;
+                white-space: nowrap;
+            }
+        }
+
+        /* ── Tailwind utility overrides ── */
+        .bg-white, .bg-gray-50, .bg-slate-50, .bg-gray-100 { background: #0D1B2E !important; }
+        .bg-gray-200, .bg-slate-100 { background: #14253D !important; }
+        .text-gray-900, .text-slate-900, .text-gray-800 { color: #F1F5F9 !important; }
+        .text-gray-700, .text-slate-700, .text-gray-600 { color: #CBD5E1 !important; }
+        .text-gray-500, .text-slate-500, .text-gray-400 { color: #94A3B8 !important; }
+        .border-gray-200, .border-slate-200, .border-gray-300 { border-color: #1E3A5F !important; }
+        .divide-gray-200 > * + * { border-color: #1E3A5F !important; }
+        .shadow, .shadow-sm, .shadow-md, .shadow-lg {
+            box-shadow: 0 2px 12px rgba(0,0,0,0.45) !important;
+        }
     </style>
 </head>
-<body class="font-sans bg-slate-50 min-h-screen">
+<body class="font-sans min-h-screen{% if is_simulation %} simulation-mode{% endif %}">
 <header class="bg-gradient-to-r from-primary-dark to-primary sticky top-0 z-50 shadow-lg">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -1179,7 +1744,63 @@
         </div>
     </div>
 </header>
-    
+
+    {% if projet %}
+    <!-- ══ Bannière contexte projet ════════════════════════════════════════ -->
+    <div style="background:{% if user_role == 'entreprise' %}linear-gradient(90deg,rgba(245,158,11,.12),rgba(245,158,11,.06)){% else %}linear-gradient(90deg,rgba(34,211,238,.10),rgba(34,211,238,.04)){% endif %};border-bottom:1px solid {% if user_role == 'entreprise' %}rgba(245,158,11,.3){% else %}rgba(34,211,238,.25){% endif %};padding:10px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <!-- Icône mode -->
+        <div style="width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;flex-shrink:0;
+            {% if user_role == 'entreprise' %}background:rgba(245,158,11,.18);color:#F59E0B;border:1px solid rgba(245,158,11,.4);
+            {% else %}background:rgba(34,211,238,.12);color:#22D3EE;border:1px solid rgba(34,211,238,.35);{% endif %}">
+            {{ 'P' if projet.plan == 'pro' else 'A' }}
+        </div>
+        <!-- Infos -->
+        <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:.88rem;color:#F1F5F9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ projet.nom }}
+                {% if projet.pk_debut and projet.pk_fin %}
+                <span style="font-weight:400;color:#94A3B8;margin-left:8px;">PK {{ projet.pk_debut }} → {{ projet.pk_fin }}</span>
+                {% endif %}
+            </div>
+            <div style="font-size:.75rem;color:#64748B;margin-top:1px;display:flex;gap:10px;flex-wrap:wrap;">
+                <span>Mode <strong style="color:{% if user_role == 'entreprise' %}#F59E0B{% else %}#22D3EE{% endif %};">{{ 'PARTENARIAT' if projet.plan == 'pro' else 'AUTONOME' }}</strong></span>
+                <span>Rôle <strong style="color:{% if user_role == 'entreprise' %}#F59E0B{% else %}#22D3EE{% endif %};">{% if user_role == 'entreprise' %}ET{% elif user_role == 'admin' %}Admin{% else %}MDC{% endif %}</strong></span>
+                {% if projet.tolerance_defaut %}<span>Tolérance <strong style="color:#CBD5E1;">{{ projet.tolerance_defaut }} cm</strong></span>{% endif %}
+            </div>
+        </div>
+        {% if demande %}
+        <!-- Badge demande -->
+        <div style="padding:6px 12px;border-radius:8px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);font-size:.78rem;flex-shrink:0;">
+            <span style="color:#94A3B8;">Demande </span><strong style="color:#F59E0B;">{{ demande.numero }}</strong>
+            <span style="color:#64748B;margin-left:6px;">{{ demande.statut_label }}</span>
+        </div>
+        {% endif %}
+        <!-- Lien retour hub -->
+        <a href="{{ url_for('pro_projets.projet_hub', projet_id=projet.id) }}"
+           style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.08);color:#64748B;font-size:.78rem;font-weight:600;text-decoration:none;flex-shrink:0;transition:all .15s;"
+           onmouseover="this.style.color='#CBD5E1';this.style.background='rgba(255,255,255,.04)'"
+           onmouseout="this.style.color='#64748B';this.style.background='transparent'">
+            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Hub projet
+        </a>
+    </div>
+    {% endif %}
+
+    {% if is_simulation %}
+    <!-- ══ Bandeau SIMULATION ══════════════════════════════════════════════ -->
+    <div style="background:linear-gradient(90deg,rgba(245,158,11,.20),rgba(245,158,11,.08));border-bottom:2px dashed rgba(245,158,11,.5);padding:9px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div style="background:#F59E0B;color:#07101C;font-weight:900;font-size:.68rem;padding:2px 9px;border-radius:4px;letter-spacing:1.5px;flex-shrink:0;">SIMULATION</div>
+        <span style="color:#FBBF24;font-size:.82rem;font-weight:600;">Mode simulation — aucune fiche officielle ne sera générée. Le document imprimé portera le filigrane SIMULATION.</span>
+        {% if projet %}
+        <a href="{{ url_for('pro_projets.projet_hub', projet_id=projet.id) }}"
+           style="margin-left:auto;font-size:.75rem;color:#64748B;text-decoration:none;flex-shrink:0;"
+           onmouseover="this.style.color='#CBD5E1'" onmouseout="this.style.color='#64748B'">
+            ← Hub projet
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <div class="page-wrapper">
 
         <!-- ═══ WIZARD INDICATOR ═══ -->
@@ -1549,8 +2170,9 @@
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 Paramétrage
             </button>
-            <button class="btn-wz-next green" onclick="wizardTo(5)">
-                Signatures &amp; Export
+            <button id="btn-step4-next" class="btn-wz-next green"
+                onclick="IS_ET ? (function(){ alert('Demande soumise. La MDC recevra une notification.'); window.location.href=RECEPTA_CTX.projet_id ? `/pro/projets/${RECEPTA_CTX.projet_id}` : '/'; })() : wizardTo(5)">
+                <span id="btn-step4-next-label">Signatures &amp; Export</span>
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
         </div>
@@ -2031,6 +2653,33 @@
     }
     </script>
 
+    <!-- ══ Contexte projet injecté par Flask ══════════════════════════════ -->
+    <script>
+    const RECEPTA_CTX = {
+        projet_id:   {{ projet.id        if projet  else 'null' }},
+        projet_nom:  {{ projet.nom|tojson if projet  else '""'  }},
+        projet_plan: {{ projet.plan|tojson if projet else '"solo"' }},
+        pk_debut:    {{ projet.pk_debut|tojson if projet and projet.pk_debut else '""' }},
+        pk_fin:      {{ projet.pk_fin|tojson   if projet and projet.pk_fin   else '""' }},
+        tolerance:   {{ projet.tolerance_defaut if projet and projet.tolerance_defaut else 2.0 }},
+        user_role:   {{ user_role|tojson }},
+        demande_id:  {{ demande.id        if demande else 'null' }},
+        demande_num: {{ demande.numero|tojson if demande else '""' }},
+        demande_pk_debut: {{ demande.pk_debut|tojson if demande and demande.pk_debut else '""' }},
+        demande_pk_fin:   {{ demande.pk_fin|tojson   if demande and demande.pk_fin   else '""' }},
+        demande_mode:     {{ demande.mode|tojson      if demande and demande.mode     else '""' }},
+        demande_tolerance:{{ demande.tolerance if demande and demande.tolerance else 'null' }},
+        is_simulation: {{ 'true' if is_simulation else 'false' }},
+    };
+    // Raccourcis lisibles dans le reste du code
+    const IS_ET         = RECEPTA_CTX.user_role === 'entreprise';
+    const IS_MDC        = !IS_ET;
+    const IS_PRO        = RECEPTA_CTX.projet_plan === 'pro';
+    const HAS_CTX       = RECEPTA_CTX.projet_id !== null;
+    const IS_SIMULATION = RECEPTA_CTX.is_simulation === true;
+    </script>
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+
     <script>
     // Données manuelles chargées depuis sessionStorage
     let manualReceptionData = null;
@@ -2314,6 +2963,93 @@
         
         // Initialiser la date d'aujourd'hui
         document.getElementById('date-controle').value = new Date().toISOString().split('T')[0];
+
+        // ── Pré-remplissage depuis RECEPTA_CTX ──────────────────────────────
+        (function applyCtx() {
+            if (!HAS_CTX) return;
+
+            // Étape 1 — infos projet
+            const nom = document.getElementById('projet-nom');
+            if (nom && !nom.value && RECEPTA_CTX.projet_nom)
+                nom.value = RECEPTA_CTX.projet_nom;
+
+            // Tolérance
+            const tol = document.getElementById('tolerance');
+            if (tol && RECEPTA_CTX.tolerance)
+                tol.value = RECEPTA_CTX.tolerance;
+
+            // Section PK (si demande)
+            const sect = document.getElementById('section-projet');
+            if (sect && RECEPTA_CTX.demande_pk_debut && RECEPTA_CTX.demande_pk_fin)
+                sect.value = `PK ${RECEPTA_CTX.demande_pk_debut} → ${RECEPTA_CTX.demande_pk_fin}`;
+
+            // Mode réception depuis la demande
+            if (RECEPTA_CTX.demande_mode === 'terrassement') {
+                const tog = document.getElementById('mode-toggle');
+                if (tog) tog.click();
+            }
+
+            // Masquer l'étape 5 (Clôture/Signatures) pour le rôle ET
+            if (IS_ET) {
+                const wi5  = document.getElementById('wi-5');
+                const wl45 = document.getElementById('wl-4-5');
+                if (wi5)  wi5.style.display  = 'none';
+                if (wl45) wl45.style.display = 'none';
+
+                // Changer le bouton "Générer" en "Soumettre"
+                const genBtn = document.getElementById('generate-reception');
+                if (genBtn) {
+                    genBtn.textContent = 'Soumettre la réception à la MDC';
+                    genBtn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+                    genBtn.onclick = function() {
+                        alert('Demande soumise. La MDC recevra une notification.');
+                        window.location.href = `/pro/projets/${RECEPTA_CTX.projet_id}`;
+                    };
+                }
+            }
+
+            // Changer le label du bouton step4 → Soumettre pour ET
+            if (IS_ET) {
+                const lbl = document.getElementById('btn-step4-next-label');
+                const btn = document.getElementById('btn-step4-next');
+                if (lbl) lbl.textContent = 'Soumettre à la MDC';
+                if (btn) btn.style.background = 'linear-gradient(135deg,#f59e0b,#d97706)';
+            }
+
+            // Bandeau demande en step 3 header (si présent)
+            if (RECEPTA_CTX.demande_num) {
+                const hdr = document.querySelector('#wz-step-3 .section-header h2');
+                if (hdr) hdr.innerHTML +=
+                    ` <span style="font-size:.72rem;font-weight:600;background:rgba(245,158,11,.15);color:#F59E0B;padding:2px 8px;border-radius:6px;border:1px solid rgba(245,158,11,.3);">DR ${RECEPTA_CTX.demande_num}</span>`;
+            }
+
+            // ── Mode SIMULATION ─────────────────────────────────────────────
+            if (IS_SIMULATION) {
+                // Aller directement à l'étape 3 (paramétrage) en auto-remplissant l'étape 1
+                setTimeout(() => wizardTo(3), 120);
+
+                // Bouton étape 4 → "Imprimer la simulation" (pas de soumission)
+                const lbl4 = document.getElementById('btn-step4-next-label');
+                const btn4 = document.getElementById('btn-step4-next');
+                if (lbl4) lbl4.textContent = 'Imprimer la simulation';
+                if (btn4) {
+                    btn4.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
+                    btn4.onclick = function() {
+                        document.getElementById('ph-date') &&
+                            (document.getElementById('ph-date').textContent =
+                                new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}));
+                        window.print();
+                    };
+                }
+
+                // Bouton "Générer le tableau" → indique simulation
+                const genBtn = document.getElementById('generate-reception');
+                if (genBtn) {
+                    genBtn.textContent = 'Générer la simulation';
+                    genBtn.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
+                }
+            }
+        })();
         
         // ========================================
         // FONCTIONS UTILITAIRES PK ↔ MÈTRES
@@ -5481,7 +6217,8 @@ OPTILAB — Service Topographique`;
         bottom: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        background: #0D1B2E;
+        border-top: 1px solid #1E3A5F;
         padding: 16px 32px;
         box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
         z-index: 100;
@@ -5515,12 +6252,13 @@ OPTILAB — Service Topographique`;
         transform: translateY(-2px);
     }
     .workflow-nav-item.home {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        border-color: transparent;
+        background: rgba(34,211,238,0.15);
+        border-color: rgba(34,211,238,0.4);
+        color: #22D3EE;
     }
     .workflow-nav-item.home:hover {
-        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        background: rgba(34,211,238,0.25);
+        box-shadow: 0 4px 12px rgba(34,211,238,0.25);
     }
     .workflow-nav-progress {
         display: flex;
@@ -5547,8 +6285,8 @@ OPTILAB — Service Topographique`;
         box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
     }
     .progress-step.completed .step-dot {
-        background: #3b82f6;
-        border-color: #3b82f6;
+        background: #22D3EE;
+        border-color: #22D3EE;
     }
     .step-label {
         color: rgba(255,255,255,0.7);
@@ -5565,7 +6303,7 @@ OPTILAB — Service Topographique`;
         background: rgba(255,255,255,0.3);
     }
     .progress-line.completed {
-        background: #3b82f6;
+        background: #22D3EE;
     }
     @media (max-width: 900px) {
         .workflow-nav-progress {

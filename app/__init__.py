@@ -1,4 +1,6 @@
 # app/__init__.py
+__version__ = "2.0.0"
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager

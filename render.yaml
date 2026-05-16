@@ -19,3 +19,7 @@ services:
         sync: false
       - key: R2_SECRET_ACCESS_KEY
         sync: false
+      - key: RESEND_API_KEY
+        sync: false          # clé API Resend — fiches de réception par email
+      - key: MAIL_FROM
+        sync: false          # ex: RECEPTA <noreply@ptt-btp.fr>

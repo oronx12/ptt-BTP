@@ -120,11 +120,18 @@ def projet_hub(projet_id):
             .count()
         )
 
+    # Équipe du projet — membres V3 direct
+    membres = MembreProjet.query.filter_by(projet_id=projet_id).all()
+    mdc_membres = [m for m in membres if m.role in ("controleur", "observateur")]
+    et_membres  = [m for m in membres if m.role == "travaux"]
+
     return render_template(
         "pro/projet_hub.html",
         projet=projet,
         role=role,
         pending_count=pending_count,
+        mdc_membres=mdc_membres,
+        et_membres=et_membres,
     )
 
 

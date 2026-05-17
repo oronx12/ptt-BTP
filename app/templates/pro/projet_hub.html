@@ -511,6 +511,126 @@
 
     {% endif %}
 
+    <!-- ═══════════════════════════════════════════════════
+         SECTION ÉQUIPE DU PROJET (tous rôles)
+    ═══════════════════════════════════════════════════ -->
+    {% if mdc_membres or et_membres %}
+    <div class="mt-10">
+        <p class="sec-label mb-5" style="background:rgba(100,116,139,.08);color:#64748b;border:1px solid rgba(100,116,139,.18);">Équipe du projet</p>
+
+        <div style="position:relative;padding-left:20px;">
+            <!-- Ligne verticale hiérarchique -->
+            <div style="position:absolute;left:6px;top:22px;bottom:22px;width:2px;background:linear-gradient(to bottom,rgba(34,211,238,.4),rgba(245,158,11,.3));border-radius:99px;"></div>
+
+            <!-- ── MDC ───────────────────────────────────────── -->
+            {% if mdc_membres %}
+            <div class="mb-5">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <div style="width:12px;height:12px;border-radius:50%;background:#22d3ee;box-shadow:0 0 8px rgba(34,211,238,.5);flex-shrink:0;margin-left:-6px;"></div>
+                    <span style="font-size:.68rem;font-weight:800;letter-spacing:1.2px;color:#22d3ee;text-transform:uppercase;">Mission de Contrôle</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;padding-left:14px;">
+                    {% for m in mdc_membres %}
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(34,211,238,.04);border:1px solid rgba(34,211,238,.15);border-radius:12px;min-width:0;">
+                        <!-- Initiales -->
+                        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0e4d5c,#0e9cc4);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:900;color:#e0f7ff;flex-shrink:0;letter-spacing:-0.5px;">
+                            {{ m.user.nom[:2]|upper if m.user.nom|length >= 2 else m.user.nom[0]|upper }}
+                        </div>
+                        <div style="min-width:0;">
+                            <div style="font-size:.88rem;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">{{ m.user.nom }}</div>
+                            <div style="font-size:.72rem;color:#22d3ee;margin-top:1px;">
+                                {% if m.role == 'observateur' %}Observateur{% else %}Contrôleur{% endif %}
+                            </div>
+                            {% if m.entreprise %}
+                            <div style="font-size:.7rem;color:#475569;margin-top:1px;">{{ m.entreprise.nom }}</div>
+                            {% endif %}
+                        </div>
+                        {% if m.user.id == current_user.id %}
+                        <span style="font-size:.65rem;font-weight:700;color:#07101c;background:#22d3ee;padding:2px 7px;border-radius:99px;margin-left:4px;flex-shrink:0;">vous</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ── ET ────────────────────────────────────────── -->
+            {% if et_membres %}
+            <div class="mb-2">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <div style="width:12px;height:12px;border-radius:50%;background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,.4);flex-shrink:0;margin-left:-6px;"></div>
+                    <span style="font-size:.68rem;font-weight:800;letter-spacing:1.2px;color:#f59e0b;text-transform:uppercase;">Entreprise de Travaux</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;padding-left:14px;">
+                    {% for m in et_membres %}
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.14);border-radius:12px;min-width:0;">
+                        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#78350f,#d97706);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:900;color:#fff7e6;flex-shrink:0;letter-spacing:-0.5px;">
+                            {{ m.user.nom[:2]|upper if m.user.nom|length >= 2 else m.user.nom[0]|upper }}
+                        </div>
+                        <div style="min-width:0;">
+                            <div style="font-size:.88rem;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">{{ m.user.nom }}</div>
+                            <div style="font-size:.72rem;color:#f59e0b;margin-top:1px;">Entreprise de Travaux</div>
+                            {% if m.entreprise %}
+                            <div style="font-size:.7rem;color:#475569;margin-top:1px;">{{ m.entreprise.nom }}</div>
+                            {% endif %}
+                        </div>
+                        {% if m.user.id == current_user.id %}
+                        <span style="font-size:.65rem;font-weight:700;color:#07101c;background:#f59e0b;padding:2px 7px;border-radius:99px;margin-left:4px;flex-shrink:0;">vous</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════
+         GRILLE ACCÈS — Entreprise de Travaux uniquement
+    ═══════════════════════════════════════════════════ -->
+    {% if role == 'entreprise' %}
+    <div class="mt-8 mb-4">
+        <p class="sec-label mb-5" style="background:rgba(245,158,11,.06);color:#92400e;border:1px solid rgba(245,158,11,.15);">Vos accès sur ce projet</p>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;">
+
+            {% set acces = [
+                ('Nouvelle demande de réception', true,  'Soumettre une demande à la MDC.', '#fbbf24'),
+                ('Suivre mes demandes',            true,  "Consulter l'état de vos demandes.", '#fbbf24'),
+                ('Simulation (brouillon)',          true,  'Calculer les côtes théoriques.', '#60a5fa'),
+                ('Visualisation du projet',         true,  'Profil en long et schéma en travers.', '#34d399'),
+                ('Initier une réception',           false, 'Réservé à la Mission de Contrôle.', '#f87171'),
+                ('Traiter les demandes',            false, 'Réservé à la Mission de Contrôle.', '#f87171'),
+                ('Rapport de période',              false, 'Réservé à la Mission de Contrôle.', '#f87171'),
+                ('Carte GPS du tracé',              false, 'Réservé à la Mission de Contrôle.', '#f87171'),
+            ] %}
+
+            {% for label, ok, desc, _ in acces %}
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;
+                        background:{% if ok %}rgba(52,211,153,.04){% else %}rgba(239,68,68,.03){% endif %};
+                        border:1px solid {% if ok %}rgba(52,211,153,.15){% else %}rgba(239,68,68,.1){% endif %};
+                        border-radius:10px;">
+                <div style="width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                            background:{% if ok %}rgba(52,211,153,.12){% else %}rgba(239,68,68,.08){% endif %};">
+                    {% if ok %}
+                    <svg style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20,6 9,17 4,12"/></svg>
+                    {% else %}
+                    <svg style="width:12px;height:12px;" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    {% endif %}
+                </div>
+                <div>
+                    <div style="font-size:.82rem;font-weight:700;color:{% if ok %}#e2e8f0{% else %}#475569{% endif %};">{{ label }}</div>
+                    <div style="font-size:.71rem;color:{% if ok %}#64748b{% else %}#374151{% endif %};margin-top:2px;line-height:1.4;">{{ desc }}</div>
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+    {% endif %}
+
 </main>
 
 </body>
